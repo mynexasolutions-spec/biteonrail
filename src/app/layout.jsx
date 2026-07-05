@@ -73,9 +73,6 @@ function Header() {
           <Link href="/" className="text-slate-600 hover:text-rose-600 font-bold text-sm transition-colors">
             Home
           </Link>
-          <Link href="/menu" className="text-slate-600 hover:text-rose-600 font-bold text-sm transition-colors flex items-center gap-1">
-            <ShoppingBag className="w-4 h-4 text-rose-500" /> Menu
-          </Link>
           {currentUser && (
             <Link href="/orders" className="text-slate-600 hover:text-rose-600 font-bold text-sm transition-colors flex items-center gap-1">
               <ClipboardList className="w-4 h-4 text-rose-500" /> My Orders
