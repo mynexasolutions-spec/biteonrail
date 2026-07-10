@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useApp } from '../../context/AppContext';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { uploadToCloudinary, isCloudinaryConfigured } from '../../lib/cloudinary';
-import { X, Printer } from 'lucide-react';
+import { X, Printer, Clock, Compass, User, Calendar, Train, Phone, Locate, Truck, Gift, IndianRupee, ChefHat, Send, Check, CheckCircle2, AlertTriangle, ClipboardList } from 'lucide-react';
 
 // Sub-components import
 import Sidebar from '../../components/admin/Sidebar';
@@ -15,6 +15,8 @@ import StationsTab from '../../components/admin/StationsTab';
 import CredentialsTab from '../../components/admin/CredentialsTab';
 import PlatformSettingsTab from '../../components/admin/PlatformSettingsTab';
 import SupportDirectoryTab from '../../components/admin/SupportDirectoryTab';
+import HomeCustomizeTab from '../../components/admin/HomeCustomizeTab';
+import StatesTab from '../../components/admin/StatesTab';
 
 function AdminPageContent() {
   const {
@@ -49,7 +51,14 @@ function AdminPageContent() {
     categories,
     addCategory,
     removeCategory,
-    updateCategory
+    updateCategory,
+    socialInstagram,
+    updateSocialInstagram,
+    socialFacebook,
+    updateSocialFacebook,
+    socialTwitter,
+    updateSocialTwitter,
+    toggleGlobalItemAvailability
   } = useApp();
 
   // Admin access control state
@@ -121,6 +130,7 @@ function AdminPageContent() {
   // Menu tab filters
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
   const [menuActiveCategory, setMenuActiveCategory] = useState('All');
+  const [menuOriginFilter, setMenuOriginFilter] = useState('All'); // 'All' | 'Local' | 'Global'
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingCategory, setEditingCategory] = useState(null);
   const [editCategoryName, setEditCategoryName] = useState('');
@@ -129,6 +139,7 @@ function AdminPageContent() {
   const [ordersSearchQuery, setOrdersSearchQuery] = useState('');
   const [ordersSortBy, setOrdersSortBy] = useState('timeSoonest'); // 'timeSoonest' | 'newestOrder' | 'oldestOrder'
   const [printingOrder, setPrintingOrder] = useState(null);
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
   const [ordersStationFilter, setOrdersStationFilter] = useState('All');
   const [stationSearchQuery, setStationSearchQuery] = useState('');
   const [stationStateFilter, setStationStateFilter] = useState('All');
@@ -189,22 +200,6 @@ function AdminPageContent() {
 
   const handleTrackTrain = async (orderId, pnr) => {
     const orderObj = orders.find(o => o.id === orderId);
-    if (orderObj && orderObj.doj) {
-      const clean = orderObj.doj.toLowerCase().trim();
-      if (clean !== 'today') {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const dojDate = parseDojDate(orderObj.doj);
-        if (dojDate && !isNaN(dojDate.getTime())) {
-          dojDate.setHours(0, 0, 0, 0);
-          if (dojDate.getTime() !== today.getTime()) {
-            alert(`Live tracking is only active on the day of departure (${orderObj.doj}).`);
-            return;
-          }
-        }
-      }
-    }
 
     try {
       setTrackingLoadingId(orderId);
@@ -228,15 +223,48 @@ function AdminPageContent() {
         throw new Error("Train number not found");
       }
 
+      // Fetch train schedule to get day offset
+      let dayOffset = 0;
+      if (stationCode) {
+        try {
+          const schedRes = await fetch(`/api/train-schedule?trainNo=${trainNo}`);
+          if (schedRes.ok) {
+            const schedData = await schedRes.json();
+            const routeStops = schedData.data?.route || [];
+            const match = routeStops.find(s => (s.stationCode || s.stnCode || s.code || '').toUpperCase() === stationCode.toUpperCase());
+            if (match && match.day) {
+              dayOffset = Math.max(0, parseInt(match.day, 10) - 1);
+            }
+          }
+        } catch (schedErr) {
+          console.warn("Failed to determine day offset for admin track train:", schedErr);
+        }
+      }
+
       const cleanDoj = doj.replace(/\//g, '-').trim();
       let dateParam = 'today';
+      let dojDate = null;
       if (cleanDoj.includes('-')) {
         const parts = cleanDoj.split('-');
-        if (parts[0].length === 4) {
-          dateParam = `${parts[2]}-${parts[1]}-${parts[0]}`;
-        } else if (parts[2].length === 4) {
-          dateParam = cleanDoj;
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            dojDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          } else {
+            dojDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+          }
         }
+      } else {
+        dojDate = new Date(doj);
+      }
+
+      if (dojDate && !isNaN(dojDate.getTime())) {
+        if (dayOffset > 0) {
+          dojDate.setDate(dojDate.getDate() - dayOffset);
+        }
+        const yyyy = dojDate.getFullYear();
+        const mm = String(dojDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(dojDate.getDate()).padStart(2, '0');
+        dateParam = `${dd}-${mm}-${yyyy}`;
       }
 
       const liveRes = await fetch(`/api/track-train?trainNo=${trainNo}&date=${dateParam}`);
@@ -248,7 +276,7 @@ function AdminPageContent() {
       }
 
       const stationsArray = trackingData.data.timeline || trackingData.data.stations || [];
-      const currentStationText = trackingData.data.currentStationName || trackingData.data.statusNote || "In Transit";
+      const currentStationText = trackingData.data.statusNote || trackingData.data.currentStationName || "In Transit";
 
       let delayMins = 0;
       let targetStationCode = String(stationCode || '').toUpperCase().trim();
@@ -272,6 +300,8 @@ function AdminPageContent() {
           trainNo,
           delay: delayMins,
           nextStation: currentStationText,
+          statusNote: trackingData.data.statusNote || currentStationText,
+          lastUpdate: trackingData.data.lastUpdate || '',
           tracked: true
         }
       }));
@@ -285,6 +315,8 @@ function AdminPageContent() {
           trainNo: orderObj?.trainNumber || "12001",
           delay: 0,
           nextStation: "Schedule Confirmed (No Live Update)",
+          statusNote: "Schedule Confirmed (No Live Update)",
+          lastUpdate: "",
           tracked: true
         }
       }));
@@ -461,23 +493,36 @@ function AdminPageContent() {
 
   const filteredCategories = React.useMemo(() => {
     if (!categories) return [];
+    // Station specific categories
     const stationSpecific = categories
       .filter(cat => cat.station_code && cat.station_code.toUpperCase() === selectedStationCode.toUpperCase())
       .map(cat => cat.name);
 
-    if (stationSpecific.length === 0) {
-      return categories
-        .filter(cat => !cat.station_code || cat.station_code.toUpperCase() === 'ALL')
-        .map(cat => cat.name);
-    }
-    return stationSpecific;
+    // Global categories
+    const globalCats = categories
+      .filter(cat => !cat.station_code || cat.station_code.toUpperCase() === 'ALL')
+      .map(cat => cat.name);
+
+    // Merge both and remove duplicates using a Set
+    return Array.from(new Set([...stationSpecific, ...globalCats]));
   }, [categories, selectedStationCode]);
 
   const baseMenuItems = React.useMemo(() => {
-    return adminType === 'station'
-      ? menuItems.filter(item => item.station_code && item.station_code.toUpperCase() === selectedStationCode.toUpperCase())
-      : menuItems;
-  }, [menuItems, adminType, selectedStationCode]);
+    if (adminType === 'station') {
+      // Station admin sees their own items + global items
+      return menuItems.filter(item =>
+        (item.station_code && item.station_code.toUpperCase() === selectedStationCode.toUpperCase()) ||
+        (!item.station_code || item.station_code.toUpperCase() === 'ALL')
+      );
+    }
+    if (activeSubTab === 'global_menu') {
+      // Head admin on Global Menu tab: only show global items (station_code = 'ALL' or null)
+      return menuItems.filter(item =>
+        !item.station_code || item.station_code.toUpperCase() === 'ALL'
+      );
+    }
+    return menuItems;
+  }, [menuItems, adminType, selectedStationCode, activeSubTab]);
 
   const sortedMenuItems = React.useMemo(() => {
     const filtered = baseMenuItems.filter(item => {
@@ -489,7 +534,16 @@ function AdminPageContent() {
         : menuAvailabilityFilter === 'InStock'
           ? item.available
           : !item.available;
-      return matchesSearch && matchesCategory && matchesAvailability;
+
+      // Filter by Origin (Local vs Global)
+      let matchesOrigin = true;
+      if (menuOriginFilter === 'Global') {
+        matchesOrigin = !item.station_code || item.station_code.toUpperCase() === 'ALL';
+      } else if (menuOriginFilter === 'Local') {
+        matchesOrigin = item.station_code && item.station_code.toUpperCase() !== 'ALL';
+      }
+
+      return matchesSearch && matchesCategory && matchesAvailability && matchesOrigin;
     });
 
     return [...filtered].sort((a, b) => {
@@ -507,13 +561,26 @@ function AdminPageContent() {
         return a.name.localeCompare(b.name);
       }
     });
-  }, [baseMenuItems, menuSearchQuery, menuActiveCategory, menuAvailabilityFilter, menuSortBy]);
+  }, [baseMenuItems, menuSearchQuery, menuActiveCategory, menuAvailabilityFilter, menuSortBy, menuOriginFilter]);
 
   const totalMenuFilteredCount = sortedMenuItems.length;
   const menuStartIndex = (menuCurrentPage - 1) * menuPageSize;
   const displayMenuItems = React.useMemo(() => {
     return sortedMenuItems.slice(menuStartIndex, menuStartIndex + menuPageSize);
   }, [sortedMenuItems, menuStartIndex, menuPageSize]);
+
+  // Dynamically default the category input field to the first available category name in the list
+  React.useEffect(() => {
+    const list = adminType === 'global'
+      ? categories.filter(c => !c.station_code || c.station_code.toUpperCase() === 'ALL').map(c => c.name)
+      : filteredCategories;
+    
+    if (list.length > 0) {
+      if (!list.includes(newItemCategory)) {
+        setNewItemCategory(list[0]);
+      }
+    }
+  }, [adminType, categories, filteredCategories, activeSubTab]);
 
   const handleAdminLogin = async (e) => {
     e.preventDefault();
@@ -937,7 +1004,20 @@ function AdminPageContent() {
     setEditingMenuItem(item);
     setNewItemName(item.name);
     setNewItemPrice(item.price);
-    setNewItemCategory(item.category);
+
+    // Validate if the item's category is in the currently active category list, otherwise default to the first option
+    const list = adminType === 'global'
+      ? categories.filter(c => !c.station_code || c.station_code.toUpperCase() === 'ALL').map(c => c.name)
+      : filteredCategories;
+
+    if (list.includes(item.category)) {
+      setNewItemCategory(item.category);
+    } else if (list.length > 0) {
+      setNewItemCategory(list[0]);
+    } else {
+      setNewItemCategory(item.category || 'Uncategorized');
+    }
+
     setNewItemDescription(item.description || '');
     setUploadedUrl(item.image_url || item.image || '');
     setNewItemStationCode(item.station_code || 'ALL');
@@ -1131,6 +1211,8 @@ function AdminPageContent() {
             handleAssignRider={handleAssignRider}
             updateOrderStatus={updateOrderStatus}
             setPrintingOrder={setPrintingOrder}
+            selectedOrderDetails={selectedOrderDetails}
+            setSelectedOrderDetails={setSelectedOrderDetails}
           />
         )}
 
@@ -1143,9 +1225,9 @@ function AdminPageContent() {
             baseMenuItems={baseMenuItems}
             menuItems={menuItems}
             categories={filteredCategories}
-            addCategory={(name) => addCategory(name, selectedStationCode)}
+            addCategory={(name, image) => addCategory(name, selectedStationCode, image)}
             removeCategory={(name) => removeCategory(name, selectedStationCode)}
-            updateCategory={(oldName, newName) => updateCategory(oldName, newName, selectedStationCode)}
+            updateCategory={(oldName, newName, image) => updateCategory(oldName, newName, selectedStationCode, image)}
             menuSearchQuery={menuSearchQuery}
             setMenuSearchQuery={setMenuSearchQuery}
             menuSortBy={menuSortBy}
@@ -1206,6 +1288,85 @@ function AdminPageContent() {
             setEditingCategory={setEditingCategory}
             editCategoryName={editCategoryName}
             setEditCategoryName={setEditCategoryName}
+            toggleGlobalItemAvailability={toggleGlobalItemAvailability}
+            menuOriginFilter={menuOriginFilter}
+            setMenuOriginFilter={setMenuOriginFilter}
+          />
+        )}
+
+        {(activeSubTab === 'global_menu' || activeSubTab === 'global_categories') && adminType === 'global' && (
+          <MenuCatalogTab
+            activeSubTab={activeSubTab === 'global_menu' ? 'menu' : 'categories'}
+            setActiveSubTab={(tab) => setActiveSubTab(tab === 'menu' ? 'global_menu' : 'global_categories')}
+            adminType={'global'}
+            selectedStationCode={'ALL'}
+            baseMenuItems={baseMenuItems}
+            menuItems={menuItems}
+            categories={categories.filter(c => !c.station_code || c.station_code.toUpperCase() === 'ALL').map(c => c.name)}
+            addCategory={(name, image) => addCategory(name, 'ALL', image)}
+            removeCategory={(name) => removeCategory(name, 'ALL')}
+            updateCategory={(oldName, newName, image) => updateCategory(oldName, newName, 'ALL', image)}
+            menuSearchQuery={menuSearchQuery}
+            setMenuSearchQuery={setMenuSearchQuery}
+            menuSortBy={menuSortBy}
+            setMenuSortBy={setMenuSortBy}
+            menuAvailabilityFilter={menuAvailabilityFilter}
+            setMenuAvailabilityFilter={setMenuAvailabilityFilter}
+            menuActiveCategory={menuActiveCategory}
+            setMenuActiveCategory={setMenuActiveCategory}
+            menuViewMode={menuViewMode}
+            setMenuViewMode={setMenuViewMode}
+            menuPageSize={menuPageSize}
+            setMenuPageSize={setMenuPageSize}
+            menuSelectedIds={menuSelectedIds}
+            setMenuSelectedIds={setMenuSelectedIds}
+            displayMenuItems={displayMenuItems}
+            totalMenuFilteredCount={totalMenuFilteredCount}
+            menuStartIndex={menuStartIndex}
+            menuCurrentPage={menuCurrentPage}
+            setMenuCurrentPage={setMenuCurrentPage}
+            newItemName={newItemName}
+            setNewItemName={setNewItemName}
+            newItemPrice={newItemPrice}
+            setNewItemPrice={setNewItemPrice}
+            newItemCategory={newItemCategory}
+            setNewItemCategory={setNewItemCategory}
+            newItemStationCode={newItemStationCode}
+            setNewItemStationCode={setNewItemStationCode}
+            newItemFoodType={newItemFoodType}
+            setNewItemFoodType={setNewItemFoodType}
+            uploadedUrl={uploadedUrl}
+            setUploadedUrl={setUploadedUrl}
+            newItemDescription={newItemDescription}
+            setNewItemDescription={setNewItemDescription}
+            hasVariants={hasVariants}
+            setHasVariants={setHasVariants}
+            itemVariants={itemVariants}
+            setItemVariants={setItemVariants}
+            stations={stations}
+            uploading={uploading}
+            handleImageUpload={handleImageUpload}
+            handleAddMenuItem={handleAddMenuItem}
+            startEditMenuItem={startEditMenuItem}
+            cancelEditMenuItem={cancelEditMenuItem}
+            handleEditMenuItemSubmit={handleEditMenuItemSubmit}
+            handleBulkAvailability={handleBulkAvailability}
+            handleBulkDelete={handleBulkDelete}
+            handleUpdatePriceInline={handleUpdatePriceInline}
+            handleToggleItemAvailability={handleToggleItemAvailability}
+            handleRemoveMenuItem={handleRemoveMenuItem}
+            editingMenuItem={editingMenuItem}
+            editingPriceId={editingPriceId}
+            setEditingPriceId={setEditingPriceId}
+            editingPriceValue={editingPriceValue}
+            setEditingPriceValue={setEditingPriceValue}
+            newCategoryName={newCategoryName}
+            setNewCategoryName={setNewCategoryName}
+            editingCategory={editingCategory}
+            setEditingCategory={setEditingCategory}
+            editCategoryName={editCategoryName}
+            setEditCategoryName={setEditCategoryName}
+            toggleGlobalItemAvailability={toggleGlobalItemAvailability}
           />
         )}
 
@@ -1251,6 +1412,16 @@ function AdminPageContent() {
             handleRemoveStation={handleRemoveStation}
             handleAddStation={handleAddStation}
             handleUpdateStationSettings={handleUpdateStationSettings}
+          />
+        )}
+
+        {activeSubTab === 'states' && adminType === 'global' && (
+          <StatesTab
+            availableStates={availableStates}
+            addAvailableState={addAvailableState}
+            removeAvailableState={removeAvailableState}
+            renameAvailableState={renameAvailableState}
+            stations={stations}
           />
         )}
 
@@ -1337,6 +1508,12 @@ function AdminPageContent() {
             updateSupportEmail={updateSupportEmail}
             supportContacts={supportContacts}
             updateSupportContacts={updateSupportContacts}
+            socialInstagram={socialInstagram}
+            updateSocialInstagram={updateSocialInstagram}
+            socialFacebook={socialFacebook}
+            updateSocialFacebook={updateSocialFacebook}
+            socialTwitter={socialTwitter}
+            updateSocialTwitter={updateSocialTwitter}
           />
         )}
 
@@ -1346,6 +1523,10 @@ function AdminPageContent() {
             supportContacts={supportContacts}
             updateSupportContacts={updateSupportContacts}
           />
+        )}
+
+        {activeSubTab === 'home_custom' && adminType === 'global' && (
+          <HomeCustomizeTab />
         )}
 
         {/* KOT Printer Dialog Overlay */}
@@ -1462,6 +1643,371 @@ function AdminPageContent() {
           </div>
         )}
       </main>
+
+      {/* Detailed Order View Modal - EXACT Card Layout */}
+      {selectedOrderDetails && (() => {
+        const order = selectedOrderDetails;
+        const oStationCode = order.stationCode || order.station_code || order.stationcode || '';
+        const targetStation = stations.find(st => st.code.toUpperCase() === oStationCode.toUpperCase());
+        const stationDisplayName = targetStation ? `${targetStation.name} (${targetStation.code})` : (oStationCode || 'Global/ALL');
+        const orderItems = Array.isArray(order.items)
+          ? order.items
+          : (typeof order.items === 'string' ? (() => { try { return JSON.parse(order.items); } catch (e) { return []; } })() : []);
+        const orderOnDemand = Array.isArray(order.onDemandRequests)
+          ? order.onDemandRequests
+          : (typeof order.onDemandRequests === 'string' ? (() => { try { return JSON.parse(order.onDemandRequests); } catch (e) { return []; } })() : []);
+
+        return (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[100] p-2 sm:p-4 min-h-screen h-full w-full overflow-y-auto animate-fadeIn">
+            <div className="bg-white rounded-3xl max-w-6xl w-full p-4 sm:p-6 md:p-8 space-y-6 shadow-2xl relative border border-slate-105 max-h-[90vh] overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <button
+                onClick={() => setSelectedOrderDetails(null)}
+                className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-all z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Exact Card Header inside Modal */}
+              <div className="flex justify-between items-start flex-wrap gap-4 border-b border-slate-150 pb-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="text-slate-808 text-base lg:text-lg font-black">Order #{order.id}</span>
+                    <span className={`text-[11px] lg:text-xs px-2.5 py-1 rounded-full font-black uppercase tracking-wider ${order.status === 'Placed' ? 'bg-rose-50 text-rose-600 border border-rose-105' :
+                      order.status === 'Preparing' ? 'bg-amber-50 text-amber-705 border border-amber-105' :
+                      order.status === 'Dispatched' ? 'bg-indigo-55 text-indigo-600 border border-indigo-105' :
+                      order.status === 'Delivered' ? 'bg-emerald-55 text-emerald-700 border border-emerald-105' :
+                      'bg-slate-100 text-slate-550 border border-slate-200'
+                    }`}>{order.status}</span>
+
+                    {String(order.paymentMode).toUpperCase() === 'ONLINE' ? (
+                      <span className="text-[11px] lg:text-xs text-emerald-700 bg-emerald-50 border border-emerald-105 px-2.5 py-1 rounded-full font-black uppercase tracking-wider flex items-center gap-0.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> PAID (Online)
+                      </span>
+                    ) : (
+                      <span className="text-[11px] lg:text-xs text-amber-755 bg-amber-50 border border-amber-105 px-2.5 py-1 rounded-full font-black uppercase tracking-wider flex items-center gap-0.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> Cash On Delivery (COD)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-right mr-10 sm:mr-0">
+                  {order.timestamp && (
+                    <span className="text-xs lg:text-sm text-slate-555 font-black bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-xl flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-slate-400 shrink-0" /> Placed: {order.timestamp}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Exact Card Body columns inside Modal */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-8">
+                {/* Train & Passenger Info */}
+                <div className="bg-slate-50 border border-slate-150 p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                  <div>
+                    <span className="text-xs lg:text-[13px] text-slate-455 font-black uppercase tracking-wider block mb-3">Passenger Compartment</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="bg-rose-600 text-white text-xs lg:text-sm font-black uppercase px-3.5 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 animate-pulse-slow">
+                        <User className="w-4 h-4" /> Coach {order.coach} · Seat {order.seat}
+                      </span>
+                      <span className="bg-slate-800 text-white text-xs lg:text-sm font-black uppercase px-3.5 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5">
+                        <Compass className="w-4 h-4" /> PF: {order.platform || 'TBD'}
+                      </span>
+                      <span className="text-xs lg:text-sm font-black text-slate-555 bg-white border border-slate-200 px-3.5 py-2.5 rounded-xl uppercase tracking-wider font-mono">
+                        PNR: {order.pnr}
+                      </span>
+                    </div>
+                    {order.doj && (
+                      <div className="mt-3 flex items-center gap-1.5 text-xs lg:text-sm font-black text-rose-700 bg-rose-50 border border-rose-100 px-3.5 py-2 rounded-xl uppercase tracking-wider w-fit">
+                        <Calendar className="w-4 h-4 text-rose-600" /> Delivery: {order.doj}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2 pt-3 border-t border-slate-200/60">
+                    <span className="text-[10px] lg:text-xs text-slate-455 font-black uppercase tracking-wider block mb-1">Transit Details</span>
+                    {order.trainNumber && order.trainNumber !== 'N/A' && (
+                      <div className="flex items-center gap-2.5 bg-white border border-slate-200 p-3 rounded-xl">
+                        <Train className="w-5 h-5 text-rose-600 animate-bounce" />
+                        <div className="text-xs lg:text-sm font-bold text-slate-805 leading-tight">
+                          <p className="font-black text-slate-900 text-sm lg:text-base">{order.trainNumber}</p>
+                          <p className="text-[11px] lg:text-xs text-slate-550 truncate max-w-[180px] mt-0.5">{order.trainName}</p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between text-xs lg:text-sm font-bold text-slate-600 pt-1.5">
+                      <span className="flex items-center gap-1">
+                        <Phone className="w-4 h-4 text-slate-400" /> {order.phone || order.customerPhone}
+                      </span>
+                      <button
+                        onClick={() => handleTrackTrain(order.id, order.pnr)}
+                        disabled={trackingLoadingId === order.id}
+                        className="text-[10px] lg:text-xs text-rose-655 bg-rose-50 border border-rose-105 hover:bg-rose-100 px-3 py-1.5 rounded-lg font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0"
+                      >
+                        <Locate className="w-4 h-4" /> {trackingLoadingId === order.id ? 'Tracking...' : 'Track Train'}
+                      </button>
+                    </div>
+
+                    {trainTrackInfo[order.id]?.tracked ? (
+                      <div className="space-y-1.5 pt-2 border-t border-dashed border-slate-205">
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className={`inline-flex items-center gap-1 text-[10px] lg:text-xs px-2.5 py-1 rounded-md font-black uppercase tracking-wider border ${trainTrackInfo[order.id].delay > 0 ? 'text-red-700 bg-red-55 border-red-200 animate-pulse' : 'text-emerald-700 bg-emerald-55 border-emerald-200'
+                            }`}>
+                            <Clock className="w-3.5 h-3.5" />
+                            {trainTrackInfo[order.id].delay > 0
+                              ? `Delay: ${trainTrackInfo[order.id].delay}m`
+                              : 'On Time'
+                            }
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[10px] lg:text-xs px-2.5 py-1 rounded-md font-black uppercase tracking-wider bg-slate-50 text-slate-500 border border-slate-200">
+                            Scheduled: {order.arrTime || order.arrivalTime || 'N/A'}
+                          </span>
+                          {order.arrTime && (
+                            <span className={`inline-flex items-center gap-1 text-[10px] lg:text-xs px-2.5 py-1 rounded-md font-black uppercase tracking-wider border ${trainTrackInfo[order.id].delay > 0
+                              ? 'bg-rose-50 text-rose-700 border-rose-100'
+                              : 'bg-emerald-50 text-emerald-705 border-emerald-100'
+                              }`}>
+                              ETA: {getRevisedETA(order.arrTime || order.arrivalTime, trainTrackInfo[order.id].delay)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs lg:text-sm text-slate-700 font-extrabold bg-slate-50 px-3 py-2 rounded-lg border border-slate-200/60 block leading-tight">
+                          {trainTrackInfo[order.id].statusNote || trainTrackInfo[order.id].nextStation}
+                        </p>
+                        {trainTrackInfo[order.id].lastUpdate && (
+                          <p className="text-[10px] lg:text-xs text-slate-405 font-black uppercase tracking-wider block mt-0.5">
+                            Last Updated: {trainTrackInfo[order.id].lastUpdate}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1.5 text-[10px] lg:text-xs text-amber-705 bg-amber-50 border border-amber-150 px-3 py-1.5 rounded-xl font-black uppercase tracking-wider mt-1.5">
+                        <Clock className="w-4 h-4 text-amber-650" /> Scheduled: {order.arrTime || order.arrivalTime || 'N/A'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Order Items */}
+                <div className="border border-slate-200 p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                  <div>
+                    <span className="text-xs lg:text-[13px] text-slate-455 font-black uppercase tracking-wider block mb-3">Menu Items</span>
+                    <div className="bg-slate-50/50 rounded-xl p-4 border border-slate-150 divide-y divide-slate-150/60 max-h-[170px] overflow-y-auto space-y-2">
+                      {orderItems.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-xs lg:text-sm py-2.5 first:pt-0 last:pb-0 font-extrabold text-slate-800">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-rose-500" />
+                            <span>{item.name}</span>
+                            <strong className="text-rose-600 font-black bg-rose-50 border border-rose-100 px-2 py-0.5 rounded text-[10px] lg:text-xs">&times; {item.quantity || item.qty || 1}</strong>
+                          </span>
+                          <span className="font-black text-slate-900 text-sm lg:text-base">₹{(item.price || 0) * (item.quantity || item.qty || 1)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-xs lg:text-sm">
+                    <span className="font-bold text-slate-400">Total Items:</span>
+                    <span className="font-black text-slate-700">{orderItems.reduce((acc, curr) => acc + (curr.quantity || curr.qty || 1), 0)} Items</span>
+                  </div>
+                </div>
+
+                {/* Custom Requests */}
+                <div className="border border-slate-200 p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                  <div>
+                    <span className="text-xs lg:text-[13px] text-slate-455 font-black uppercase tracking-wider block mb-3">Custom Requests</span>
+                    {orderOnDemand && orderOnDemand.length > 0 ? (
+                      <div className="space-y-2.5 max-h-[170px] overflow-y-auto pr-1">
+                        {orderOnDemand.map((req, idx) => (
+                          <div key={idx} className="text-xs lg:text-sm p-3.5 bg-slate-50/70 rounded-xl border border-slate-200 flex flex-col justify-between gap-2">
+                            <div className="flex justify-between items-start gap-1">
+                              <span className="font-extrabold text-slate-855 leading-snug">
+                                {req.item || req.name}
+                                {(!String(req.item || req.name).startsWith('Custom MRP Request:') && !String(req.item || req.name).startsWith('Alert:')) && (
+                                  req.price > 0 ? (
+                                    <span className="text-[10px] lg:text-xs text-amber-700 bg-amber-50 border border-amber-205 px-1.5 py-0.5 rounded ml-1.5 font-black uppercase tracking-wider">
+                                      ₹{req.price} MRP
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] lg:text-xs text-emerald-755 bg-emerald-50 border border-emerald-105 px-2 py-0.5 rounded ml-1.5 font-black uppercase tracking-wider">
+                                      Free
+                                    </span>
+                                  )
+                                )}
+                              </span>
+
+                              <span className={`text-[9px] lg:text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wider border ${req.status === 'Accepted' ? 'bg-emerald-55 text-emerald-700 border-emerald-150' :
+                                req.status === 'Rejected' ? 'bg-rose-50 text-rose-750 border-rose-150' : 'bg-amber-50 text-amber-755 border-amber-205 animate-pulse'
+                                }`}>
+                                {req.status}
+                              </span>
+                            </div>
+
+                            {req.status === 'Pending' && (
+                              <div className="flex gap-2 justify-end mt-1 border-t border-slate-200/50 pt-2.5">
+                                <button
+                                  onClick={() => {
+                                    updateOnDemandStatus(order.id, idx, 'Accepted');
+                                    setSelectedOrderDetails(prev => {
+                                      const updatedOnDemand = [...prev.onDemandRequests];
+                                      updatedOnDemand[idx].status = 'Accepted';
+                                      return { ...prev, onDemandRequests: updatedOnDemand };
+                                    });
+                                  }}
+                                  className="bg-emerald-55 hover:bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-250 transition-all text-[10px] lg:text-xs font-black uppercase tracking-wider"
+                                >
+                                  ✓ Accept
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    updateOnDemandStatus(order.id, idx, 'Rejected');
+                                    setSelectedOrderDetails(prev => {
+                                      const updatedOnDemand = [...prev.onDemandRequests];
+                                      updatedOnDemand[idx].status = 'Rejected';
+                                      return { ...prev, onDemandRequests: updatedOnDemand };
+                                    });
+                                  }}
+                                  className="bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-1.5 rounded-lg border border-rose-250 transition-all text-[10px] lg:text-xs font-black uppercase tracking-wider"
+                                >
+                                  ✕ Reject
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-6 text-center flex flex-col items-center justify-center min-h-[110px]">
+                        <ClipboardList className="w-7 h-7 text-slate-350 mb-1" />
+                        <span className="text-[10px] lg:text-xs text-slate-400 font-bold">No custom requests.</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 text-[10px] lg:text-xs font-bold text-slate-400">
+                    Updates reflect instantly in real-time.
+                  </div>
+                </div>
+              </div>
+
+              {/* Exact Card Footer inside Modal */}
+              <div className="border-t border-slate-150 pt-5 sm:pt-6 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-5">
+                {/* Rider allocation */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
+                  <span className="font-extrabold text-slate-700 text-xs lg:text-sm shrink-0 flex items-center gap-1.5">
+                    <Truck className="w-5 h-5 text-rose-550" /> Assigned Rider:
+                  </span>
+                  <div className="relative w-full sm:w-64">
+                    <input
+                      type="text"
+                      defaultValue={order.rider_name || ''}
+                      placeholder="Rider Name & Mobile"
+                      onBlur={(e) => {
+                        handleAssignRider(order.id, e.target.value);
+                        setSelectedOrderDetails(prev => ({ ...prev, rider_name: e.target.value }));
+                      }}
+                      className="bg-slate-50 border border-slate-205 rounded-xl pl-3 pr-8 py-2.5 text-xs lg:text-sm font-semibold text-slate-805 placeholder-slate-400 focus:outline-none focus:border-rose-500 w-full shadow-inner"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6 flex-grow border-t lg:border-t-0 border-slate-100 pt-4 lg:pt-0">
+                  <div className="flex flex-wrap items-center gap-6 justify-start lg:justify-start lg:pl-4">
+                    <div className="flex flex-col items-start">
+                      <span className="text-[10px] lg:text-xs text-slate-400 font-black uppercase tracking-wider">Payment Status</span>
+                      {String(order.paymentMode).toUpperCase() === 'ONLINE' ? (
+                        <span className="text-xs lg:text-sm font-black text-emerald-700 bg-emerald-50 border border-emerald-250 px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-sm flex items-center gap-1">
+                          ✓ Paid Online
+                        </span>
+                      ) : (
+                        <span className="text-xs lg:text-sm font-black text-amber-705 bg-amber-50 border border-amber-250 px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-sm flex items-center gap-1">
+                          ⚠ Collect Cash (COD)
+                        </span>
+                      )}
+                    </div>
+
+                    {order.isFreeGiftAdded && (
+                      <div className="flex flex-col items-start">
+                        <span className="text-[10px] lg:text-xs text-slate-400 font-black uppercase tracking-wider">Promo Incentive</span>
+                        <span className="text-amber-700 bg-amber-50 border border-amber-205 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 text-[10px] lg:text-xs font-black uppercase tracking-wider shadow-sm">
+                          <Gift className="w-4 h-4 text-amber-500" /> Gift: {order.freeGiftProduct}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="text-left pl-3 border-l border-slate-205">
+                      <span className="text-[10px] lg:text-xs text-slate-400 font-black uppercase tracking-wider block">Grand Total</span>
+                      <span className="text-rose-600 font-black text-xl lg:text-2xl flex items-center">
+                        <IndianRupee className="w-5 h-5 text-rose-655 inline" />{order.total}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-105 w-full lg:w-auto justify-end flex-wrap sm:flex-nowrap">
+                    {order.status === 'Placed' && (
+                      <button
+                        onClick={() => {
+                          updateOrderStatus(order.id, 'Preparing');
+                          setSelectedOrderDetails(prev => ({ ...prev, status: 'Preparing' }));
+                        }}
+                        className="bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs lg:text-sm px-6 py-3.5 rounded-2xl uppercase tracking-wider transition-all duration-200 active:scale-[0.98] shadow-md shadow-amber-600/20 hover:shadow-lg hover:shadow-amber-600/30 flex items-center justify-center gap-2 flex-1 sm:flex-initial whitespace-nowrap"
+                      >
+                        <ChefHat className="w-5 h-5" /> Start Preparing
+                      </button>
+                    )}
+                    {order.status === 'Preparing' && (
+                      <button
+                        onClick={() => {
+                          updateOrderStatus(order.id, 'Dispatched');
+                          setSelectedOrderDetails(prev => ({ ...prev, status: 'Dispatched' }));
+                        }}
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs lg:text-sm px-6 py-3.5 rounded-2xl uppercase tracking-wider transition-all duration-200 active:scale-[0.98] shadow-md shadow-indigo-600/20 hover:shadow-lg hover:shadow-indigo-600/30 flex items-center justify-center gap-2 flex-1 sm:flex-initial whitespace-nowrap"
+                      >
+                        <Send className="w-5 h-5" /> Handover to Rider
+                      </button>
+                    )}
+                    {order.status === 'Dispatched' && (
+                      <button
+                        onClick={() => {
+                          updateOrderStatus(order.id, 'Delivered');
+                          setSelectedOrderDetails(prev => ({ ...prev, status: 'Delivered' }));
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs lg:text-sm px-6 py-3.5 rounded-2xl uppercase tracking-wider transition-all duration-200 active:scale-[0.98] shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/30 flex items-center justify-center gap-2 flex-1 sm:flex-initial whitespace-nowrap"
+                      >
+                        <Check className="w-5 h-5" /> Confirm Delivery
+                      </button>
+                    )}
+
+                    {order.status !== 'Delivered' && order.status !== 'Cancelled' && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to cancel Order #${order.id}?`)) {
+                            updateOrderStatus(order.id, 'Cancelled');
+                            setSelectedOrderDetails(prev => ({ ...prev, status: 'Cancelled' }));
+                          }
+                        }}
+                        className="bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white font-extrabold text-xs lg:text-sm px-6 py-3.5 rounded-2xl uppercase tracking-wider transition-all duration-200 active:scale-[0.98] border border-rose-200 hover:border-rose-600 flex items-center justify-center gap-2 flex-1 sm:flex-initial whitespace-nowrap"
+                        title="Cancel Order"
+                      >
+                        <X className="w-5 h-5" /> Cancel
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setPrintingOrder(order);
+                        setSelectedOrderDetails(null);
+                      }}
+                      className="bg-slate-50 hover:bg-slate-100 text-slate-700 p-3 rounded-xl border border-slate-200 transition-all flex items-center justify-center shrink-0"
+                      title="Print KOT Slip"
+                    >
+                      <Printer className="w-5 h-5 text-slate-500" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

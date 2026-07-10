@@ -19,6 +19,42 @@ export function AppProvider({ children }) {
   const [supportEmail, setSupportEmail] = useState("");
   const [supportContacts, setSupportContacts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [homepageHeroDesktop, setHomepageHeroDesktop] = useState("/herobanner.png");
+  const [homepageHeroMobile, setHomepageHeroMobile] = useState("/vande_bharat.png");
+  const [homepageShowcase1, setHomepageShowcase1] = useState("/vande_bharat.png");
+  const [homepageShowcase2, setHomepageShowcase2] = useState("/train_food_delivery.png");
+  const [homepagePopularDishes, setHomepagePopularDishes] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem("s_homepage_popular_dishes");
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  });
+  const [socialInstagram, setSocialInstagram] = useState("https://instagram.com");
+  const [socialFacebook, setSocialFacebook] = useState("https://facebook.com");
+  const [socialTwitter, setSocialTwitter] = useState("https://twitter.com");
+  const [statsPassengers, setStatsPassengers] = useState("5k+");
+  const [statsEateries, setStatsEateries] = useState("80+");
+  const [statsRating, setStatsRating] = useState("4.8");
+  const [statsJunctions, setStatsJunctions] = useState("");
+  const [homepageLogo, setHomepageLogo] = useState("/logo.png");
+  const [homepageLogoWhite, setHomepageLogoWhite] = useState("/logo-white.png");
+  const [loading, setLoading] = useState(true);
+  const [globalOverrides, setGlobalOverrides] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem("s_global_overrides");
+        return local ? JSON.parse(local) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  });
 
   // Database load/save and Supabase sync
   useEffect(() => {
@@ -47,94 +83,93 @@ export function AppProvider({ children }) {
     if (isSupabaseConfigured()) {
       const syncFromSupabase = async () => {
         try {
-          const { data: stationsData } = await supabase.from('stations').select('*');
-          if (stationsData) {
-            const formattedStations = stationsData.map(s => ({
-              ...s,
-              buffer_minutes: Number(s.buffer_minutes) || 60
-            }));
-            setStations(formattedStations);
-          }
+          // Fetch critical menu & category data in parallel first
+          const [
+            stationsDataRes,
+            menuDataRes,
+            categoriesDataRes,
+            overridesDataRes,
+            statesDataRes
+          ] = await Promise.all([
+            supabase.from('stations').select('*'),
+            supabase.from('menu_items').select('*'),
+            supabase.from('categories').select('*'),
+            supabase.from('global_item_overrides').select('*'),
+            supabase.from('states').select('*')
+          ]);
 
-          const { data: menuData } = await supabase.from('menu_items').select('*');
-          if (menuData) {
-            const formattedMenu = menuData.map(item => ({
-              ...item,
-              price: Number(item.price),
-              mrp: Number(item.mrp)
-            }));
-            setMenuItems(formattedMenu);
+          if (stationsDataRes.data) {
+            setStations(stationsDataRes.data.map(s => ({ ...s, buffer_minutes: Number(s.buffer_minutes) || 60 })));
           }
-
-          const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-          if (ordersData) {
-            setOrders(ordersData.map(parseOrderObj));
+          if (menuDataRes.data) {
+            setMenuItems(menuDataRes.data.map(item => ({ ...item, price: Number(item.price), mrp: Number(item.mrp) })));
           }
-
-          const { data: categoriesData } = await supabase.from('categories').select('*');
-          if (categoriesData) {
-            setCategories(categoriesData);
+          if (categoriesDataRes.data) {
+            setCategories(categoriesDataRes.data);
           }
-
-          const { data: configData } = await supabase.from('config').select('*').eq('key', 'free_product').single();
-          if (configData) {
-            setFreeProduct(configData.value);
+          if (statesDataRes && statesDataRes.data) {
+            const loadedStates = statesDataRes.data.map(s => s.name);
+            setAvailableStates(loadedStates);
           }
-
-          const { data: codPolicyData } = await supabase.from('config').select('*').eq('key', 'cod_policy').single();
-          if (codPolicyData) {
-            setCodPolicy(codPolicyData.value);
+          if (overridesDataRes && overridesDataRes.data && !overridesDataRes.error) {
+            setGlobalOverrides(overridesDataRes.data);
+            localStorage.setItem("s_global_overrides", JSON.stringify(overridesDataRes.data));
           }
+          // Note: If global_item_overrides table doesn't exist yet, overrides fall back to localStorage
 
-          const { data: cutoffHourData } = await supabase.from('config').select('*').eq('key', 'cod_cutoff_hour').single();
-          if (cutoffHourData) {
-            const hr = Number(cutoffHourData.value);
-            setCodCutoffHour(hr);
-          }
+          // Toggle loading off immediately after critical data is loaded!
+          setLoading(false);
 
-          const { data: deliveryData } = await supabase.from('config').select('*').eq('key', 'delivery_charge').single();
-          if (deliveryData) {
-            const charge = Number(deliveryData.value);
-            setDeliveryCharge(charge);
-          }
-
-          const { data: thresholdData } = await supabase.from('config').select('*').eq('key', 'gift_threshold').single();
-          if (thresholdData) {
-            const limit = Number(thresholdData.value);
-            setGiftThreshold(limit);
-          }
-
-          const { data: statesConfig } = await supabase.from('config').select('*').eq('key', 'available_states').single();
-          if (statesConfig) {
-            try {
-              const parsedStates = JSON.parse(statesConfig.value);
-              setAvailableStates(parsedStates);
-            } catch (e) {
-              console.error("Error parsing available_states config:", e);
+          // Fetch other configurations asynchronously in the background
+          Promise.all([
+            supabase.from('orders').select('*').order('created_at', { ascending: false }),
+            supabase.from('config').select('*')
+          ]).then(([ordersRes, configRes]) => {
+            if (ordersRes.data) {
+              setOrders(ordersRes.data.map(parseOrderObj));
             }
-          }
+            if (configRes.data) {
+              configRes.data.forEach(cfg => {
+                switch (cfg.key) {
+                  case 'free_product': setFreeProduct(cfg.value); break;
+                  case 'cod_policy': setCodPolicy(cfg.value); break;
+                  case 'cod_cutoff_hour': setCodCutoffHour(Number(cfg.value)); break;
+                  case 'delivery_charge': setDeliveryCharge(Number(cfg.value)); break;
+                  case 'gift_threshold': setGiftThreshold(Number(cfg.value)); break;
+                  case 'support_phone': setSupportPhone(cfg.value); break;
+                  case 'support_email': setSupportEmail(cfg.value); break;
+                  case 'homepage_hero_desktop': setHomepageHeroDesktop(cfg.value); break;
+                  case 'homepage_hero_mobile': setHomepageHeroMobile(cfg.value); break;
+                  case 'homepage_showcase_1': setHomepageShowcase1(cfg.value); break;
+                  case 'homepage_showcase_2': setHomepageShowcase2(cfg.value); break;
+                  case 'social_instagram': setSocialInstagram(cfg.value); break;
+                  case 'social_facebook': setSocialFacebook(cfg.value); break;
+                  case 'social_twitter': setSocialTwitter(cfg.value); break;
+                  case 'stats_passengers': setStatsPassengers(cfg.value); break;
+                  case 'stats_eateries': setStatsEateries(cfg.value); break;
+                  case 'stats_rating': setStatsRating(cfg.value); break;
+                  case 'stats_junctions': setStatsJunctions(cfg.value); break;
+                  case 'homepage_logo': setHomepageLogo(cfg.value); break;
+                  case 'homepage_logo_white': setHomepageLogoWhite(cfg.value); break;
+                  case 'homepage_popular_dishes':
+                    try {
+                      const parsed = JSON.parse(cfg.value);
+                      setHomepagePopularDishes(parsed);
+                      localStorage.setItem("s_homepage_popular_dishes", JSON.stringify(parsed));
+                    } catch (e) { }
+                    break;
 
-          const { data: supportPhoneData } = await supabase.from('config').select('*').eq('key', 'support_phone').single();
-          if (supportPhoneData) {
-            setSupportPhone(supportPhoneData.value);
-          }
-
-          const { data: supportEmailData } = await supabase.from('config').select('*').eq('key', 'support_email').single();
-          if (supportEmailData) {
-            setSupportEmail(supportEmailData.value);
-          }
-
-          const { data: supportContactsData } = await supabase.from('config').select('*').eq('key', 'hq_support_contacts').single();
-          if (supportContactsData) {
-            try {
-              const parsed = JSON.parse(supportContactsData.value);
-              setSupportContacts(parsed);
-            } catch (e) {
-              console.error("Error parsing support contacts:", e);
+                  case 'hq_support_contacts':
+                    try { setSupportContacts(JSON.parse(cfg.value)); } catch (e) { }
+                    break;
+                }
+              });
             }
-          }
+          }).catch(err => console.warn("Background config fetch failed:", err));
+
         } catch (err) {
           console.warn("Supabase load fallback:", err);
+          setLoading(false);
         }
       };
       syncFromSupabase();
@@ -313,16 +348,16 @@ export function AppProvider({ children }) {
     localStorage.setItem("s_orders", JSON.stringify(updated));
     if (isSupabaseConfigured()) {
       try {
-        const { 
-          stationCode, 
-          items, 
-          onDemandRequests, 
-          isFreeGiftAdded, 
-          freeGiftProduct, 
-          paymentMode, 
+        const {
+          stationCode,
+          items,
+          onDemandRequests,
+          isFreeGiftAdded,
+          freeGiftProduct,
+          paymentMode,
           paymentId,
           platform,
-          ...restOrder 
+          ...restOrder
         } = order;
 
         const payload = {
@@ -427,6 +462,161 @@ export function AppProvider({ children }) {
     localStorage.removeItem("s_user");
   };
 
+  const updateHomepageHeroDesktop = async (val) => {
+    setHomepageHeroDesktop(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'homepage_hero_desktop', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateHomepageHeroMobile = async (val) => {
+    setHomepageHeroMobile(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'homepage_hero_mobile', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateHomepageShowcase1 = async (val) => {
+    setHomepageShowcase1(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'homepage_showcase_1', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateHomepageShowcase2 = async (val) => {
+    setHomepageShowcase2(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'homepage_showcase_2', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateHomepagePopularDishes = async (val) => {
+    setHomepagePopularDishes(val);
+    localStorage.setItem("s_homepage_popular_dishes", JSON.stringify(val));
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'homepage_popular_dishes', value: JSON.stringify(val) }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateSocialInstagram = async (val) => {
+    setSocialInstagram(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'social_instagram', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateSocialFacebook = async (val) => {
+    setSocialFacebook(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'social_facebook', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateSocialTwitter = async (val) => {
+    setSocialTwitter(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'social_twitter', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateStatsPassengers = async (val) => {
+    setStatsPassengers(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'stats_passengers', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateStatsEateries = async (val) => {
+    setStatsEateries(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'stats_eateries', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateStatsRating = async (val) => {
+    setStatsRating(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'stats_rating', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateStatsJunctions = async (val) => {
+    setStatsJunctions(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'stats_junctions', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateHomepageLogo = async (val) => {
+    setHomepageLogo(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'homepage_logo', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const updateHomepageLogoWhite = async (val) => {
+    setHomepageLogoWhite(val);
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('config').upsert({ key: 'homepage_logo_white', value: val }, { onConflict: 'key' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
   const updateFreeProduct = async (prod) => {
     setFreeProduct(prod);
     if (isSupabaseConfigured()) {
@@ -461,32 +651,59 @@ export function AppProvider({ children }) {
     }
   };
 
-  const updateAvailableStates = async (newStates) => {
-    setAvailableStates(newStates);
+  const addAvailableState = async (stateName) => {
+    const trimmed = stateName.trim();
+    if (!trimmed) return;
+    if (availableStates.includes(trimmed)) return;
+
+    const updated = [...availableStates, trimmed];
+    setAvailableStates(updated);
+
     if (isSupabaseConfigured()) {
       try {
-        await supabase.from('config').upsert([{ key: 'available_states', value: JSON.stringify(newStates) }]);
+        const { error } = await supabase.from('states').insert([{ name: trimmed }]);
+        if (error) {
+          console.error("Error adding state to DB:", error);
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Error adding state to DB catch:", err);
       }
     }
   };
 
-  const addAvailableState = (stateName) => {
-    const trimmed = stateName.trim();
-    if (!trimmed) return;
-    if (availableStates.includes(trimmed)) return;
-    updateAvailableStates([...availableStates, trimmed]);
+  const removeAvailableState = async (stateName) => {
+    const updated = availableStates.filter(s => s !== stateName);
+    setAvailableStates(updated);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.from('states').delete().eq('name', stateName);
+        if (error) {
+          console.error("Error deleting state from DB:", error);
+        }
+      } catch (err) {
+        console.error("Error deleting state from DB catch:", err);
+      }
+    }
   };
 
-  const removeAvailableState = (stateName) => {
-    updateAvailableStates(availableStates.filter(s => s !== stateName));
-  };
-
-  const renameAvailableState = (oldName, newName) => {
+  const renameAvailableState = async (oldName, newName) => {
     const trimmedNew = newName.trim();
     if (!trimmedNew || trimmedNew === oldName) return;
-    updateAvailableStates(availableStates.map(s => s === oldName ? trimmedNew : s));
+
+    const updated = availableStates.map(s => s === oldName ? trimmedNew : s);
+    setAvailableStates(updated);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.from('states').update({ name: trimmedNew }).eq('name', oldName);
+        if (error) {
+          console.error("Error renaming state in DB:", error);
+        }
+      } catch (err) {
+        console.error("Error renaming state in DB catch:", err);
+      }
+    }
   };
 
   const updateSupportPhone = async (newValue) => {
@@ -548,18 +765,21 @@ export function AppProvider({ children }) {
     }
   };
 
-  const addCategory = async (name, stationCode = 'ALL') => {
-    if (!name) return;
+  const addCategory = async (name, stationCode = 'ALL', image = '') => {
     const code = (stationCode || 'ALL').toUpperCase();
     const exists = categories.some(c => (c.name || '').toLowerCase() === name.toLowerCase() && (c.station_code || 'ALL').toUpperCase() === code);
     if (exists) return;
-    
-    const newCat = { name, station_code: code };
+
+    const newCat = { name, station_code: code, image };
     const updated = [...categories, newCat];
     setCategories(updated);
     if (isSupabaseConfigured()) {
       try {
-        await supabase.from('categories').insert([newCat]);
+        const { error } = await supabase.from('categories').insert([newCat]);
+        if (error) {
+          console.error("Supabase insert category error:", error);
+          alert("Database insert error: " + error.message);
+        }
       } catch (e) {
         console.error("Error inserting category:", e);
       }
@@ -600,33 +820,116 @@ export function AppProvider({ children }) {
     }
   };
 
-  const updateCategory = async (oldName, newName, stationCode = 'ALL') => {
+  const updateCategory = async (oldName, newName, stationCode = 'ALL', image = null) => {
     if (!newName) return;
     const code = (stationCode || 'ALL').toUpperCase();
-    const exists = categories.some(c => (c.name || '').toLowerCase() === newName.toLowerCase() && (c.station_code || 'ALL').toUpperCase() === code);
-    if (exists) return;
-    
-    const updated = categories.map(c => {
-      const matchExact = (c.name || '').toLowerCase() === oldName.toLowerCase() && (c.station_code || 'ALL').toUpperCase() === code;
-      const matchLegacy = c.name && c.name.includes(':') && c.name.split(':')[1].toLowerCase() === oldName.toLowerCase() && c.name.split(':')[0].toUpperCase() === code;
-      if (matchExact || matchLegacy) {
-        return { ...c, name: newName };
+
+    const getCleanName = (n) => {
+      if (!n) return '';
+      return n.includes(':') ? n.split(':')[1] : n;
+    };
+
+    const cleanOldName = getCleanName(oldName);
+    const cleanNewName = getCleanName(newName);
+    const legacyOldName = `${code}:${cleanOldName}`;
+
+    // 1. Update categories in local state
+    const updatedCats = categories.map(c => {
+      const cClean = getCleanName(c.name).toLowerCase();
+      const match = cClean === cleanOldName.toLowerCase() && (c.station_code || 'ALL').toUpperCase() === code;
+      if (match) {
+        const newObj = { ...c, name: newName };
+        if (image !== null) newObj.image = image;
+        return newObj;
       }
       return c;
     });
-    setCategories(updated);
+    setCategories(updatedCats);
+
+    // 2. Update menuItems category reference in local state
+    const updatedMenu = menuItems.map(item => {
+      const isThisStation = (item.station_code || 'ALL').toUpperCase() === code;
+      const itemCleanCat = getCleanName(item.category).toLowerCase();
+      if (isThisStation && (item.category === oldName || itemCleanCat === cleanOldName.toLowerCase() || item.category === legacyOldName)) {
+        return { ...item, category: newName };
+      }
+      return item;
+    });
+    setMenuItems(updatedMenu);
+
+    // 3. Database operations
     if (isSupabaseConfigured()) {
       try {
-        // Try update clean schema format
-        await supabase.from('categories').update({ name: newName }).eq('name', oldName).eq('station_code', code);
-        // Fallback: update legacy prefix format
-        const legacyOldName = `${code}:${oldName}`;
-        const legacyNewName = `${code}:${newName}`;
-        await supabase.from('categories').update({ name: legacyNewName }).eq('name', legacyOldName);
+        const updatePayload = { name: newName };
+        if (image !== null) updatePayload.image = image;
+
+        // Update in categories table
+        await supabase.from('categories').update(updatePayload).eq('name', oldName).eq('station_code', code);
+        await supabase.from('categories').update(updatePayload).eq('name', cleanOldName).eq('station_code', code);
+        await supabase.from('categories').update(updatePayload).eq('name', legacyOldName);
+
+        // Update in menu_items table
+        await supabase.from('menu_items').update({ category: newName }).eq('category', oldName).eq('station_code', code);
+        await supabase.from('menu_items').update({ category: newName }).eq('category', cleanOldName).eq('station_code', code);
+        await supabase.from('menu_items').update({ category: newName }).eq('category', legacyOldName).eq('station_code', code);
+
       } catch (e) {
-        console.error("Error updating category:", e);
+        console.error("Error updating category details:", e);
       }
     }
+  };
+
+  // ─── Global Item Overrides ────────────────────────────────────────────────
+  // toggleGlobalItemAvailability: Station admins can toggle global items on/off
+  // for their own station without editing the master record.
+  const toggleGlobalItemAvailability = async (itemId, stationCode, available) => {
+    const code = String(stationCode).toUpperCase();
+    const itemStr = String(itemId);
+
+    setGlobalOverrides(prev => {
+      const existingIdx = prev.findIndex(
+        o => String(o.item_id) === itemStr && String(o.station_code).toUpperCase() === code
+      );
+      let updated;
+      if (existingIdx !== -1) {
+        updated = prev.map((o, i) => i === existingIdx ? { ...o, available } : o);
+      } else {
+        updated = [...prev, { item_id: itemStr, station_code: code, available }];
+      }
+      localStorage.setItem('s_global_overrides', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: existingRows } = await supabase
+          .from('global_item_overrides')
+          .select('*')
+          .eq('item_id', itemStr)
+          .eq('station_code', code);
+        if (existingRows && existingRows.length > 0) {
+          await supabase.from('global_item_overrides').update({ available }).eq('item_id', itemStr).eq('station_code', code);
+        } else {
+          await supabase.from('global_item_overrides').insert([{ item_id: itemStr, station_code: code, available }]);
+        }
+      } catch (e) {
+        console.error('Error saving global item override:', e);
+      }
+    }
+  };
+
+  // resolveItemAvailability: Returns effective availability of a menu item for a station.
+  // Global items (station_code = 'ALL') check for a station-specific override first.
+  const resolveItemAvailability = (item, stationCode) => {
+    if (!item.station_code || item.station_code.toUpperCase() !== 'ALL') {
+      return item.available !== false;
+    }
+    const code = String(stationCode || '').toUpperCase();
+    const override = globalOverrides.find(
+      o => String(o.item_id) === String(item.id) && String(o.station_code).toUpperCase() === code
+    );
+    if (override !== undefined) return override.available !== false;
+    return item.available !== false;
   };
 
   // Dynamically compute disableCod based on selected policy
@@ -671,7 +974,39 @@ export function AppProvider({ children }) {
       categories,
       addCategory,
       removeCategory,
-      updateCategory
+      updateCategory,
+      homepageHeroDesktop,
+      updateHomepageHeroDesktop,
+      homepageHeroMobile,
+      updateHomepageHeroMobile,
+      homepageShowcase1,
+      updateHomepageShowcase1,
+      homepageShowcase2,
+      updateHomepageShowcase2,
+      homepagePopularDishes,
+      updateHomepagePopularDishes,
+      socialInstagram,
+      updateSocialInstagram,
+      socialFacebook,
+      updateSocialFacebook,
+      socialTwitter,
+      updateSocialTwitter,
+      statsPassengers,
+      updateStatsPassengers,
+      statsEateries,
+      updateStatsEateries,
+      statsRating,
+      updateStatsRating,
+      statsJunctions,
+      updateStatsJunctions,
+      homepageLogo,
+      updateHomepageLogo,
+      homepageLogoWhite,
+      updateHomepageLogoWhite,
+      globalOverrides,
+      toggleGlobalItemAvailability,
+      resolveItemAvailability,
+      loading
     }}>
       {children}
     </AppContext.Provider>

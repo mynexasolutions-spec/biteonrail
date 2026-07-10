@@ -192,10 +192,10 @@ export default function CredentialsTab({
       <div className="space-y-6 max-w-6xl animate-fadeIn">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-xl font-black text-slate-808 tracking-tight uppercase flex items-center gap-2">
+          <h1 className="text-xl lg:text-2xl font-black text-slate-808 tracking-tight uppercase flex items-center gap-2">
             <Key className="w-5.5 h-5.5 text-rose-550" /> Station Managers Logins
           </h1>
-          <p className="text-slate-500 text-xs mt-1">Create, view and manage administrative access for delivery hubs. Managers only see orders matching their station.</p>
+          <p className="text-slate-500 text-xs lg:text-sm mt-1">Create, view and manage administrative access for delivery hubs. Managers only see orders matching their station.</p>
         </div>
         <button
           onClick={() => {
@@ -205,7 +205,7 @@ export default function CredentialsTab({
             if (stations.length > 0) setNewAdminStationCode(stations[0].code);
             setIsAdminModalOpen(true);
           }}
-          className="bg-rose-600 hover:bg-rose-500 text-white font-extrabold px-5 py-3 rounded-xl text-xs transition-colors flex items-center gap-1.5 shadow-md uppercase tracking-wider shrink-0"
+          className="bg-rose-600 hover:bg-rose-500 text-white font-extrabold px-5 py-3 rounded-xl text-xs lg:text-sm transition-colors flex items-center gap-1.5 shadow-md uppercase tracking-wider shrink-0"
         >
           <Plus className="w-4 h-4" /> Add Manager Account
         </button>
@@ -224,10 +224,10 @@ export default function CredentialsTab({
                 value={adminsSearchQuery}
                 onChange={(e) => setAdminsSearchQuery(e.target.value)}
                 placeholder="Search by station code, station name, email, manager name..."
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-rose-500 font-bold text-slate-855 placeholder-slate-400"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs lg:text-sm focus:outline-none focus:border-rose-500 font-bold text-slate-855 placeholder-slate-400"
               />
             </div>
-            <span className="text-[10px] text-slate-550 font-black uppercase bg-slate-50 border border-slate-150 px-3.5 py-2.5 rounded-xl text-center shrink-0">
+            <span className="text-[10px] lg:text-xs text-slate-550 font-black uppercase bg-slate-50 border border-slate-150 px-3.5 py-2.5 rounded-xl text-center shrink-0">
               Managers: {filteredAdmins.length} Accounts
             </span>
           </div>
@@ -235,14 +235,14 @@ export default function CredentialsTab({
           {/* Table Card */}
           <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
             {adminsLoading ? (
-              <div className="p-12 text-center text-slate-400 font-bold text-xs animate-pulse">Loading credentials from DB...</div>
+              <div className="p-12 text-center text-slate-400 font-bold text-xs lg:text-sm animate-pulse">Loading credentials from DB...</div>
             ) : (
               <>
                 {/* Desktop View (Table) */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 text-xs font-black text-slate-450 uppercase tracking-widest border-b border-slate-200">
+                      <tr className="bg-slate-50 text-xs lg:text-sm font-black text-slate-455 uppercase tracking-widest border-b border-slate-200">
                         <th className="py-4 px-5">Assigned Hub</th>
                         <th className="py-4 px-5 font-bold">Login Email</th>
                         <th className="py-4 px-5">Manager Contact</th>
@@ -254,7 +254,7 @@ export default function CredentialsTab({
                     <tbody className="divide-y divide-slate-100 text-xs text-slate-705 font-bold">
                       {filteredAdmins.length === 0 ? (
                         <tr>
-                          <td colSpan="6" className="py-8 text-center text-slate-400 font-bold">No station manager accounts found matching query.</td>
+                          <td colSpan="6" className="py-8 text-center text-slate-405 font-bold lg:text-sm">No station manager accounts found matching query.</td>
                         </tr>
                       ) : (
                         filteredAdmins.map(admin => {
@@ -263,11 +263,11 @@ export default function CredentialsTab({
                             <tr key={admin.id} className="hover:bg-slate-50/50 transition-colors">
                               <td className="py-3.5 px-5 font-black text-slate-800">
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-slate-800 text-xs">{stationObj ? stationObj.name : 'Unknown Hub'}</span>
-                                  <span className="text-[10px] text-rose-707 font-mono font-black uppercase">{admin.station_code}</span>
+                                  <span className="text-slate-800 text-xs lg:text-sm">{stationObj ? stationObj.name : 'Unknown Hub'}</span>
+                                  <span className="text-[10px] lg:text-xs text-rose-707 font-mono font-black uppercase">{admin.station_code}</span>
                                 </div>
                               </td>
-                              <td className="py-3.5 px-5 font-mono text-slate-655 font-medium max-w-[160px] truncate" title={admin.email}>{admin.email}</td>
+                              <td className="py-3.5 px-5 font-mono text-slate-655 font-medium max-w-[160px] truncate lg:text-sm" title={admin.email}>{admin.email}</td>
                               <td className="py-3.5 px-5 text-slate-700">
                                 {(() => {
                                   const dispName = admin.manager_name || admin.name || stationObj?.manager_name || '';
@@ -276,10 +276,10 @@ export default function CredentialsTab({
                                     return (
                                       <div className="space-y-0.5">
                                         {dispName && (
-                                          <span className="text-slate-800 text-xs font-extrabold block">{dispName}</span>
+                                          <span className="text-slate-800 text-xs lg:text-sm font-extrabold block">{dispName}</span>
                                         )}
                                         {dispPhone && (
-                                          <a href={`tel:${dispPhone}`} className="text-rose-600 hover:text-rose-750 font-mono text-xs flex items-center gap-1.5 w-fit font-black">
+                                          <a href={`tel:${dispPhone}`} className="text-rose-600 hover:text-rose-750 font-mono text-xs lg:text-sm flex items-center gap-1.5 w-fit font-black">
                                             <Phone className="w-3 h-3 text-rose-500" /> {dispPhone}
                                           </a>
                                         )}
@@ -287,13 +287,13 @@ export default function CredentialsTab({
                                     );
                                   }
                                   return (
-                                    <span className="text-slate-400 text-xs italic">No contact added</span>
+                                    <span className="text-slate-400 text-xs lg:text-sm italic">No contact added</span>
                                   );
                                 })()}
                               </td>
                               <td className="py-3.5 px-5 font-mono font-black text-slate-855">
                                 <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-150 px-2.5 py-1.5 rounded-lg w-fit">
-                                  <span className="tracking-wider text-xs">{visiblePasswords[admin.id] ? admin.password : '••••••••'}</span>
+                                  <span className="tracking-wider text-xs lg:text-sm">{visiblePasswords[admin.id] ? admin.password : '••••••••'}</span>
                                   <button
                                     type="button"
                                     onClick={() => setVisiblePasswords(prev => ({ ...prev, [admin.id]: !prev[admin.id] }))}

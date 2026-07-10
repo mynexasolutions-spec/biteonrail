@@ -1,8 +1,10 @@
 "use client";
 import React from 'react';
+import { useApp } from '../../context/AppContext';
+import { uploadToCloudinary, isCloudinaryConfigured } from '../../lib/cloudinary';
 import {
   Plus, Trash, Check, X, Coffee, Database, CheckCircle2, AlertTriangle,
-  Search, Pencil, IndianRupee, Upload, ClipboardList, Eye
+  Search, Pencil, IndianRupee, Upload, ClipboardList, Eye, Image, Globe
 } from 'lucide-react';
 
 export default function MenuCatalogTab({
@@ -75,10 +77,19 @@ export default function MenuCatalogTab({
   editingCategory,
   setEditingCategory,
   editCategoryName,
-  setEditCategoryName
+  setEditCategoryName,
+  toggleGlobalItemAvailability,
+  menuOriginFilter,
+  setMenuOriginFilter
 }) {
+  const { categories: rawCategories, globalOverrides, resolveItemAvailability } = useApp();
+  const [newCategoryImage, setNewCategoryImage] = React.useState('');
+  const [uploadingCat, setUploadingCat] = React.useState(false);
+  const [editCategoryImage, setEditCategoryImage] = React.useState(null);
+
   const [isMenuModalOpen, setIsMenuModalOpen] = React.useState(false);
   const [viewingItem, setViewingItem] = React.useState(null);
+  const [categoryTypeFilter, setCategoryTypeFilter] = React.useState('all');
   if (activeSubTab === 'menu') {
     const inStockCount = baseMenuItems.filter(item => item.available).length;
     const outOfStockCount = baseMenuItems.filter(item => !item.available).length;
@@ -125,14 +136,23 @@ export default function MenuCatalogTab({
           <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm space-y-5">
             <div className="flex justify-between items-center flex-wrap gap-3">
               <div>
-                <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
+                <h2 className="text-sm lg:text-base font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
                   <Database className="w-4 h-4 text-rose-550" />
                   {adminType === 'station' ? `Catalog: ${selectedStationCode}` : 'Global Menu Catalog'}
                 </h2>
-                <p className="text-[11px] text-slate-505 font-medium">Easily search, paginate, and edit pricing for your pantry items.</p>
+                <p className="text-[11px] lg:text-sm text-slate-505 font-medium">Easily search, paginate, and edit pricing for your pantry items.</p>
               </div>
+              {adminType === 'global' && (
+                <div className="w-full mt-3 flex items-start gap-3 bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-3">
+                  <Globe className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[11px] lg:text-sm font-black text-indigo-800">Global Items — Visible on All Stations</p>
+                    <p className="text-[10px] lg:text-xs text-indigo-600 font-medium mt-0.5">Items added here (with Hub = "All Stations") appear on every station's menu. Station admins can toggle them available/unavailable for their own station — but cannot edit or delete them.</p>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-555 font-black uppercase bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                <span className="text-[10px] lg:text-xs text-slate-555 font-black uppercase bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
                   Filtered: {totalMenuFilteredCount} Items
                 </span>
                 <button
@@ -140,7 +160,7 @@ export default function MenuCatalogTab({
                     cancelEditMenuItem();
                     setIsMenuModalOpen(true);
                   }}
-                  className="bg-rose-600 hover:bg-rose-500 text-white font-extrabold px-4 py-2 rounded-xl text-[10px] transition-colors flex items-center gap-1 shadow-sm uppercase tracking-wider shrink-0"
+                  className="bg-rose-600 hover:bg-rose-500 text-white font-extrabold px-4 py-2 rounded-xl text-[10px] lg:text-xs transition-colors flex items-center gap-1 shadow-sm uppercase tracking-wider shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Item
                 </button>
@@ -149,21 +169,21 @@ export default function MenuCatalogTab({
 
             {/* Inline Search and Advanced Controls */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
-              <div className="relative md:col-span-6">
+              <div className={`relative ${adminType !== 'global' ? 'md:col-span-4' : 'md:col-span-6'}`}>
                 <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
                   value={menuSearchQuery}
                   onChange={(e) => { setMenuSearchQuery(e.target.value); setMenuCurrentPage(1); }}
                   placeholder="Search items by name, description..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-rose-500 font-bold text-slate-855 placeholder-slate-400"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs lg:text-sm focus:outline-none focus:border-rose-500 font-bold text-slate-855 placeholder-slate-400"
                 />
               </div>
 
               <select
                 value={menuSortBy}
                 onChange={(e) => setMenuSortBy(e.target.value)}
-                className="md:col-span-3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-705 focus:outline-none focus:border-rose-500 cursor-pointer"
+                className={`${adminType !== 'global' ? 'md:col-span-3' : 'md:col-span-3'} bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs lg:text-sm font-bold text-slate-705 focus:outline-none focus:border-rose-500 cursor-pointer`}
               >
                 <option value="nameAsc">Sort: Name (A-Z)</option>
                 <option value="nameDesc">Sort: Name (Z-A)</option>
@@ -175,12 +195,24 @@ export default function MenuCatalogTab({
               <select
                 value={menuAvailabilityFilter}
                 onChange={(e) => { setMenuAvailabilityFilter(e.target.value); setMenuCurrentPage(1); }}
-                className="md:col-span-3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-705 focus:outline-none focus:border-rose-500 cursor-pointer"
+                className={`${adminType !== 'global' ? 'md:col-span-3' : 'md:col-span-3'} bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs lg:text-sm font-bold text-slate-705 focus:outline-none focus:border-rose-500 cursor-pointer`}
               >
                 <option value="All">Stock Status: All</option>
                 <option value="InStock">Status: In Stock Only</option>
                 <option value="SoldOut">Status: Sold Out Only</option>
               </select>
+
+              {adminType !== 'global' && (
+                <select
+                  value={menuOriginFilter || 'All'}
+                  onChange={(e) => { setMenuOriginFilter(e.target.value); setMenuCurrentPage(1); }}
+                  className="md:col-span-2 bg-slate-50 border border-indigo-100 focus:border-rose-500 rounded-xl px-3 py-2.5 text-xs lg:text-sm font-black text-indigo-700 cursor-pointer"
+                >
+                  <option value="All">Items: All Origin</option>
+                  <option value="Local">Origin: Local Menu</option>
+                  <option value="Global">Origin: Global Menu</option>
+                </select>
+              )}
             </div>
 
             {/* Categories & Layout Switches */}
@@ -192,7 +224,7 @@ export default function MenuCatalogTab({
                     key={cat}
                     type="button"
                     onClick={() => { setMenuActiveCategory(cat); setMenuCurrentPage(1); }}
-                    className={`px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${menuActiveCategory === cat
+                    className={`px-3.5 py-1.5 rounded-xl text-[10px] lg:text-xs font-black uppercase tracking-wider transition-all border ${menuActiveCategory === cat
                       ? 'bg-rose-600 border-rose-650 text-white shadow-sm'
                       : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-55'
                       }`}
@@ -272,7 +304,7 @@ export default function MenuCatalogTab({
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[750px] text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-xs font-black text-slate-450 uppercase tracking-widest">
+                      <tr className="bg-slate-50 border-b border-slate-200 text-xs lg:text-sm font-black text-slate-450 uppercase tracking-widest">
                         <th className="py-4 px-4 w-12 text-center">
                           <input
                             type="checkbox"
@@ -286,7 +318,7 @@ export default function MenuCatalogTab({
                                 setMenuSelectedIds(prev => prev.filter(id => !pageIds.includes(id)));
                               }
                             }}
-                            className="rounded border-slate-355 text-rose-650 focus:ring-rose-500 w-4 h-4 cursor-pointer"
+                            className="rounded border-slate-355 text-rose-655 focus:ring-rose-500 w-4 h-4 cursor-pointer"
                           />
                         </th>
                         <th className="py-4 px-4 w-[36%] text-left">Item Details</th>
@@ -333,7 +365,7 @@ export default function MenuCatalogTab({
                                   </div>
                                 )}
                                 <div>
-                                  <span className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5 leading-tight">
+                                  <span className="font-extrabold text-slate-800 text-sm lg:text-base flex items-center gap-1.5 leading-tight">
                                     {item.food_type === 'veg' && (
                                       <span className="w-3.5 h-3.5 border border-emerald-600 p-[1.5px] flex items-center justify-center shrink-0 bg-white" title="Veg">
                                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 block" />
@@ -348,18 +380,23 @@ export default function MenuCatalogTab({
                                     )}
                                     {item.name}
                                   </span>
-                                  <span className="text-xs text-slate-400 line-clamp-1 mt-0.5 font-medium">{item.description || 'No description provided.'}</span>
+                                  <span className="text-xs lg:text-sm text-slate-400 line-clamp-1 mt-0.5 font-medium">{item.description || 'No description provided.'}</span>
                                 </div>
                               </div>
                             </td>
                             <td className="py-3 px-4">
                               <div className="space-y-1">
-                                <span className="text-[10px] text-rose-655 bg-rose-55 border border-rose-100 px-2 py-0.5 rounded uppercase tracking-wider block w-max font-black">
+                                <span className="text-[10px] lg:text-xs text-rose-655 bg-rose-55 border border-rose-100 px-2 py-0.5 rounded uppercase tracking-wider block w-max font-black">
                                   {item.category}
                                 </span>
                                 {adminType !== 'station' && (
-                                  <span className="text-[10px] text-slate-505 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded font-black uppercase tracking-wider block w-max">
+                                  <span className="text-[10px] lg:text-xs text-slate-505 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded font-black uppercase tracking-wider block w-max">
                                     Hub: {item.station_code || 'ALL'}
+                                  </span>
+                                )}
+                                {(item.station_code || 'ALL').toUpperCase() === 'ALL' && (
+                                  <span className="text-[9px] lg:text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded font-black uppercase tracking-wider flex items-center gap-0.5 w-max">
+                                    <Globe className="w-2.5 h-2.5" /> Global
                                   </span>
                                 )}
                               </div>
@@ -368,7 +405,7 @@ export default function MenuCatalogTab({
                               {item.variants && item.variants.length > 0 ? (
                                 <div className="text-left space-y-1">
                                   {item.variants.map((v, idx) => (
-                                    <span key={idx} className="font-extrabold text-slate-800 text-xs block leading-none">
+                                    <span key={idx} className="font-extrabold text-slate-800 text-xs lg:text-sm block leading-none">
                                       {v.name}: ₹{v.price}
                                     </span>
                                   ))}
@@ -380,7 +417,7 @@ export default function MenuCatalogTab({
                                     type="number"
                                     value={editingPriceValue}
                                     onChange={(e) => setEditingPriceValue(e.target.value)}
-                                    className="w-16 bg-white border border-rose-500 rounded px-1.5 py-1 text-xs font-black text-slate-805 text-left focus:outline-none"
+                                    className="w-16 bg-white border border-rose-500 rounded px-1.5 py-1 text-xs lg:text-sm font-black text-slate-805 text-left focus:outline-none"
                                     autoFocus
                                   />
                                   <button
@@ -400,7 +437,7 @@ export default function MenuCatalogTab({
                                 </div>
                               ) : (
                                 <div className="flex items-center justify-start gap-1.5 group cursor-pointer" onClick={() => { setEditingPriceId(item.id); setEditingPriceValue(item.price); }}>
-                                  <span className="font-black text-rose-655 text-sm flex items-center">
+                                  <span className="font-black text-rose-655 text-sm lg:text-base flex items-center">
                                     <IndianRupee className="w-3.5 h-3.5" />{item.price}
                                   </span>
                                   <Pencil className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -408,18 +445,37 @@ export default function MenuCatalogTab({
                               )}
                             </td>
                             <td className="py-3 px-4 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleToggleItemAvailability(item.id)}
-                                className="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 hover:bg-slate-100/70 px-2.5 py-1.5 rounded-full transition-all duration-200 shadow-sm whitespace-nowrap"
-                              >
-                                <div className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-200 flex items-center ${item.available ? 'bg-emerald-500 justify-end' : 'bg-slate-300 justify-start'}`}>
-                                  <div className="w-3 h-3 bg-white rounded-full shadow-sm" />
-                                </div>
-                                <span className={`text-[9px] font-black uppercase tracking-wider whitespace-nowrap ${item.available ? 'text-emerald-705' : 'text-slate-500'}`}>
-                                  {item.available ? 'In Stock' : 'Out of Stock'}
-                                </span>
-                              </button>
+                              {(() => {
+                                const isGlobal = (item.station_code || 'ALL').toUpperCase() === 'ALL';
+                                const isStationAdmin = adminType === 'station';
+                                const effectiveAvail = isGlobal && isStationAdmin
+                                  ? resolveItemAvailability(item, selectedStationCode)
+                                  : item.available !== false;
+                                const handleClick = () => {
+                                  if (isGlobal && isStationAdmin) {
+                                    toggleGlobalItemAvailability(item.id, selectedStationCode, !effectiveAvail);
+                                  } else {
+                                    handleToggleItemAvailability(item.id);
+                                  }
+                                };
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={handleClick}
+                                    className="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 hover:bg-slate-100/70 px-2.5 py-1.5 rounded-full transition-all duration-200 shadow-sm whitespace-nowrap"
+                                  >
+                                    <div className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-200 flex items-center ${effectiveAvail ? 'bg-emerald-500 justify-end' : 'bg-slate-300 justify-start'}`}>
+                                      <div className="w-3 h-3 bg-white rounded-full shadow-sm" />
+                                    </div>
+                                    <span className={`text-[9px] font-black uppercase tracking-wider whitespace-nowrap ${effectiveAvail ? 'text-emerald-705' : 'text-slate-500'}`}>
+                                      {effectiveAvail ? 'Available' : 'Not Available'}
+                                    </span>
+                                    {isGlobal && isStationAdmin && (
+                                      <span className="text-[8px] text-indigo-600 font-black ml-0.5">(Local)</span>
+                                    )}
+                                  </button>
+                                );
+                              })()}
                             </td>
                             <td className="py-3 px-4 text-center">
                               <div className="flex items-center justify-center gap-1.5">
@@ -437,16 +493,18 @@ export default function MenuCatalogTab({
                                     startEditMenuItem(item);
                                     setIsMenuModalOpen(true);
                                   }}
-                                  className="text-slate-400 hover:text-indigo-650 p-1.5 hover:bg-indigo-50 rounded-lg transition-colors border border-slate-200 hover:border-indigo-150"
-                                  title="Edit Item"
+                                  disabled={(item.station_code || 'ALL').toUpperCase() === 'ALL' && adminType === 'station'}
+                                  className={`p-1.5 rounded-lg transition-colors border ${ (item.station_code || 'ALL').toUpperCase() === 'ALL' && adminType === 'station' ? 'text-slate-300 bg-slate-50 border-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-indigo-650 hover:bg-indigo-50 border-slate-200 hover:border-indigo-150' }`}
+                                  title={(item.station_code || 'ALL').toUpperCase() === 'ALL' && adminType === 'station' ? 'Global items can only be edited by Head Admin' : 'Edit Item'}
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveMenuItem(item.id)}
-                                  className="text-slate-400 hover:text-rose-650 p-1.5 hover:bg-rose-50 rounded-lg transition-colors inline-block border border-slate-200 hover:border-rose-150"
-                                  title="Delete Item"
+                                  disabled={(item.station_code || 'ALL').toUpperCase() === 'ALL' && adminType === 'station'}
+                                  className={`p-1.5 rounded-lg transition-colors inline-block border ${ (item.station_code || 'ALL').toUpperCase() === 'ALL' && adminType === 'station' ? 'text-slate-300 bg-slate-50 border-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-rose-650 hover:bg-rose-50 border-slate-200 hover:border-rose-150' }`}
+                                  title={(item.station_code || 'ALL').toUpperCase() === 'ALL' && adminType === 'station' ? 'Global items cannot be deleted by station admins' : 'Delete Item'}
                                 >
                                   <Trash className="w-3.5 h-3.5" />
                                 </button>
@@ -497,6 +555,11 @@ export default function MenuCatalogTab({
                               Hub: {item.station_code || 'ALL'}
                             </span>
                           )}
+                          {(item.station_code || 'ALL').toUpperCase() === 'ALL' && (
+                            <span className="text-[9px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md font-black uppercase flex items-center gap-0.5">
+                              <Globe className="w-2.5 h-2.5" /> Global
+                            </span>
+                          )}
                         </div>
                         <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
                           {item.food_type === 'veg' && (
@@ -526,18 +589,37 @@ export default function MenuCatalogTab({
                         {item.variants && item.variants.length > 0 ? `₹${item.variants[0].price} onwards` : `₹${item.price}`}
                       </span>
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleItemAvailability(item.id)}
-                          className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 hover:bg-slate-100/70 px-2 py-1 rounded-full transition-all duration-200 shadow-sm"
-                        >
-                          <div className={`w-7 h-3.5 rounded-full p-0.5 transition-colors duration-200 flex items-center ${item.available ? 'bg-emerald-500 justify-end' : 'bg-slate-300 justify-start'}`}>
-                            <div className="w-2.5 h-2.5 bg-white rounded-full shadow-sm" />
-                          </div>
-                          <span className={`text-[8px] font-black uppercase tracking-wider ${item.available ? 'text-emerald-705' : 'text-slate-500'}`}>
-                            {item.available ? 'In Stock' : 'Out of Stock'}
-                          </span>
-                        </button>
+                        {(() => {
+                          const isGlobal = (item.station_code || 'ALL').toUpperCase() === 'ALL';
+                          const isStationAdmin = adminType === 'station';
+                          const effectiveAvail = isGlobal && isStationAdmin
+                            ? resolveItemAvailability(item, selectedStationCode)
+                            : item.available !== false;
+                          const handleClick = () => {
+                            if (isGlobal && isStationAdmin) {
+                              toggleGlobalItemAvailability(item.id, selectedStationCode, !effectiveAvail);
+                            } else {
+                              handleToggleItemAvailability(item.id);
+                            }
+                          };
+                          return (
+                            <button
+                              type="button"
+                              onClick={handleClick}
+                              className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 hover:bg-slate-100/70 px-2 py-1 rounded-full transition-all duration-200 shadow-sm"
+                            >
+                              <div className={`w-7 h-3.5 rounded-full p-0.5 transition-colors duration-200 flex items-center ${effectiveAvail ? 'bg-emerald-500 justify-end' : 'bg-slate-300 justify-start'}`}>
+                                <div className="w-2.5 h-2.5 bg-white rounded-full shadow-sm" />
+                              </div>
+                              <span className={`text-[8px] font-black uppercase tracking-wider ${effectiveAvail ? 'text-emerald-705' : 'text-slate-500'}`}>
+                                {effectiveAvail ? 'Available' : 'Not Available'}
+                              </span>
+                              {isGlobal && isStationAdmin && (
+                                <span className="text-[7px] text-indigo-600 font-black">(Local)</span>
+                              )}
+                            </button>
+                          );
+                        })()}
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setViewingItem(item); }}
@@ -552,16 +634,18 @@ export default function MenuCatalogTab({
                             startEditMenuItem(item);
                             setIsMenuModalOpen(true);
                           }}
-                          className="text-slate-400 hover:text-indigo-650 p-1.5 bg-slate-50 hover:bg-indigo-50 rounded-lg transition-colors border border-slate-200 hover:border-indigo-100"
-                          title="Edit Item"
+                          disabled={(item.station_code || 'ALL').toUpperCase() === 'ALL' && adminType === 'station'}
+                          className={`p-1.5 rounded-lg transition-colors border ${ (item.station_code || 'ALL').toUpperCase() === 'ALL' && adminType === 'station' ? 'text-slate-300 bg-slate-50 border-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-indigo-650 bg-slate-50 hover:bg-indigo-50 border-slate-200 hover:border-indigo-100' }`}
+                          title={(item.station_code || 'ALL').toUpperCase() === 'ALL' && adminType === 'station' ? 'Global items can only be edited by Head Admin' : 'Edit Item'}
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleRemoveMenuItem(item.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1.5 bg-slate-50 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200 hover:border-rose-100"
-                          title="Delete Item"
+                          disabled={(item.station_code || 'ALL').toUpperCase() === 'ALL' && adminType === 'station'}
+                          className={`p-1.5 rounded-lg transition-colors border ${ (item.station_code || 'ALL').toUpperCase() === 'ALL' && adminType === 'station' ? 'text-slate-300 bg-slate-50 border-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 border-slate-200 hover:border-rose-100' }`}
+                          title={(item.station_code || 'ALL').toUpperCase() === 'ALL' && adminType === 'station' ? 'Global items cannot be deleted by station admins' : 'Delete Item'}
                         >
                           <Trash className="w-3.5 h-3.5" />
                         </button>
@@ -832,11 +916,19 @@ export default function MenuCatalogTab({
                     onChange={(e) => setNewItemCategory(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 text-xs font-bold focus:outline-none focus:border-rose-500 cursor-pointer"
                   >
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
+                    {categories.map(cat => {
+                      const rawCatObj = (rawCategories || []).find(c => {
+                        const matchExact = (c.name || '').toLowerCase() === cat.toLowerCase();
+                        const matchLegacy = c.name && c.name.includes(':') && c.name.split(':')[1].toLowerCase() === cat.toLowerCase();
+                        return matchExact || matchLegacy;
+                      });
+                      const isGlobal = !rawCatObj?.station_code || rawCatObj.station_code.toUpperCase() === 'ALL';
+                      return (
+                        <option key={cat} value={cat}>
+                          {cat} {isGlobal ? '(Global)' : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
@@ -1044,57 +1136,217 @@ export default function MenuCatalogTab({
   }
 
   if (activeSubTab === 'categories') {
+    const handleCatImageUpload = async (e, isEdit = false) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        setUploadingCat(true);
+
+        if (!isCloudinaryConfigured()) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (isEdit) {
+              setEditCategoryImage(reader.result);
+            } else {
+              setNewCategoryImage(reader.result);
+            }
+            setUploadingCat(false);
+            alert("Image saved locally (Base64) successfully!");
+          };
+          reader.onerror = () => {
+            alert("Failed to read image locally.");
+            setUploadingCat(false);
+          };
+          reader.readAsDataURL(file);
+          return;
+        }
+
+        const url = await uploadToCloudinary(file);
+        if (isEdit) {
+          setEditCategoryImage(url);
+        } else {
+          setNewCategoryImage(url);
+        }
+        alert("Category image uploaded successfully!");
+      } catch (err) {
+        console.error("Category upload error:", err);
+        alert("Failed to upload category image: " + err.message);
+      } finally {
+        setUploadingCat(false);
+      }
+    };
+
+    const filteredCategoriesToRender = categories.filter(cat => {
+      if (adminType === 'global') return true;
+      const rawCatObj = (rawCategories || []).find(c => {
+        const matchExact = (c.name || '').toLowerCase() === cat.toLowerCase();
+        const matchLegacy = c.name && c.name.includes(':') && c.name.split(':')[1].toLowerCase() === cat.toLowerCase();
+        return matchExact || matchLegacy;
+      });
+      const isGlobal = !rawCatObj?.station_code || rawCatObj.station_code.toUpperCase() === 'ALL';
+
+      if (categoryTypeFilter === 'global') return isGlobal;
+      if (categoryTypeFilter === 'local') return !isGlobal;
+      return true;
+    });
+
     return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Categories list table (Left Side) */}
         <div className="lg:col-span-8 space-y-5">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <div>
-              <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
+              <h2 className="text-sm lg:text-base font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
                 <ClipboardList className="w-4.5 h-4.5 text-rose-550" />
-                Active Pantry Categories
+                {adminType === 'global' ? 'Global Categories' : 'Active Pantry Categories'}
               </h2>
-              <p className="text-[11px] text-slate-550 font-medium">Manage and edit classifications for passenger menus.</p>
+              <p className="text-[11px] lg:text-sm text-slate-555 font-medium">Manage and edit classifications for passenger menus.</p>
             </div>
-            <span className="text-[10px] text-slate-500 font-black uppercase bg-white border border-slate-200 px-3.5 py-1.5 rounded-xl shadow-sm">
-              Total Categories: {categories.length}
+            <span className="text-[10px] lg:text-xs text-slate-500 font-black uppercase bg-white border border-slate-200 px-3.5 py-1.5 rounded-xl shadow-sm">
+              Filtered Categories: {filteredCategoriesToRender.length}
             </span>
           </div>
+
+          {adminType === 'global' && (
+            <div className="flex items-start gap-3 bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-3">
+              <Globe className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[11px] lg:text-sm font-black text-indigo-800">Global Categories — Shared Across All Stations</p>
+                <p className="text-[10px] lg:text-xs text-indigo-600 font-medium mt-0.5">Categories created here are available to all station admins when adding their menu items. Station admins can assign items to these categories but cannot delete them.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Filter selector tabs for station admins */}
+          {adminType !== 'global' && (
+            <div className="flex bg-slate-100 p-1 rounded-xl w-fit border border-slate-200 gap-1 text-xs">
+              <button
+                type="button"
+                onClick={() => setCategoryTypeFilter('all')}
+                className={`px-3 py-1.5 rounded-lg font-black uppercase tracking-wider transition-all ${
+                  categoryTypeFilter === 'all' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => setCategoryTypeFilter('local')}
+                className={`px-3 py-1.5 rounded-lg font-black uppercase tracking-wider transition-all ${
+                  categoryTypeFilter === 'local' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Created By You
+              </button>
+              <button
+                type="button"
+                onClick={() => setCategoryTypeFilter('global')}
+                className={`px-3 py-1.5 rounded-lg font-black uppercase tracking-wider transition-all ${
+                  categoryTypeFilter === 'global' ? 'bg-white text-indigo-600 shadow-xs border border-indigo-100' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Global Categories
+              </button>
+            </div>
+          )}
 
           <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-450 uppercase tracking-widest">
+                  <tr className="bg-slate-50 border-b border-slate-200 text-[10px] lg:text-sm font-black text-slate-450 uppercase tracking-widest">
                     <th className="py-4 px-6 w-16 text-center">S.No</th>
-                    <th className="py-4 px-6">Category Name</th>
+                    <th className="py-4 px-6">Category Detail</th>
                     <th className="py-4 px-6 w-48 text-center">Linked Items</th>
                     <th className="py-4 px-6 w-32 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {categories.map((cat, index) => {
+                  {filteredCategoriesToRender.map((cat, index) => {
                     const displayCatName = cat.includes(':') ? cat.split(':')[1] : cat;
                     const itemCount = menuItems.filter(item => item.category === cat || item.category === displayCatName).length;
+
+                    // Lookup category image
+                    const rawCatObj = (rawCategories || []).find(c => {
+                      const matchExact = (c.name || '').toLowerCase() === cat.toLowerCase();
+                      const matchLegacy = c.name && c.name.includes(':') && c.name.split(':')[1].toLowerCase() === cat.toLowerCase();
+                      return matchExact || matchLegacy;
+                    });
+                    const categoryImage = rawCatObj?.image;
+
                     return (
                       <tr key={cat} className="hover:bg-slate-50/50 transition-colors">
                         <td className="py-4 px-6 text-center font-bold text-slate-400 font-mono">{index + 1}</td>
                         <td className="py-4 px-6">
-                          {editingCategory === cat ? (
-                            <input
-                              type="text"
-                              value={editCategoryName}
-                              onChange={(e) => setEditCategoryName(e.target.value)}
-                              className="bg-slate-50 border border-slate-200 focus:border-rose-500 rounded-xl px-3 py-1.5 text-slate-800 text-xs font-black focus:outline-none w-full max-w-xs"
-                              required
-                              autoFocus
-                            />
-                          ) : (
-                            <span className="font-extrabold text-slate-800 text-sm">{displayCatName}</span>
-                          )}
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 flex items-center justify-center shrink-0">
+                              {editingCategory === cat ? (
+                                editCategoryImage ? (
+                                  <img src={editCategoryImage} alt="Preview" className="w-full h-full object-cover" />
+                                ) : (
+                                  <Image className="w-5 h-5 text-slate-350" />
+                                )
+                              ) : (
+                                categoryImage ? (
+                                  <img src={categoryImage} alt={displayCatName} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Coffee className="w-5 h-5 text-slate-400" />
+                                )
+                              )}
+                            </div>
+
+                            <div className="flex flex-col">
+                              {editingCategory === cat ? (
+                                <div className="space-y-2">
+                                  <input
+                                    type="text"
+                                    value={editCategoryName}
+                                    onChange={(e) => setEditCategoryName(e.target.value)}
+                                    className="bg-slate-50 border border-slate-200 focus:border-rose-500 rounded-xl px-3 py-1.5 text-slate-800 text-xs font-black focus:outline-none w-full max-w-xs"
+                                    required
+                                    autoFocus
+                                  />
+                                  <div className="flex items-center gap-2">
+                                    <label className="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded cursor-pointer font-bold hover:bg-indigo-100 transition-all">
+                                      {uploadingCat ? "Uploading..." : "Change Image"}
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        disabled={uploadingCat}
+                                        onChange={(e) => handleCatImageUpload(e, true)}
+                                        className="hidden"
+                                      />
+                                    </label>
+                                    {editCategoryImage && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditCategoryImage('')}
+                                        className="text-[10px] text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded font-bold hover:bg-rose-100 transition-all"
+                                      >
+                                        Remove
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (() => {
+                                const isGlobal = !rawCatObj?.station_code || rawCatObj.station_code.toUpperCase() === 'ALL';
+                                return (
+                                  <span className="font-extrabold text-slate-800 text-sm lg:text-base flex items-center gap-1.5">
+                                    {displayCatName}
+                                    {isGlobal && (
+                                      <span className="text-[9px] lg:text-xs text-indigo-755 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
+                                        Global
+                                      </span>
+                                    )}
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                          </div>
                         </td>
                         <td className="py-4 px-6 text-center">
-                          <span className="inline-flex items-center gap-1.5 text-[10px] text-rose-707 bg-rose-55 border border-rose-100 px-3 py-1 rounded-full font-black uppercase tracking-wider">
+                          <span className="inline-flex items-center gap-1.5 text-[10px] lg:text-xs text-rose-707 bg-rose-55 border border-rose-100 px-3 py-1 rounded-full font-black uppercase tracking-wider">
                             <Coffee className="w-3.5 h-3.5 text-rose-550" /> {itemCount} Dishes
                           </span>
                         </td>
@@ -1105,8 +1357,8 @@ export default function MenuCatalogTab({
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (editCategoryName.trim() && editCategoryName.trim() !== displayCatName) {
-                                      updateCategory(cat, editCategoryName.trim());
+                                    if (editCategoryName.trim()) {
+                                      updateCategory(cat, editCategoryName.trim(), editCategoryImage);
                                     }
                                     setEditingCategory(null);
                                   }}
@@ -1124,33 +1376,48 @@ export default function MenuCatalogTab({
                                   <X className="w-4 h-4" />
                                 </button>
                               </>
-                            ) : (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditingCategory(cat);
-                                    setEditCategoryName(displayCatName);
-                                  }}
-                                  className="text-slate-400 hover:text-indigo-650 p-1.5 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-150 rounded-lg transition-colors"
-                                  title="Edit Name"
-                                >
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (confirm(`Are you sure you want to remove the category "${displayCatName}"? This does NOT delete the food items, but they will need a new category.`)) {
-                                      removeCategory(cat);
-                                    }
-                                  }}
-                                  className="text-slate-400 hover:text-rose-650 p-1.5 hover:bg-rose-50 border border-slate-200 hover:border-rose-150 rounded-lg transition-colors"
-                                  title="Delete Category"
-                                >
-                                  <Trash className="w-3.5 h-3.5" />
-                                </button>
-                              </>
-                            )}
+                            ) : (() => {
+                              const isGlobal = !rawCatObj?.station_code || rawCatObj.station_code.toUpperCase() === 'ALL';
+                              const disabled = isGlobal && adminType !== 'global';
+                              return (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => {
+                                      setEditingCategory(cat);
+                                      setEditCategoryName(displayCatName);
+                                      setEditCategoryImage(categoryImage || '');
+                                    }}
+                                    className={`p-1.5 border rounded-lg transition-colors ${
+                                      disabled
+                                        ? 'text-slate-300 bg-slate-50 border-slate-200 cursor-not-allowed'
+                                        : 'text-slate-400 hover:text-indigo-650 hover:bg-indigo-50 border-slate-200 hover:border-indigo-150'
+                                    }`}
+                                    title={disabled ? 'Global categories can only be edited by Head Admin' : 'Edit Category'}
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => {
+                                      if (confirm(`Are you sure you want to remove the category "${displayCatName}"? This does NOT delete the food items, but they will need a new category.`)) {
+                                        removeCategory(cat);
+                                      }
+                                    }}
+                                    className={`p-1.5 border rounded-lg transition-colors ${
+                                      disabled
+                                        ? 'text-slate-300 bg-slate-50 border-slate-200 cursor-not-allowed'
+                                        : 'text-slate-400 hover:text-rose-650 hover:bg-rose-50 border-slate-200 hover:border-rose-150'
+                                    }`}
+                                    title={disabled ? 'Global categories cannot be deleted by station admins' : 'Delete Category'}
+                                  >
+                                    <Trash className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              );
+                            })()}
                           </div>
                         </td>
                       </tr>
@@ -1171,8 +1438,9 @@ export default function MenuCatalogTab({
               onSubmit={(e) => {
                 e.preventDefault();
                 if (newCategoryName.trim()) {
-                  addCategory(newCategoryName.trim());
+                  addCategory(newCategoryName.trim(), newCategoryImage);
                   setNewCategoryName('');
+                  setNewCategoryImage('');
                 }
               }}
               className="space-y-4"
@@ -1187,6 +1455,40 @@ export default function MenuCatalogTab({
                   placeholder="e.g. South Indian, Desserts..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 text-xs font-bold focus:outline-none focus:border-rose-500"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5">Category Image</label>
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0 relative">
+                    {newCategoryImage ? (
+                      <img src={newCategoryImage} alt="Category preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <Image className="w-6 h-6 text-slate-350" />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="bg-white border border-slate-250 hover:border-rose-300 text-slate-700 hover:text-rose-600 text-[10px] font-black px-3.5 py-2 rounded-xl cursor-pointer transition-all shadow-xs text-center">
+                      {uploadingCat ? "Uploading..." : "Upload Image"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingCat}
+                        onChange={(e) => handleCatImageUpload(e, false)}
+                        className="hidden"
+                      />
+                    </label>
+                    {newCategoryImage && (
+                      <button
+                        type="button"
+                        onClick={() => setNewCategoryImage('')}
+                        className="text-[10px] text-slate-500 hover:text-rose-600 font-bold text-left px-1.5"
+                      >
+                        Clear Image
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <button

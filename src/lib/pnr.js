@@ -177,7 +177,9 @@ const getRouteStopsForTrain = async (trainNumber, boardingStation, destinationSt
             delay: "Right Time",
             isActive: activeHubs.includes(code),
             isPassed: false,
-            haltTime: stop.halt || ''
+            haltTime: stop.halt || '',
+            day: parseInt(stop.day || 1, 10),
+            depTime: stop.departure || '--'
           };
         });
 
@@ -233,12 +235,33 @@ export const parsePnrData = async (apiResponse, dateParam = 'today') => {
   const passengers = rawPassengers.map((p, idx) => {
     const booking = p.booking || {};
     const current = p.current || {};
+    
+    // If current status is CNF but coach is empty/not allotted yet (Chart not prepared)
+    const isCnfNotAllotted = (current.status === 'CNF' || p.currentStatus === 'CNF' || p.bookingStatus === 'CNF') && 
+                             (!current.coach || String(current.coach).trim() === '');
+
+    const coachVal = isCnfNotAllotted
+      ? ''
+      : (current.coach && String(current.coach).trim() !== '') 
+        ? String(current.coach).trim() 
+        : (booking.coach && String(booking.coach).trim() !== '')
+          ? String(booking.coach).trim()
+          : (p.coach || p.Coach || p.BookingCoachId || '');
+
+    const seatVal = isCnfNotAllotted
+      ? ''
+      : (current.berthNo && String(current.berthNo).trim() !== '0' && String(current.berthNo).trim() !== '')
+        ? String(current.berthNo).trim()
+        : (booking.berthNo && String(booking.berthNo).trim() !== '0' && String(booking.berthNo).trim() !== '')
+          ? String(booking.berthNo).trim()
+          : (p.seat || p.SeatNo || p.Seat || p.Berth || p.berth || '');
+
     return {
       passengerNumber: p.no || p.PassengerNo || (idx + 1),
       bookingStatus: booking.status || p.booking_status || p.bookingStatus || p.BookingStatus || "CNF",
       currentStatus: current.status || p.current_status || p.currentStatus || p.CurrentStatus || "CNF",
-      coach: current.coach || booking.coach || p.coach || p.Coach || p.BookingCoachId || "B1",
-      seat: current.berthNo || booking.berthNo || p.seat || p.SeatNo || p.Seat || p.Berth || p.berth || "23"
+      coach: coachVal,
+      seat: seatVal
     };
   });
 

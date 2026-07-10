@@ -143,10 +143,10 @@ export default function SupportDirectoryTab({
         {/* Header Block with Add Button for Mobile/Tablet */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
-            <h1 className="text-xl font-black text-slate-805 tracking-tight uppercase flex items-center gap-2">
+            <h1 className="text-xl lg:text-2xl font-black text-slate-805 tracking-tight uppercase flex items-center gap-2">
               <Phone className="w-5.5 h-5.5 text-rose-550" /> Support Contact Directory
             </h1>
-            <p className="text-slate-555 text-xs mt-1">
+            <p className="text-slate-555 text-xs lg:text-sm mt-1">
               Configure contact details for both public customers and station managers.
             </p>
           </div>

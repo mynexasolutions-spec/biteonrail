@@ -1,8 +1,8 @@
 "use client";
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../../context/AppContext';
-import { Search as SearchIcon, MapPin, Train, ArrowRight, Utensils, Star, AlertCircle } from 'lucide-react';
+import { Search as SearchIcon, MapPin, Train, ArrowRight, Utensils, Star, AlertCircle, Info } from 'lucide-react';
 
 const POPULAR_TRAINS = [
   { name: "Vande Bharat Express", number: "22436", route: "NDLS - BSB" },
@@ -12,14 +12,40 @@ const POPULAR_TRAINS = [
   { name: "Brahmaputra Mail", number: "15657", route: "DLI - KYQ" }
 ];
 
-export default function SearchPage() {
+function SearchContent() {
   const router = useRouter();
   const { stations, menuItems } = useApp();
+  const searchParams = useSearchParams();
+  const qParam = searchParams.get('q') || '';
+
   const [query, setQuery] = useState('');
   const [selectedTrain, setSelectedTrain] = useState(null);
   const [pnrInput, setPnrInput] = useState('');
   const [apiTrains, setApiTrains] = useState([]);
   const [loadingTrains, setLoadingTrains] = useState(false);
+  const [boardingDate, setBoardingDate] = useState('');
+
+  // Auto trigger search if query is in searchParams on mount
+  useEffect(() => {
+    if (qParam) {
+      setQuery(qParam);
+      const runSearch = async () => {
+        setLoadingTrains(true);
+        try {
+          const res = await fetch(`/api/train-search?q=${encodeURIComponent(qParam)}`);
+          if (res.ok) {
+            const data = await res.json();
+            setApiTrains(data);
+          }
+        } catch (err) {
+          console.error("Auto search failed:", err);
+        } finally {
+          setLoadingTrains(false);
+        }
+      };
+      runSearch();
+    }
+  }, [qParam]);
 
   const handleSearchSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -66,7 +92,11 @@ export default function SearchPage() {
 
   const handleTrainSelect = (train) => {
     setSelectedTrain(train);
-    setPnrInput('');
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    setBoardingDate(`${yyyy}-${mm}-${dd}`);
   };
 
   const handlePnrSubmit = (e) => {
@@ -79,18 +109,18 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 pb-8 selection:bg-rose-600 selection:text-white font-sans relative">
-      <div className="max-w-2xl mx-auto px-4 pt-0 md:pt-6">
+    <div className="min-h-screen bg-slate-50 text-slate-800 pb-20 md:pb-12 selection:bg-rose-600 selection:text-white font-sans relative">
+      <div className="max-w-3xl mx-auto px-4 pt-0 md:pt-6">
 
         {/* Search Header */}
         <div className="mb-6 text-center hidden md:block">
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Explore BiteOnRail</h1>
-          <p className="text-slate-500 text-xs mt-1">Search trains, stations, foods or brand partners</p>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Explore BiteOnRail</h1>
+          <p className="text-slate-500 text-xs md:text-sm mt-1">Search Station, Search Trains</p>
         </div>
 
         {/* Floating Search Box */}
-        <div className="sticky top-0 md:top-[68px] z-30 bg-slate-50/95 backdrop-blur-md py-3 -mx-4 px-4 mb-4">
-          <form onSubmit={handleSearchSubmit} className="relative bg-white border border-slate-200 rounded-2xl shadow-md p-2 flex items-center gap-2">
+        <div className="sticky top-0 md:top-[68px] z-30 bg-slate-50/95 backdrop-blur-md py-3 -mx-4 px-4 mb-4 flex justify-center">
+          <form onSubmit={handleSearchSubmit} className="relative bg-white border border-slate-200 rounded-2xl shadow-md p-2 flex items-center gap-2 w-full md:max-w-xl">
             <div className="relative flex-grow">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
@@ -98,8 +128,8 @@ export default function SearchPage() {
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search Train No. or Station..."
-                className="pl-11 pr-4 py-3.5 w-full bg-slate-50 border border-slate-100 rounded-xl text-[15px] md:text-base focus:outline-none focus:border-rose-500 font-sans font-bold text-slate-800 placeholder-slate-400"
+                placeholder="Search Station, Train No..."
+                className="pl-11 pr-4 py-3.5 w-full bg-slate-50 border border-slate-100 rounded-xl text-[15px] md:text-lg focus:outline-none focus:border-rose-500 font-sans font-bold text-slate-800 placeholder-slate-400"
               />
             </div>
             <button
@@ -128,10 +158,10 @@ export default function SearchPage() {
                     className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
                   >
                     <div>
-                      <p className="font-extrabold text-slate-800 text-[13px] md:text-sm">{train.name}</p>
-                      <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{train.route}</span>
+                      <p className="font-extrabold text-slate-800 text-[13px] md:text-[15px]">{train.name}</p>
+                      <span className="text-[11px] md:text-[13px] text-slate-400 font-bold uppercase tracking-wider">{train.route}</span>
                     </div>
-                    <span className="text-xs md:text-sm font-black text-rose-655 bg-rose-50 px-2.5 py-1 rounded-lg">{train.number}</span>
+                    <span className="text-xs md:text-[15px] font-black text-rose-655 bg-rose-50 px-2.5 py-1 rounded-lg">{train.number}</span>
                   </div>
                 ))}
               </div>
@@ -150,10 +180,10 @@ export default function SearchPage() {
                     className="bg-white border border-slate-200/80 p-3 sm:p-4 rounded-xl sm:rounded-2xl cursor-pointer hover:border-rose-300 hover:shadow-md transition-all flex items-center justify-between"
                   >
                     <div className="min-w-0 pr-1">
-                      <p className="font-extrabold text-slate-800 text-[12px] sm:text-sm whitespace-normal">{station.name}</p>
-                      <span className="text-[8px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-wider block whitespace-normal">{station.state}</span>
+                      <p className="font-extrabold text-slate-800 text-[12px] sm:text-[15px] whitespace-normal">{station.name}</p>
+                      <span className="text-[8px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-wider block whitespace-normal">{station.state}</span>
                     </div>
-                    <span className="text-[10px] sm:text-sm font-black text-rose-600 bg-rose-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg shrink-0">{station.code}</span>
+                    <span className="text-[10px] sm:text-[15px] font-black text-rose-600 bg-rose-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg shrink-0">{station.code}</span>
                   </div>
                 ))}
               </div>
@@ -165,8 +195,14 @@ export default function SearchPage() {
           <div className="space-y-6">
             {/* Loading status */}
             {loadingTrains && (
-              <div className="text-center py-4 text-xs font-bold text-rose-500 animate-pulse">
-                Fetching trains running status database...
+              <div className="flex flex-col items-center justify-center py-12 gap-4 text-rose-500">
+                <div className="relative flex items-center justify-center w-14 h-14">
+                  {/* Outer spinning border */}
+                  <div className="absolute inset-0 border-4 border-rose-100 border-t-rose-600 rounded-full animate-spin"></div>
+                  {/* Center static train icon */}
+                  <Train className="w-6 h-6 text-rose-600" />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-wider animate-pulse">Fetching trains running status...</span>
               </div>
             )}
 
@@ -184,11 +220,11 @@ export default function SearchPage() {
                       <div className="flex items-center gap-2.5">
                         <Train className="w-4 h-4 text-slate-400 shrink-0" />
                         <div>
-                          <p className="text-[13px] md:text-sm font-black text-slate-800">{train.name}</p>
-                          <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{train.route}</span>
+                          <p className="text-[13px] md:text-[15px] font-black text-slate-800">{train.name}</p>
+                          <span className="text-[11px] md:text-[13px] text-slate-400 font-bold uppercase tracking-wider">{train.route}</span>
                         </div>
                       </div>
-                      <span className="text-xs md:text-sm font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg">{train.number}</span>
+                      <span className="text-xs md:text-[15px] font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg">{train.number}</span>
                     </div>
                   ))}
                 </div>
@@ -209,18 +245,18 @@ export default function SearchPage() {
                       <div className="flex items-center gap-2.5">
                         <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
                         <div>
-                          <p className="text-[13px] md:text-sm font-black text-slate-800">{station.name}</p>
-                          <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{station.state}</span>
+                          <p className="text-[13px] md:text-[15px] font-black text-slate-800">{station.name}</p>
+                          <span className="text-[9px] md:text-xs text-slate-400 font-bold uppercase tracking-wider">{station.state}</span>
                         </div>
                       </div>
-                      <span className="text-xs md:text-sm font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg">{station.code}</span>
+                      <span className="text-xs md:text-[15px] font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg">{station.code}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {filteredStations.length === 0 && apiTrains.length === 0 && (
+            {filteredStations.length === 0 && apiTrains.length === 0 && !loadingTrains && (
               <div className="text-center py-16 bg-white border border-slate-250 rounded-2xl">
                 <p className="text-sm font-black text-slate-800">No match found</p>
                 <p className="text-xs text-slate-500 mt-1">Try searching for other trains or stations.</p>
@@ -229,7 +265,7 @@ export default function SearchPage() {
           </div>
         )}
 
-        {/* PNR Prompt Modal */}
+        {/* Boarding Date Prompt Modal */}
         {selectedTrain && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 relative border border-rose-50 animate-in fade-in zoom-in-95 duration-200">
@@ -238,17 +274,74 @@ export default function SearchPage() {
               </h2>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-5">Train No: {selectedTrain.number}</p>
 
-              <form onSubmit={handlePnrSubmit} className="space-y-4">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                localStorage.setItem("checkout_doj", boardingDate);
+                router.push(`/train-route?trainNo=${selectedTrain.number}&trainName=${encodeURIComponent(selectedTrain.name)}&date=${boardingDate}`);
+                setSelectedTrain(null);
+              }} className="space-y-4">
+                {/* Helpful tip for overnight trains */}
+                <div className="bg-amber-50 border border-amber-250/70 rounded-xl p-3 text-[10px] sm:text-[11px] text-amber-850 font-semibold leading-normal flex items-start gap-2">
+                  <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <strong>Note for Passengers:</strong> Please select the <strong>actual date you will board the train</strong> (your Boarding Date). Our system will automatically calculate and track the correct train starting date.
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-extrabold text-slate-500 uppercase mb-1">Enter your PNR to track route</label>
+                  <label className="block text-xs font-extrabold text-slate-500 uppercase mb-2">Select Boarding Date</label>
+
+                  {/* Quick Select Buttons */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    {(() => {
+                      const today = new Date();
+                      const tomorrow = new Date(today);
+                      tomorrow.setDate(today.getDate() + 1);
+
+                      const fmtDate = (d) => {
+                        const y = d.getFullYear();
+                        const m = String(d.getMonth() + 1).padStart(2, '0');
+                        const r = String(d.getDate()).padStart(2, '0');
+                        return `${y}-${m}-${r}`;
+                      };
+
+                      const todayStr = fmtDate(today);
+                      const tomorrowStr = fmtDate(tomorrow);
+
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setBoardingDate(todayStr)}
+                            className={`py-2 px-3 rounded-xl border text-xs font-black uppercase tracking-wider transition-all
+                              ${boardingDate === todayStr
+                                ? 'bg-slate-900 border-slate-900 text-white'
+                                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                          >
+                            Today
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setBoardingDate(tomorrowStr)}
+                            className={`py-2 px-3 rounded-xl border text-xs font-black uppercase tracking-wider transition-all
+                              ${boardingDate === tomorrowStr
+                                ? 'bg-slate-900 border-slate-900 text-white'
+                                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                          >
+                            Tomorrow
+                          </button>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Standard Date Input */}
                   <input
-                    type="text"
+                    type="date"
                     required
-                    maxLength={10}
-                    value={pnrInput}
-                    onChange={(e) => setPnrInput(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Enter 10-digit PNR"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500 font-sans font-bold text-slate-800 placeholder-slate-400"
+                    value={boardingDate}
+                    onChange={(e) => setBoardingDate(e.target.value)}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-rose-500"
                   />
                 </div>
 
@@ -264,7 +357,7 @@ export default function SearchPage() {
                     type="submit"
                     className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl text-xs uppercase tracking-wide transition-colors"
                   >
-                    Submit
+                    Proceed
                   </button>
                 </div>
               </form>
@@ -274,5 +367,17 @@ export default function SearchPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider animate-pulse">Loading Search Screen...</p>
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   );
 }

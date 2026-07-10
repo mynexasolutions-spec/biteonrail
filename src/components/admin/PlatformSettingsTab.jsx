@@ -27,7 +27,13 @@ export default function PlatformSettingsTab({
   supportEmail,
   updateSupportEmail,
   supportContacts,
-  updateSupportContacts
+  updateSupportContacts,
+  socialInstagram,
+  updateSocialInstagram,
+  socialFacebook,
+  updateSocialFacebook,
+  socialTwitter,
+  updateSocialTwitter
 }) {
   const [newContactLabel, setNewContactLabel] = React.useState('');
   const [newContactValue, setNewContactValue] = React.useState('');
@@ -38,8 +44,8 @@ export default function PlatformSettingsTab({
       <div className="space-y-6 max-w-5xl animate-fadeIn">
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div>
-            <h1 className="text-xl font-black text-slate-805 tracking-tight uppercase">Customer User Directory</h1>
-            <p className="text-slate-500 text-xs mt-1">
+            <h1 className="text-xl lg:text-2xl font-black text-slate-808 tracking-tight uppercase">Customer User Directory</h1>
+            <p className="text-slate-500 text-xs lg:text-sm mt-1">
               View and manage registered passenger accounts. Users are created automatically upon OTP verification at the checkout step.
             </p>
           </div>
@@ -136,10 +142,10 @@ export default function PlatformSettingsTab({
     return (
       <div className="space-y-6 max-w-5xl animate-fadeIn">
         <div>
-          <h1 className="text-xl font-black text-slate-805 tracking-tight uppercase flex items-center gap-2">
+          <h1 className="text-xl lg:text-2xl font-black text-slate-808 tracking-tight uppercase flex items-center gap-2">
             <Database className="w-5.5 h-5.5 text-rose-550" /> Platform Settings
           </h1>
-          <p className="text-slate-505 text-sm mt-1">Configure system variables, order cutoff rules, cash delivery settings, and passenger incentives globally.</p>
+          <p className="text-slate-505 text-xs lg:text-sm mt-1">Configure system variables, order cutoff rules, cash delivery settings, and passenger incentives globally.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -258,6 +264,50 @@ export default function PlatformSettingsTab({
 
               <div className="p-3.5 bg-rose-55 rounded-xl border border-rose-100 text-xs text-slate-655 font-bold">
                 <strong>Active Rule:</strong> Automatically adds "<strong>{freeProduct}</strong>" to all passenger carts with subtotal above <strong>₹{giftThreshold || 300}</strong>.
+              </div>
+            </div>
+
+            {/* Social Media Links Configuration */}
+            <div className="bg-white border border-slate-200 p-6 rounded-[32px] space-y-4 shadow-sm">
+              <h2 className="text-base font-black text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <Plus className="w-4.5 h-4.5 text-rose-600" /> Social Media Handles
+              </h2>
+
+              <p className="text-sm text-slate-500 leading-relaxed">Customize the social media links displayed dynamically inside the public website footer.</p>
+
+              <div className="space-y-4 pt-2">
+                <div>
+                  <label className="block text-sm font-bold text-slate-550 mb-1.5">Instagram URL</label>
+                  <input
+                    type="text"
+                    value={socialInstagram}
+                    onChange={(e) => updateSocialInstagram(e.target.value)}
+                    placeholder="e.g. https://instagram.com/biteonrail"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-bold focus:outline-none focus:border-rose-500 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-550 mb-1.5">Facebook URL</label>
+                  <input
+                    type="text"
+                    value={socialFacebook}
+                    onChange={(e) => updateSocialFacebook(e.target.value)}
+                    placeholder="e.g. https://facebook.com/biteonrail"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-bold focus:outline-none focus:border-rose-500 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-550 mb-1.5">Twitter / X URL</label>
+                  <input
+                    type="text"
+                    value={socialTwitter}
+                    onChange={(e) => updateSocialTwitter(e.target.value)}
+                    placeholder="e.g. https://twitter.com/biteonrail"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-bold focus:outline-none focus:border-rose-500 font-mono"
+                  />
+                </div>
               </div>
             </div>
           </div>

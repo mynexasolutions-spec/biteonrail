@@ -3,7 +3,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../../context/AppContext';
 import { auth, RecaptchaVerifier, signInWithPhoneNumber, isFirebaseConfigured } from '../../lib/firebase';
-import { Phone, CheckCircle, Clock, CreditCard, Gift, AlertCircle, Coins, User, Train, MapPin, ArrowRight, ArrowLeft, Lock, Ticket, ClipboardList } from 'lucide-react';
+import { Phone, CheckCircle, Clock, CreditCard, Gift, AlertCircle, Coins, User, Train, MapPin, ArrowRight, ArrowLeft, Lock, Ticket, ClipboardList, Calendar, ShoppingBag } from 'lucide-react';
 
 const loadRazorpay = () => {
   return new Promise((resolve) => {
@@ -26,15 +26,21 @@ function CheckoutContent() {
   const stationCode = searchParams.get('station') || '';
   const pnrParam = searchParams.get('pnr') || '';
 
-  const { addOrder, loginUser, currentUser, freeProduct, disableCod, codPolicy, codCutoffHour, stations, deliveryCharge, giftThreshold } = useApp();
+  const { addOrder, loginUser, currentUser, freeProduct, disableCod, codPolicy, codCutoffHour, stations, deliveryCharge, giftThreshold, menuItems } = useApp();
 
   const [subtotal, setSubtotal] = useState(0);
   const [delivery, setDelivery] = useState(deliveryCharge || 30);
   const [total, setTotal] = useState(0);
   const [cart, setCart] = useState([]);
   const [onDemand, setOnDemand] = useState([]);
+  const [showCartDrawer, setShowCartDrawer] = useState(false);
   // Form states
   const [pnr, setPnr] = useState(pnrParam);
+  const [isCheckingPnr, setIsCheckingPnr] = useState(false);
+  const [pnrVerified, setPnrVerified] = useState(false);
+  const [isPnrNotAllotted, setIsPnrNotAllotted] = useState(false);
+  const [pnrError, setPnrError] = useState('');
+  const [trackingError, setTrackingError] = useState('');
   const [phone, setPhone] = useState('');
   const [seat, setSeat] = useState('');
   const [coach, setCoach] = useState('');
@@ -52,6 +58,12 @@ function CheckoutContent() {
     return val && val.trim() !== '' ? val : null;
   };
 
+  const isValidTrainNo = (num) => {
+    if (!num) return false;
+    const clean = String(num).trim();
+    return clean !== '' && clean !== 'N/A' && clean !== 'null' && /^\d+$/.test(clean);
+  };
+
   const [arrTimeVal, setArrTimeVal] = useState(getParam('arrTime') || '');
   const [trainNameVal, setTrainNameVal] = useState(getParam('trainName') || '');
   const [trainNumberVal, setTrainNumberVal] = useState(getParam('trainNumber') || '');
@@ -67,8 +79,8 @@ function CheckoutContent() {
   const [mobileStep, setMobileStep] = useState(1); // 1 = passenger info, 2 = bill + payment
 
   const handleManualTrack = async () => {
-    if (!trainNumberVal) {
-      alert("Please enter a valid Train Number first!");
+    if (!isValidTrainNo(trainNumberVal)) {
+      alert("Please enter a valid numeric Train Number first!");
       return;
     }
     const activeStation = stationCode || localStorage.getItem("selected_station_code") || '';
@@ -237,102 +249,175 @@ function CheckoutContent() {
     }
   }, [currentUser]);
 
-  // Auto-detect coach, seat, and delay details from PNR status check
-  useEffect(() => {
-    if (pnr && pnr.length === 10) {
-      const fetchAndSetPnrDetails = async () => {
-        try {
-          const { getPnrStatus, parsePnrData, getLiveTrainDelay } = await import('../../lib/pnr');
-          const status = await getPnrStatus(pnr);
-          const parsed = await parsePnrData(status);
-          if (parsed) {
-            if (parsed.passengers?.length > 0) {
-              setCoach((parsed.passengers[0].coach || '').toUpperCase());
-              setSeat((parsed.passengers[0].seat || '').toUpperCase());
-            }
+  const handlePnrVerification = async (forcedPnr = pnr) => {
+    if (!forcedPnr || forcedPnr.length !== 10) {
+      setPnrError("Please enter a valid 10-digit PNR.");
+      return;
+    }
+    try {
+      setIsCheckingPnr(true);
+      setPnrVerified(false);
+      setPnrError('');
+      setLiveDelay(null);
+      setCalculatedArrTime('');
+      setTrackingTimeline(null);
+      setFullTrackingData(null);
+      setTrackingError('');
 
-            let currentTrainNo = trainNumberVal;
-            if (parsed.trainNumber) {
-              currentTrainNo = parsed.trainNumber;
-              setTrainNumberVal(parsed.trainNumber);
-              localStorage.setItem("checkout_train_number", parsed.trainNumber);
-            }
-            if (parsed.trainName) {
-              setTrainNameVal(parsed.trainName);
-              localStorage.setItem("checkout_train_name", parsed.trainName);
-            }
-            if (parsed.dateOfJourney) {
-              localStorage.setItem("checkout_doj", parsed.dateOfJourney);
-            }
+      const { getPnrStatus, parsePnrData, getLiveTrainDelay } = await import('../../lib/pnr');
+      const status = await getPnrStatus(forcedPnr);
+      const parsed = await parsePnrData(status);
+      if (parsed && !parsed.Error && !parsed.error) {
+        let notAllotted = false;
+        if (parsed.passengers && parsed.passengers.length > 0) {
+          const firstPsgr = parsed.passengers[0];
+          const coachStr = (firstPsgr.coach || '').toUpperCase().trim();
+          const currentStatusStr = (firstPsgr.currentStatus || '').toUpperCase().trim();
+          const bookingStatusStr = (firstPsgr.bookingStatus || '').toUpperCase().trim();
+          
+          if (coachStr === '' || coachStr === 'N/A' || currentStatusStr.includes('WL') || currentStatusStr.includes('WAIT') || bookingStatusStr.includes('WL') || bookingStatusStr.includes('WAIT')) {
+            notAllotted = true;
+          }
+          
+          setCoach(coachStr);
+          setSeat((firstPsgr.seat || '').toUpperCase());
+        }
+        setIsPnrNotAllotted(notAllotted);
 
-            // Immediately fetch live delay status using the resolved train number & date of journey only if TODAY
-            const activeStation = stationCode || localStorage.getItem("selected_station_code") || '';
-            if (currentTrainNo && activeStation) {
-              const isTodayJourney = parsed.dateOfJourney ? (() => {
-                try {
-                  let dojDate = null;
-                  if (parsed.dateOfJourney.includes('-')) {
-                    const parts = parsed.dateOfJourney.split('-');
-                    if (parts.length === 3) {
-                      if (parts[0].length === 4) {
-                        dojDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-                      } else {
-                        dojDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
-                      }
-                    }
-                  }
-                  if (!dojDate || isNaN(dojDate.getTime())) {
-                    dojDate = new Date(parsed.dateOfJourney);
-                  }
-                  if (dojDate && !isNaN(dojDate.getTime())) {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    dojDate.setHours(0, 0, 0, 0);
-                    return dojDate.getTime() === today.getTime();
-                  }
-                } catch (e) { }
-                return true;
-              })() : true;
+        if (parsed.trainNumber) {
+          setTrainNumberVal(parsed.trainNumber);
+          localStorage.setItem("checkout_train_number", parsed.trainNumber);
+        }
+        if (parsed.trainName) {
+          setTrainNameVal(parsed.trainName);
+          localStorage.setItem("checkout_train_name", parsed.trainName);
+        }
+        if (parsed.dateOfJourney) {
+          setDojVal(parsed.dateOfJourney);
+          localStorage.setItem("checkout_doj", parsed.dateOfJourney);
+        }
 
-              if (isTodayJourney) {
-                const dateParam = parsed.dateOfJourney ? (() => {
-                  try {
-                    const dojDate = new Date(parsed.dateOfJourney);
-                    if (!isNaN(dojDate.getTime())) {
-                      const mm = String(dojDate.getMonth() + 1).padStart(2, '0');
-                      const dd = String(dojDate.getDate()).padStart(2, '0');
-                      const yyyy = dojDate.getFullYear();
-                      return `${dd}-${mm}-${yyyy}`;
-                    }
-                  } catch (e) { }
-                  return 'today';
-                })() : 'today';
-
-                const delayData = await getLiveTrainDelay(currentTrainNo, dateParam, activeStation);
-                if (delayData) {
-                  setLiveDelay(delayData);
-                  if (delayData.actualTime && delayData.actualTime !== '--:--') {
-                    setCalculatedArrTime(delayData.actualTime);
-                    localStorage.setItem("checkout_arr_time", delayData.actualTime);
-                  }
+        // Live delay check
+        const activeStation = stationCode || localStorage.getItem("selected_station_code") || '';
+        if (parsed.trainNumber && activeStation) {
+          const calculateSourceStartDate = (dojStr, boardingStation, routeStops) => {
+            if (!dojStr) return 'today';
+            try {
+              const parts = dojStr.split(/[-/]/);
+              let dojDate;
+              if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                  dojDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                } else {
+                  dojDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
                 }
-                // Immediately fetch full routing timeline
-                fetch(`/api/track-train?trainNo=${currentTrainNo}&date=${dateParam}`)
-                  .then(r => r.json())
-                  .then(resData => {
-                    if (resData.success && resData.data) {
-                      setTrackingTimeline(resData.data.timeline || resData.data.stations || null);
-                      setFullTrackingData(resData.data);
-                    }
-                  }).catch(e => console.warn("Timeline fetch failed:", e));
+              } else {
+                dojDate = new Date(dojStr);
               }
+              if (isNaN(dojDate.getTime())) return dojStr;
+
+              let dayOffset = 0;
+              if (Array.isArray(routeStops) && boardingStation) {
+                const match = routeStops.find(s => (s.stationCode || s.code || '').toUpperCase() === boardingStation.toUpperCase());
+                if (match && match.day) {
+                  dayOffset = Math.max(0, parseInt(match.day, 10) - 1);
+                }
+              }
+
+              if (dayOffset > 0) {
+                dojDate.setDate(dojDate.getDate() - dayOffset);
+              }
+
+              const yyyy = dojDate.getFullYear();
+              const mm = String(dojDate.getMonth() + 1).padStart(2, '0');
+              const dd = String(dojDate.getDate()).padStart(2, '0');
+              return `${dd}-${mm}-${yyyy}`;
+            } catch (e) {
+              return dojStr;
+            }
+          };
+
+          const dojParam = parsed.dateOfJourney ? calculateSourceStartDate(parsed.dateOfJourney, parsed.boardingPoint || parsed.sourceStation, parsed.routeStops) : 'today';
+
+          const delayData = await getLiveTrainDelay(parsed.trainNumber, dojParam, activeStation);
+          if (delayData) {
+            setLiveDelay(delayData);
+            if (delayData.actualTime && delayData.actualTime !== '--:--') {
+              setCalculatedArrTime(delayData.actualTime);
+              localStorage.setItem("checkout_arr_time", delayData.actualTime);
             }
           }
-        } catch (err) {
-          console.warn("PNR auto-fill check failed:", err);
+
+          const resTrack = await fetch(`/api/track-train?trainNo=${parsed.trainNumber}&date=${dojParam}`);
+          if (resTrack.ok) {
+            const trackData = await resTrack.json();
+            if (trackData.success && trackData.data) {
+              setTrackingTimeline(trackData.data.timeline || trackData.data.stations || null);
+              setFullTrackingData(trackData.data);
+              setTrackingError('');
+
+              // Calculate station-specific arrival date based on PNR tracking schedule
+              const stationsArray = trackData.data.timeline || trackData.data.stations || [];
+              if (stationsArray.length > 0 && activeStation) {
+                const matchedStop = stationsArray.find(s => (s.stationCode || s.code || '').toUpperCase() === activeStation.toUpperCase());
+                if (matchedStop) {
+                  const arrivalTimeStr = matchedStop.arrival?.actual || matchedStop.arrival?.scheduled || matchedStop.departure?.actual || matchedStop.departure?.scheduled || '';
+                  if (arrivalTimeStr.includes(' ')) {
+                    const parts = arrivalTimeStr.split(' ');
+                    const datePart = parts[1];
+                    const dateParts = datePart.split('-');
+                    if (dateParts.length >= 2) {
+                      let day = parseInt(dateParts[0], 10);
+                      let monthStr = dateParts[1];
+                      let month = new Date().getMonth();
+                      const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+                      const idx = months.findIndex(m => monthStr.toLowerCase().startsWith(m));
+                      if (idx !== -1) {
+                        month = idx;
+                      } else {
+                        month = parseInt(monthStr, 10) - 1;
+                      }
+                      let year = new Date().getFullYear();
+                      if (dateParts.length === 3) {
+                        year = parseInt(dateParts[2], 10);
+                      }
+                      const arrivalDate = new Date(year, month, day);
+                      const yyyy = arrivalDate.getFullYear();
+                      const mm = String(arrivalDate.getMonth() + 1).padStart(2, '0');
+                      const dd = String(arrivalDate.getDate()).padStart(2, '0');
+                      const formattedArrivalDate = `${yyyy}-${mm}-${dd}`;
+                      setDojVal(formattedArrivalDate);
+                      localStorage.setItem("checkout_doj", formattedArrivalDate);
+                    }
+                  }
+                }
+              }
+            } else if (trackData.success === false && trackData.error && String(trackData.error).toLowerCase().includes('greater than today')) {
+              setTrackingError("Train journey has not started from the source station yet for this date. Please verify your boarding date.");
+            } else {
+              setTrackingError('');
+            }
+          }
         }
-      };
-      fetchAndSetPnrDetails();
+        setPnrVerified(true);
+      }
+    } catch (err) {
+      console.warn("PNR auto-fill check failed:", err);
+      const errMsg = String(err.message || '').toLowerCase();
+      if (errMsg.includes('400') || errMsg.includes('invalid') || errMsg.includes('bad request') || errMsg.includes('fail')) {
+        setPnrError("Invalid PNR Number. Please check and try again.");
+      } else {
+        setPnrError("Unable to verify PNR. Please check and try again later.");
+      }
+    } finally {
+      setIsCheckingPnr(false);
+    }
+  };
+
+  // Auto-detect details when PNR length is 10 digits
+  useEffect(() => {
+    if (pnr && pnr.length === 10) {
+      handlePnrVerification(pnr);
     }
   }, [pnr]);
 
@@ -340,7 +425,7 @@ function CheckoutContent() {
   useEffect(() => {
     if (pnr) return; // Skip since PNR flow handles delay inside its own block
     const activeStation = stationCode || localStorage.getItem("selected_station_code") || '';
-    if (trainNumberVal && activeStation) {
+    if (isValidTrainNo(trainNumberVal) && activeStation) {
       const fetchDelay = async () => {
         try {
           const { getLiveTrainDelay } = await import('../../lib/pnr');
@@ -385,6 +470,48 @@ function CheckoutContent() {
               if (resData.success && resData.data) {
                 setTrackingTimeline(resData.data.timeline || resData.data.stations || null);
                 setFullTrackingData(resData.data);
+                setTrackingError('');
+
+                // Calculate station-specific arrival date based on manual tracking schedule
+                const stationsArray = resData.data.timeline || resData.data.stations || [];
+                if (stationsArray.length > 0 && activeStation) {
+                  const matchedStop = stationsArray.find(s => (s.stationCode || s.code || '').toUpperCase() === activeStation.toUpperCase());
+                  if (matchedStop) {
+                    const arrivalTimeStr = matchedStop.arrival?.actual || matchedStop.arrival?.scheduled || matchedStop.departure?.actual || matchedStop.departure?.scheduled || '';
+                    if (arrivalTimeStr.includes(' ')) {
+                      const parts = arrivalTimeStr.split(' ');
+                      const datePart = parts[1];
+                      const dateParts = datePart.split('-');
+                      if (dateParts.length >= 2) {
+                        let day = parseInt(dateParts[0], 10);
+                        let monthStr = dateParts[1];
+                        let month = new Date().getMonth();
+                        const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+                        const idx = months.findIndex(m => monthStr.toLowerCase().startsWith(m));
+                        if (idx !== -1) {
+                          month = idx;
+                        } else {
+                          month = parseInt(monthStr, 10) - 1;
+                        }
+                        let year = new Date().getFullYear();
+                        if (dateParts.length === 3) {
+                          year = parseInt(dateParts[2], 10);
+                        }
+                        const arrivalDate = new Date(year, month, day);
+                        const yyyy = arrivalDate.getFullYear();
+                        const mm = String(arrivalDate.getMonth() + 1).padStart(2, '0');
+                        const dd = String(arrivalDate.getDate()).padStart(2, '0');
+                        const formattedArrivalDate = `${yyyy}-${mm}-${dd}`;
+                        setDojVal(formattedArrivalDate);
+                        localStorage.setItem("checkout_doj", formattedArrivalDate);
+                      }
+                    }
+                  }
+                }
+              } else if (resData.success === false && resData.error && String(resData.error).toLowerCase().includes('greater than today')) {
+                setTrackingError("Train journey has not started from the source station yet for this date. Please verify your boarding date.");
+              } else {
+                setTrackingError('');
               }
             }).catch(e => console.warn("Timeline fetch failed in effect:", e));
         } catch (err) {
@@ -474,16 +601,162 @@ function CheckoutContent() {
             return;
           }
         }
+
+        // 4. Live timeline passed check
+        if (trackingTimeline && trackingTimeline.length > 0) {
+          const matchedTimelineStn = trackingTimeline.find(s => (s.stationCode || s.code || '').toUpperCase() === code.toUpperCase());
+          if (matchedTimelineStn) {
+            const rawActual = matchedTimelineStn.departure?.actual || matchedTimelineStn.arrival?.actual;
+            const rawScheduled = matchedTimelineStn.departure?.scheduled || matchedTimelineStn.arrival?.scheduled;
+
+            const parseLiveDateTime = (timeStr, baseYear = new Date().getFullYear()) => {
+              if (!timeStr || timeStr === 'SRC' || timeStr === 'DST' || timeStr === '--') return null;
+              const cleanStr = timeStr.replace('*', '').trim();
+              const parts = cleanStr.split(' ');
+              if (parts.length < 2) return null;
+              const [timePart, datePart] = parts;
+              const [hrs, mins] = timePart.split(':').map(Number);
+
+              const dateParts = datePart.split('-');
+              let day = 1;
+              let month = 0;
+              let year = baseYear;
+
+              if (dateParts.length >= 2) {
+                day = parseInt(dateParts[0], 10);
+                const monthStr = dateParts[1];
+                const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+                const idx = months.findIndex(m => monthStr.toLowerCase().startsWith(m));
+                if (idx !== -1) {
+                  month = idx;
+                } else {
+                  month = parseInt(monthStr, 10) - 1;
+                }
+              }
+              if (dateParts.length === 3) {
+                year = parseInt(dateParts[2], 10);
+              }
+
+              return new Date(year, month, day, hrs, mins, 0, 0);
+            };
+
+            const depDate = parseLiveDateTime(rawActual || rawScheduled);
+            const isPassed = depDate ? (depDate.getTime() < new Date().getTime()) : (matchedTimelineStn.status === 'departed' || matchedTimelineStn.status === 'passed' || matchedTimelineStn.departure?.hasDeparted || false);
+
+            if (isPassed) {
+              setIsClosed(true);
+              return;
+            }
+          }
+        }
+
         setIsClosed(false);
       }
     }
-  }, [stationCode, stations, calculatedArrTime, arrTimeVal]);
+  }, [stationCode, stations, calculatedArrTime, arrTimeVal, trackingTimeline, trackingError]);
 
   const handlePlaceOrderSubmit = async (e) => {
     if (e) e.preventDefault();
 
+    // 1. Fetch and verify latest station details from database dynamically
+    const code = stationCode || localStorage.getItem("selected_station_code") || '';
+    if (code) {
+      try {
+        const { supabase } = await import('../../lib/supabase');
+        const { data: stData, error: stErr } = await supabase
+          .from('stations')
+          .select('*')
+          .eq('code', code.toUpperCase())
+          .single();
+
+        if (stData && !stErr) {
+          // Check suspended status
+          if (stData.is_active === false) {
+            alert("Ordering is temporarily suspended by the kitchen manager at this station.");
+            setIsClosed(true);
+            return;
+          }
+
+          // Check operational hours
+          const now = new Date();
+          const currentHour = now.getHours();
+          const currentMinute = now.getMinutes();
+          const currentTimeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+          const openTime = stData.open_time || '00:00';
+          const closeTime = stData.close_time || '23:59';
+
+          const isTimeInWindow = (current, open, close) => {
+            if (open === close) return true;
+            if (open < close) {
+              return current >= open && current <= close;
+            } else {
+              return current >= open || current <= close;
+            }
+          };
+
+          if (!isTimeInWindow(currentTimeStr, openTime, closeTime)) {
+            alert(`Ordering is closed. The operational window at this station is from ${openTime} to ${closeTime}.`);
+            setIsClosed(true);
+            return;
+          }
+
+          // Check cutoff buffer time
+          const targetTime = calculatedArrTime || arrTimeVal;
+          if (targetTime) {
+            const bufferLimit = stData.buffer_minutes || 60;
+            const isBookingClosed = (arrivalTimeStr, bufferVal) => {
+              if (!arrivalTimeStr || arrivalTimeStr === '--:--') return false;
+              try {
+                const [arrHrs, arrMins] = arrivalTimeStr.split(':').map(Number);
+                let arrDate = new Date();
+                const savedDoj = typeof window !== 'undefined' ? localStorage.getItem("checkout_doj") : '';
+                if (savedDoj) {
+                  let parsedDOJ = null;
+                  if (savedDoj.includes('-')) {
+                    const parts = savedDoj.split('-');
+                    if (parts.length === 3) {
+                      if (parts[0].length === 4) {
+                        parsedDOJ = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                      } else {
+                        parsedDOJ = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+                      }
+                    }
+                  }
+                  if (!parsedDOJ || isNaN(parsedDOJ.getTime())) {
+                    parsedDOJ = new Date(savedDoj);
+                  }
+                  if (parsedDOJ && !isNaN(parsedDOJ.getTime())) {
+                    arrDate = parsedDOJ;
+                  }
+                }
+                arrDate.setHours(arrHrs, arrMins, 0, 0);
+                const diffMs = arrDate.getTime() - now.getTime();
+                const diffMins = Math.floor(diffMs / 60000);
+                return diffMins < bufferVal;
+              } catch (e) {
+                return false;
+              }
+            };
+
+            if (isBookingClosed(targetTime, bufferLimit)) {
+              alert("Ordering has been closed for this station because the train is scheduled to arrive soon.");
+              setIsClosed(true);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Real-time DB cutoff verification failed:", err);
+      }
+    }
+
     if (isClosed) {
       alert("Ordering has been closed for this station because the train is scheduled to arrive soon.");
+      return;
+    }
+
+    if (isPnrNotAllotted) {
+      alert("Food ordering is disabled because your seat has not been allocated yet. Please order only after your seat is allocated!");
       return;
     }
 
@@ -496,8 +769,15 @@ function CheckoutContent() {
       return;
     }
 
+    const isDirectStation = !!searchParams.get('station');
+    if (!isDirectStation && !pnrVerified) {
+      alert("Please verify your PNR number first.");
+      return;
+    }
+
     if (currentUser && currentUser === phone) {
-      if (mobileStep === 1) {
+      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+      if (mobileStep === 1 && !isDesktop) {
         setMobileStep(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
@@ -519,7 +799,8 @@ function CheckoutContent() {
 
     const onOtpVerified = () => {
       loginUser(phone);
-      if (mobileStep === 1) {
+      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+      if (mobileStep === 1 && !isDesktop) {
         setOtpSent(false);
         setMobileStep(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -553,10 +834,6 @@ function CheckoutContent() {
   const processOrderPlacement = async () => {
     if (paymentMode === 'online') {
       setIsVerifying(true);
-      // If no key in env, use standard Razorpay Test Key so it opens in Test Mode
-      const razorpayKeyId = (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID && process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID.trim() !== '')
-        ? process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
-        : 'rzp_test_5HwKNuLq7S2c2e'; // Standard public test key fallback for local testing
 
       const loaded = await loadRazorpay();
       if (!loaded) {
@@ -565,14 +842,62 @@ function CheckoutContent() {
         return;
       }
 
+      // Create Razorpay order on server-side
+      let serverOrder = null;
+      try {
+        const orderRes = await fetch('/api/razorpay/order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: total })
+        });
+        const orderResult = await orderRes.json();
+        if (!orderRes.ok || !orderResult.success) {
+          throw new Error(orderResult.error || 'Failed to create order on server');
+        }
+        serverOrder = orderResult.order;
+      } catch (err) {
+        console.error('Server order creation failed:', err);
+        alert(`Failed to initiate secure payment: ${err.message}. Please try again.`);
+        setIsVerifying(false);
+        return;
+      }
+
+      const razorpayKeyId = (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID && process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID.trim() !== '')
+        ? process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+        : 'rzp_test_T9qhotcNcODkpO';
+
       const options = {
         key: razorpayKeyId,
-        amount: Math.round(total * 100),
-        currency: 'INR',
+        amount: serverOrder.amount,
+        currency: serverOrder.currency,
         name: 'BiteOnRail',
         description: 'Food Delivery at Berth - Station: ' + stationCode,
-        handler: function (response) {
-          finalizeOrder(response.razorpay_payment_id);
+        order_id: serverOrder.id,
+        handler: async function (response) {
+          setIsVerifying(true);
+          try {
+            // Verify payment signature on server-side
+            const verifyRes = await fetch('/api/razorpay/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+            const verifyResult = await verifyRes.json();
+            if (verifyRes.ok && verifyResult.success) {
+              finalizeOrder(response.razorpay_payment_id);
+            } else {
+              alert(`Payment verification failed: ${verifyResult.error || 'Invalid signature'}`);
+              setIsVerifying(false);
+            }
+          } catch (err) {
+            console.error('Verification call failed:', err);
+            alert('Verification request failed. Please contact support.');
+            setIsVerifying(false);
+          }
         },
         prefill: {
           contact: '+91' + phone,
@@ -597,12 +922,29 @@ function CheckoutContent() {
         rzp.open();
       } catch (err) {
         console.error('Razorpay initiation failed:', err);
-        alert('Razorpay checkout failed to launch. Proceeding with COD flow.');
+        alert('Razorpay checkout failed to launch. Please reload and try again.');
         setIsVerifying(false);
       }
     } else {
       finalizeOrder('COD');
     }
+  };
+
+  const updateCartItemQuantity = (index, newQty) => {
+    let updatedCart = [...cart];
+    if (newQty <= 0) {
+      updatedCart.splice(index, 1);
+    } else {
+      updatedCart[index].quantity = newQty;
+    }
+    setCart(updatedCart);
+    localStorage.setItem("s_cart", JSON.stringify(updatedCart));
+
+    // Recalculate subtotal
+    const newSubtotal = updatedCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    setSubtotal(newSubtotal);
+    localStorage.setItem("checkout_subtotal", String(newSubtotal));
+    setTotal(newSubtotal + delivery);
   };
 
   const finalizeOrder = (paymentId) => {
@@ -631,7 +973,11 @@ function CheckoutContent() {
       coach: String(coach || '').toUpperCase(),
       stationCode,
       platform: platformNo,
-      arrTime: arrTimeVal || getParam('arrTime') || localStorage.getItem("checkout_arr_time") || 'N/A',
+      arrTime: (() => {
+        const raw = arrTimeVal || getParam('arrTime') || localStorage.getItem("checkout_arr_time") || '';
+        const match = String(raw).match(/\d{2}:\d{2}/);
+        return match ? match[0] : (raw || 'N/A');
+      })(),
       trainName: trainNameVal || getParam('trainName') || localStorage.getItem("checkout_train_name") || 'N/A',
       trainNumber: trainNumberVal || getParam('trainNumber') || localStorage.getItem("checkout_train_number") || 'N/A',
       doj: dojVal || localStorage.getItem("checkout_doj") || new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
@@ -677,26 +1023,26 @@ function CheckoutContent() {
               <CheckCircle className="w-6 h-6 md:w-8 md:h-8 text-white" strokeWidth={2.5} />
             </div>
             <div>
-              <h1 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight leading-tight">Order Confirmed! 🎉</h1>
-              <p className="text-slate-500 text-[10px] md:text-sm mt-0.5 font-medium">
-                Your food is being prepared · Delivery to <span className="text-rose-600 font-extrabold">Coach {placedOrderDetails.coach}, Seat {placedOrderDetails.seat}</span>
+              <h1 className="text-xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">Order Confirmed! 🎉</h1>
+              <p className="text-slate-500 text-[10px] md:text-base mt-1.5 font-semibold">
+                Your food is being prepared · Delivery to <span className="text-rose-600 font-black">Coach {placedOrderDetails.coach}, Seat {placedOrderDetails.seat}</span>
               </p>
             </div>
           </div>
 
           {/* 2-Column Layout for Desktop to fit in 100vh */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-stretch">
-            
+
             {/* Left Side: Receipt Card details */}
             <div className="md:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-lg overflow-visible flex flex-col justify-between">
               <div>
                 {/* Rose gradient header */}
                 <div className="bg-gradient-to-r from-rose-600 to-rose-500 rounded-t-[14px] px-4 py-3 md:py-4 flex justify-between items-center">
                   <div>
-                    <p className="text-rose-200 text-[10px] md:text-[9px] font-bold uppercase tracking-widest">Order Reference</p>
-                    <p className="text-white font-mono font-black text-base md:text-base tracking-wider mt-0.5">{placedOrderDetails.id}</p>
+                    <p className="text-rose-200 text-[10px] md:text-xs font-bold uppercase tracking-widest">Order Reference</p>
+                    <p className="text-white font-mono font-black text-base md:text-lg tracking-wider mt-0.5">{placedOrderDetails.id}</p>
                   </div>
-                  <span className="bg-white/20 border border-white/30 text-white text-[10px] md:text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
+                  <span className="bg-white/20 border border-white/30 text-white text-[10px] md:text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
                     ✓ {placedOrderDetails.status}
                   </span>
                 </div>
@@ -712,29 +1058,65 @@ function CheckoutContent() {
                   {/* Details grid */}
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 md:gap-y-3.5">
                     <div>
-                      <p className="text-slate-400 text-[10px] md:text-[10px] font-black uppercase tracking-widest mb-0.5">PNR Number</p>
-                      <p className="text-slate-800 font-bold font-mono tracking-wider text-sm md:text-sm">{placedOrderDetails.pnr || '—'}</p>
+                      <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5">PNR Number</p>
+                      <p className="text-slate-800 font-bold font-mono tracking-wider text-sm md:text-[15px]">{placedOrderDetails.pnr || '—'}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-[10px] md:text-[10px] font-black uppercase tracking-widest mb-0.5">Mobile Number</p>
-                      <p className="text-slate-800 font-bold font-mono tracking-wider text-sm md:text-sm">{placedOrderDetails.phone || '—'}</p>
+                      <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5">Mobile Number</p>
+                      <p className="text-slate-800 font-bold font-mono tracking-wider text-sm md:text-[15px]">{placedOrderDetails.phone || '—'}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-[10px] md:text-[10px] font-black uppercase tracking-widest mb-0.5">Berth Details</p>
-                      <p className="text-slate-800 font-bold text-sm md:text-sm">
+                      <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5">Berth Details</p>
+                      <p className="text-slate-800 font-bold text-sm md:text-[15px]">
                         Coach <span className="text-rose-600">{placedOrderDetails.coach}</span> · Seat <span className="text-rose-600">{placedOrderDetails.seat}</span>
                       </p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-[10px] md:text-[10px] font-black uppercase tracking-widest mb-0.5">Delivery Station</p>
-                      <p className="text-slate-800 font-bold text-sm md:text-sm flex items-center gap-1">
+                      <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5">Delivery Station</p>
+                      <p className="text-slate-800 font-bold text-sm md:text-[15px] flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                         <span className="truncate">{stationName}</span>
                       </p>
                     </div>
+                    <div>
+                      <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5">Expected Delivery Time</p>
+                      <p className="text-slate-800 font-bold text-sm md:text-[15px] flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                        <span className="font-mono">
+                          {(() => {
+                             const raw = placedOrderDetails.arrTime || '';
+                             const match = String(raw).match(/\d{2}:\d{2}/);
+                             return match ? match[0] : (raw || '—');
+                           })()} ({(() => {
+                             const dojStr = placedOrderDetails.doj || '';
+                             if (!dojStr) return '—';
+                             try {
+                               const clean = dojStr.replace(/\//g, '-').trim();
+                               if (clean.includes('-')) {
+                                 const parts = clean.split('-');
+                                 if (parts.length === 3) {
+                                   if (parts[0].length === 4) { // YYYY-MM-DD
+                                     return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                                   }
+                                   return clean;
+                                 }
+                               }
+                               const d = new Date(dojStr);
+                               if (!isNaN(d.getTime())) {
+                                 const dd = String(d.getDate()).padStart(2, '0');
+                                 const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                 const yyyy = d.getFullYear();
+                                 return `${dd}-${mm}-${yyyy}`;
+                               }
+                             } catch (e) {}
+                             return dojStr;
+                           })()})
+                        </span>
+                      </p>
+                    </div>
                     <div className="col-span-2">
-                      <p className="text-slate-400 text-[10px] md:text-[10px] font-black uppercase tracking-widest mb-0.5">Payment</p>
-                      <p className={`font-black text-sm md:text-sm flex items-center gap-1 ${isOnline ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5">Payment</p>
+                      <p className={`font-black text-sm md:text-[15px] flex items-center gap-1 ${isOnline ? 'text-emerald-600' : 'text-amber-600'}`}>
                         <CreditCard className="w-3.5 h-3.5 shrink-0" />
                         {isOnline ? 'Paid Online ✓' : 'Cash on Delivery'}
                       </p>
@@ -745,17 +1127,17 @@ function CheckoutContent() {
 
                   {/* Food Items */}
                   <div className="space-y-1.5 max-h-[110px] overflow-y-auto pr-1">
-                    <p className="text-slate-400 text-[10px] md:text-[10px] font-black uppercase tracking-widest">Food Items</p>
+                    <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest">Food Items</p>
                     <div className="space-y-1.5">
                       {placedOrderDetails.items.map((item, idx) => (
                         <div key={idx} className="flex justify-between items-center">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="bg-rose-50 text-rose-600 text-[10px] md:text-[9px] font-black w-4.5 h-4.5 rounded flex items-center justify-center border border-rose-100 shrink-0">
+                            <span className="bg-rose-50 text-rose-600 text-[10px] md:text-xs font-black w-4.5 h-4.5 rounded flex items-center justify-center border border-rose-100 shrink-0 font-mono">
                               {item.quantity}
                             </span>
-                            <span className="text-slate-700 text-sm md:text-sm font-medium truncate">{item.name}</span>
+                            <span className="text-slate-700 text-sm md:text-[15px] font-semibold truncate">{item.name}</span>
                           </div>
-                          <span className="text-slate-800 font-bold text-sm md:text-sm shrink-0">₹{item.price * item.quantity}</span>
+                          <span className="text-slate-800 font-black text-sm md:text-[15px] shrink-0">₹{item.price * item.quantity}</span>
                         </div>
                       ))}
                     </div>
@@ -792,17 +1174,17 @@ function CheckoutContent() {
 
               {/* Total Paid Row */}
               <div className="bg-gradient-to-r from-rose-600 to-rose-500 rounded-b-[14px] px-4 py-3 md:py-4 flex justify-between items-center shadow-inner mt-auto">
-                <span className="text-rose-200 text-[10px] md:text-[10px] font-black uppercase tracking-widest">Total Amount</span>
-                <p className="text-xl md:text-2xl font-black text-white">₹{placedOrderDetails.total}</p>
+                <span className="text-rose-200 text-[10px] md:text-xs font-black uppercase tracking-widest">Total Amount</span>
+                <p className="text-xl md:text-3xl font-black text-white">₹{placedOrderDetails.total}</p>
               </div>
             </div>
 
             {/* Right Side: Tracking & Actions */}
             <div className="md:col-span-5 flex flex-col justify-between gap-4">
-              
+ 
               {/* Order Tracking Timeline */}
               <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex-1 flex flex-col justify-center">
-                <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest mb-4 text-center">Order Tracking</p>
+                <p className="text-slate-400 text-[8px] md:text-xs font-black uppercase tracking-widest mb-4 text-center">Order Tracking</p>
                 <div className="flex flex-row md:flex-col justify-between md:justify-center md:gap-4 items-center md:items-start px-2">
                   {['Placed', 'Preparing', 'On the Way', 'Delivered'].map((step, idx) => (
                     <React.Fragment key={step}>
@@ -813,7 +1195,7 @@ function CheckoutContent() {
                           }`}>
                           {idx === 0 ? '✓' : idx + 1}
                         </div>
-                        <span className={`text-[8px] md:text-xs font-black uppercase tracking-wider leading-tight ${idx === 0 ? 'text-rose-650' : 'text-slate-400'}`}>{step}</span>
+                        <span className={`text-[8px] md:text-sm font-black uppercase tracking-wider leading-tight ${idx === 0 ? 'text-rose-655' : 'text-slate-400'}`}>{step}</span>
                       </div>
                       {idx < 3 && (
                         <div className={`hidden md:block w-0.5 h-6 bg-slate-100 ml-3.5`} />
@@ -828,13 +1210,13 @@ function CheckoutContent() {
                 <div className="flex justify-center w-full">
                   <button
                     onClick={() => router.push('/orders')}
-                    className="w-fit bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3.5 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                    className="w-fit bg-slate-900 hover:bg-slate-800 text-white font-black text-xs md:text-sm py-3.5 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                   >
                     <ClipboardList className="w-4 h-4 shrink-0 text-rose-500" />
                     <span>View My Orders</span>
                   </button>
                 </div>
-                <p className="text-center text-slate-400 text-[8px] font-medium leading-none">
+                <p className="text-center text-slate-400 text-[10px] md:text-xs font-semibold leading-none">
                   Placed at {placedOrderDetails.timestamp}
                 </p>
               </div>
@@ -885,30 +1267,30 @@ function CheckoutContent() {
       {/* Decorative Train Track Background Grid Accent */}
       <div className="absolute top-0 left-0 right-0 h-[300px] opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #e11d48 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-4xl lg:max-w-6xl mx-auto px-2.5 sm:px-6 lg:px-8 relative z-10">
 
         <div className="hidden md:block mb-10 text-center sm:text-left">
           <span className="text-[10px] font-black uppercase tracking-widest text-indigo-700 bg-indigo-50 border border-indigo-100 px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5 mb-3">
-            <Train className="w-3.5 h-3.5 text-indigo-650" /> SafeRail Berth Delivery
+            <Train className="w-3.5 h-3.5 text-indigo-650" /> BiteOnRail Berth Delivery
           </span>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Complete Booking</h1>
-          <p className="text-slate-500 text-xs mt-2.5 font-bold">Verify your train ticket information for hot food delivery straight to your seat.</p>
+          <p className="text-slate-500 text-xs md:text-sm mt-2.5 font-bold">Verify your train ticket information for hot food delivery straight to your seat.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* Form panel */}
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-7">
             {/* Mobile Step 1: Passenger Info */}
             <div className={`${mobileStep !== 1 ? 'hidden md:block' : 'block'}`}>
               {!otpSent ? (
-                <form onSubmit={handlePlaceOrderSubmit} className="bg-white rounded-[32px] border-2 border-dashed border-slate-200 shadow-xl p-5 sm:p-8 space-y-6 relative overflow-hidden">
+                <form onSubmit={handlePlaceOrderSubmit} className="bg-white rounded-[32px] border-2 border-dashed border-slate-200 shadow-xl p-4 sm:p-8 space-y-6 relative overflow-hidden">
                   {/* Left Ticket Notch */}
                   <div className="w-4 h-8 bg-slate-50 border-r-2 border-dashed border-slate-200 rounded-r-full absolute left-0 top-1/2 -translate-y-1/2 z-10" />
                   {/* Right Ticket Notch */}
                   <div className="w-4 h-8 bg-slate-50 border-l-2 border-dashed border-slate-200 rounded-l-full absolute right-0 top-1/2 -translate-y-1/2 z-10" />
 
-                  {isClosed && (() => {
+                  {isClosed && !trackingError && (() => {
                     const reasonText = getClosedReason();
                     const isSuspended = reasonText.startsWith("Kitchen Suspended");
                     const isHours = reasonText.startsWith("Closed Hours");
@@ -925,16 +1307,45 @@ function CheckoutContent() {
                     );
                   })()}
 
+                  {pnrVerified && trackingError && pnr && pnr.length === 10 && (
+                    <div className="bg-indigo-50 border border-indigo-200 text-indigo-950 p-4 rounded-2xl text-xs sm:text-sm md:text-base font-semibold leading-relaxed flex gap-2.5 items-center">
+                      <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-650 shrink-0" />
+                      <span>Train journey has not started from the source station yet for this date. Your order is registered as an advance booking.</span>
+                    </div>
+                  )}
+
+                  {pnrVerified && fullTrackingData && fullTrackingData.statusNote && pnr && pnr.length === 10 && (
+                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-950 p-4 rounded-2xl text-xs sm:text-sm md:text-base font-semibold leading-relaxed flex gap-2.5 items-start">
+                      <Train className="w-5 h-5 text-emerald-650 shrink-0 mt-0.5 animate-pulse" />
+                      <div>
+                        <strong className="block uppercase text-[10px] tracking-wider text-emerald-700">Live Running Status</strong>
+                        <span>{fullTrackingData.statusNote}</span>
+                        {fullTrackingData.lastUpdate && (
+                          <span className="block text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">
+                            Last Updated: {fullTrackingData.lastUpdate}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
-                    <User className="w-4 h-4 text-rose-500" />
-                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Passenger Information</h2>
+                    <User className="w-4.5 h-4.5 text-rose-500" />
+                    <h2 className="text-sm sm:text-base font-black text-slate-800 uppercase tracking-wider">Passenger Information</h2>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
-                      <label className="block text-xs md:text-[11px] font-black uppercase tracking-wider text-slate-400">PNR Number</label>
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs sm:text-xs md:text-[12px] font-black uppercase tracking-wider text-slate-400">PNR Number</label>
+                        {pnrVerified && (
+                          <span className="text-[10px] text-emerald-600 font-extrabold flex items-center gap-0.5">
+                            ✓ PNR Verified
+                          </span>
+                        )}
+                      </div>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-3.5 text-slate-400">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 flex items-center justify-center">
                           <Ticket className="w-4 h-4" />
                         </span>
                         <input
@@ -942,17 +1353,41 @@ function CheckoutContent() {
                           required
                           maxLength={10}
                           value={pnr}
-                          onChange={(e) => setPnr(e.target.value.replace(/\D/g, ''))}
+                          onChange={(e) => {
+                            setPnr(e.target.value.replace(/\D/g, ''));
+                            setPnrVerified(false);
+                            setPnrError('');
+                            setIsPnrNotAllotted(false);
+                          }}
                           placeholder="10-Digit PNR"
-                          className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm md:text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-mono tracking-widest font-black text-slate-800"
+                          className="w-full pl-12 pr-24 py-3.5 border border-slate-200 rounded-xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-mono tracking-widest font-black text-slate-800"
                         />
+                        <button
+                          type="button"
+                          onClick={() => handlePnrVerification()}
+                          disabled={isCheckingPnr || pnr.length !== 10}
+                          className="absolute right-1.5 top-1.5 bottom-1.5 bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black px-4 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-wider"
+                        >
+                          {isCheckingPnr ? '...' : 'Verify'}
+                        </button>
                       </div>
+                      {pnrError && (
+                        <p className="text-xs text-rose-600 font-extrabold mt-1.5 flex items-center gap-1.5 animate-fadeIn">
+                          <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                          <span>{pnrError}</span>
+                        </p>
+                      )}
+                      {isPnrNotAllotted && (
+                        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200/65 p-3 rounded-xl font-semibold leading-relaxed mt-2.5 animate-fadeIn">
+                          ⚠️ <strong>Chart Not Prepared / Waitlist:</strong> Coach/Seat number has not been allocated by Indian Railways yet. Please order only after your seat is allocated!
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs md:text-[11px] font-black uppercase tracking-wider text-slate-400">Mobile Number</label>
+                      <label className="block text-xs sm:text-xs md:text-[12px] font-black uppercase tracking-wider text-slate-400">Mobile Number</label>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-3.5 text-slate-400 text-xs md:text-sm font-bold font-mono">+91</span>
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs md:text-sm font-bold font-mono flex items-center justify-center">+91</span>
                         <input
                           type="tel"
                           required
@@ -960,15 +1395,15 @@ function CheckoutContent() {
                           value={phone}
                           onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                           placeholder="10-digit number"
-                          className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl text-sm md:text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-mono font-bold text-slate-800"
+                          className="w-full pl-14 pr-4 py-3.5 border border-slate-200 rounded-xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-mono font-bold text-slate-800"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs md:text-[11px] font-black uppercase tracking-wider text-slate-400">Coach Number</label>
+                      <label className="block text-xs sm:text-xs md:text-[12px] font-black uppercase tracking-wider text-slate-400">Coach Number</label>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-3.5 text-slate-400">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 flex items-center justify-center">
                           <Train className="w-4 h-4" />
                         </span>
                         <input
@@ -977,15 +1412,16 @@ function CheckoutContent() {
                           value={coach}
                           onChange={(e) => setCoach(e.target.value.toUpperCase())}
                           placeholder="e.g. S4, B1"
-                          className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm md:text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 uppercase font-black text-slate-800"
+                          disabled={isPnrNotAllotted}
+                          className={`w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 uppercase font-black text-slate-800 transition-all ${isPnrNotAllotted ? 'bg-slate-50 text-slate-400 cursor-not-allowed border-slate-200' : ''}`}
                         />
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs md:text-[11px] font-black uppercase tracking-wider text-slate-400">Seat / Berth Number</label>
+                      <label className="block text-xs sm:text-xs md:text-[12px] font-black uppercase tracking-wider text-slate-400">Seat / Berth Number</label>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-3.5 text-slate-400">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 flex items-center justify-center">
                           <MapPin className="w-4 h-4" />
                         </span>
                         <input
@@ -994,7 +1430,8 @@ function CheckoutContent() {
                           value={seat}
                           onChange={(e) => setSeat(e.target.value)}
                           placeholder="e.g. 42, 17"
-                          className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm md:text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 uppercase font-black text-slate-800"
+                          disabled={isPnrNotAllotted}
+                          className={`w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 uppercase font-black text-slate-800 transition-all ${isPnrNotAllotted ? 'bg-slate-50 text-slate-400 cursor-not-allowed border-slate-200' : ''}`}
                         />
                       </div>
                     </div>
@@ -1038,21 +1475,21 @@ function CheckoutContent() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-3.5">
                       <button
                         type="button"
                         onClick={() => setPaymentMode('online')}
-                        className={`p-5 rounded-2xl border-2 text-left flex items-start gap-4 transition-all duration-300 relative overflow-hidden ${paymentMode === 'online'
-                            ? 'border-rose-500 bg-rose-50/10 shadow-md shadow-rose-500/5'
-                            : 'border-slate-200 bg-white hover:bg-slate-50/50 shadow-sm'
+                        className={`p-4 md:p-5 rounded-2xl border-2 text-left flex items-center gap-4 transition-all duration-300 relative overflow-hidden ${paymentMode === 'online'
+                          ? 'border-rose-500 bg-rose-50/10 shadow-md shadow-rose-500/5'
+                          : 'border-slate-200 bg-white hover:bg-slate-50/50 shadow-sm'
                           }`}
                       >
                         <div className={`p-2.5 rounded-xl shrink-0 transition-all ${paymentMode === 'online' ? 'bg-rose-500 text-white shadow-md shadow-rose-500/25' : 'bg-slate-100 text-slate-400'}`}>
                           <CreditCard className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <span className="text-xs font-black block text-slate-800">Online UPI / Card</span>
-                          <span className="text-[9px] text-slate-450 font-medium">Pay via QR, Cards, Netbanking</span>
+                          <span className="text-xs md:text-base font-black block text-slate-800 leading-tight">Online UPI / Card</span>
+                          <span className="text-[10px] md:text-sm text-slate-450 font-medium block mt-1 leading-tight">Pay via QR, Cards, Netbanking</span>
                         </div>
                         <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ml-auto transition-all ${paymentMode === 'online' ? 'border-rose-500 bg-rose-500' : 'border-slate-300'}`}>
                           {paymentMode === 'online' && <span className="w-1.5 h-1.5 rounded-full bg-white block" />}
@@ -1063,17 +1500,17 @@ function CheckoutContent() {
                         type="button"
                         disabled={isPrepaidOnly}
                         onClick={() => setPaymentMode('cod')}
-                        className={`p-5 rounded-2xl border-2 text-left flex items-start gap-4 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed ${paymentMode === 'cod' && !isPrepaidOnly
-                            ? 'border-slate-700 bg-slate-55/50 shadow-md'
-                            : 'border-slate-200 bg-white hover:bg-slate-50/50 shadow-sm'
+                        className={`p-4 md:p-5 rounded-2xl border-2 text-left flex items-center gap-4 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed ${paymentMode === 'cod' && !isPrepaidOnly
+                          ? 'border-slate-700 bg-slate-55/50 shadow-md'
+                          : 'border-slate-200 bg-white hover:bg-slate-50/50 shadow-sm'
                           }`}
                       >
                         <div className={`p-2.5 rounded-xl shrink-0 transition-all ${paymentMode === 'cod' && !isPrepaidOnly ? 'bg-slate-800 text-white shadow-md shadow-slate-800/25' : 'bg-slate-100 text-slate-400'}`}>
                           <Coins className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <span className="text-xs font-black block text-slate-800">Cash on Delivery (COD)</span>
-                          <span className="text-[9px] text-slate-400 font-medium">Pay directly to delivery agent</span>
+                          <span className="text-xs md:text-base font-black block text-slate-800 leading-tight">Cash on Delivery (COD)</span>
+                          <span className="text-[10px] md:text-sm text-slate-400 font-medium block mt-1 leading-tight">Pay directly to delivery agent</span>
                         </div>
                         <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ml-auto transition-all ${paymentMode === 'cod' && !isPrepaidOnly ? 'border-slate-700 bg-slate-700' : 'border-slate-300'}`}>
                           {paymentMode === 'cod' && !isPrepaidOnly && <span className="w-1.5 h-1.5 rounded-full bg-white block" />}
@@ -1087,10 +1524,10 @@ function CheckoutContent() {
                   {/* Desktop submit button */}
                   <button
                     type="submit"
-                    disabled={isVerifying || isClosed}
-                    className="hidden md:flex w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-3.5 rounded-xl transition-all shadow-md shadow-rose-600/10 text-xs mt-4 items-center justify-center gap-1.5 disabled:bg-slate-350 disabled:cursor-not-allowed uppercase tracking-widest"
+                    disabled={isVerifying || isClosed || isPnrNotAllotted}
+                    className="hidden md:flex w-fit mx-auto px-8 bg-rose-600 hover:bg-rose-700 text-white font-black py-3.5 rounded-xl transition-all shadow-md shadow-rose-600/10 text-xs mt-4 items-center justify-center gap-1.5 disabled:bg-slate-350 disabled:cursor-not-allowed uppercase tracking-widest"
                   >
-                    {isClosed ? 'Ordering Closed for Station' : (isVerifying ? 'Processing...' : (currentUser === phone ? 'Confirm & Place Order' : 'Verify Mobile & Place Order'))}
+                    {isClosed ? 'Ordering Closed for Station' : (isPnrNotAllotted ? 'Seat Not Allotted' : (isVerifying ? 'Processing...' : (currentUser === phone ? 'Confirm & Place Order' : 'Verify Mobile & Place Order')))}
                   </button>
                 </form>
               ) : (
@@ -1139,20 +1576,64 @@ function CheckoutContent() {
           </div>
 
           {/* Invoice Summary - Desktop always visible, Mobile only in step 2 */}
-          <div className={`lg:col-span-4 ${mobileStep === 2 ? 'block' : 'hidden md:block'}`}>
+          <div className={`lg:col-span-5 ${mobileStep === 2 ? 'block' : 'hidden md:block'}`}>
             <div className="bg-white rounded-[32px] border border-slate-200 shadow-md p-6 space-y-5 relative overflow-hidden">
-              <h3 className="font-black text-slate-800 text-xs uppercase tracking-wider border-b border-slate-50 pb-3 flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-slate-405" /> Secure Order Bill
+              <h3 className="font-black text-slate-800 text-xs md:text-sm uppercase tracking-wider border-b border-slate-50 pb-3 flex items-center gap-1.5">
+                <Lock className="w-4 h-4 text-slate-400" /> Secure Order Bill
               </h3>
 
               {/* Food items summary */}
-              <div className="space-y-3">
-                {cart.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center text-xs md:text-sm">
-                    <span className="text-slate-600 font-medium">{item.name} <strong className="text-[10px] text-slate-400 font-normal">(&times; {item.quantity})</strong></span>
-                    <span className="font-bold text-slate-700">₹{item.price * item.quantity}</span>
-                  </div>
-                ))}
+              <div className="space-y-3.5">
+                {cart.map((item, idx) => {
+                  const baseId = item.id.toString().split('_')[0];
+                  const matchedItem = (menuItems || []).find(mi => mi.id.toString() === baseId);
+                  const displayImage = item.image_url || item.image || matchedItem?.image_url || matchedItem?.image;
+                  return (
+                    <div key={idx} className="flex items-start sm:items-center gap-3 bg-slate-50 border border-slate-150 p-2.5 md:p-3 rounded-2xl">
+                      {/* Item Image */}
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-white shrink-0 border border-slate-200 flex items-center justify-center">
+                        {displayImage ? (
+                          <img
+                            src={displayImage}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-slate-350">🍴</span>
+                        )}
+                      </div>
+                      {/* Content Area */}
+                      <div className="flex-grow min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        {/* Name & price each */}
+                        <div className="min-w-0">
+                          <h4 className="text-xs md:text-sm font-black text-slate-800 truncate leading-snug">{item.name}</h4>
+                          <p className="text-[10px] md:text-xs text-slate-400 font-bold mt-0.5 font-mono">₹{item.price} each</p>
+                        </div>
+                        {/* Controls and calculated price */}
+                        <div className="flex items-center justify-between sm:justify-end gap-2.5 mt-1 sm:mt-0">
+                          <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden h-7 md:h-8 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => updateCartItemQuantity(idx, item.quantity - 1)}
+                              className="px-2 h-full text-slate-500 hover:bg-slate-50 text-xs md:text-sm font-black transition-colors"
+                            >
+                              -
+                            </button>
+                            <span className="px-1 text-[11px] md:text-xs font-black text-slate-700 w-4 md:w-5 text-center">{item.quantity}</span>
+                            <button
+                              type="button"
+                              onClick={() => updateCartItemQuantity(idx, item.quantity + 1)}
+                              className="px-2 h-full text-slate-500 hover:bg-slate-50 text-xs md:text-sm font-black transition-colors"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <span className="font-extrabold text-slate-700 text-xs md:text-[15px] min-w-[50px] text-right font-mono">₹{item.price * item.quantity}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* On demand list */}
@@ -1177,7 +1658,7 @@ function CheckoutContent() {
               )}
 
               {/* Calculations */}
-              <div className="border-t border-slate-200 pt-4 space-y-2 text-xs md:text-sm font-semibold text-slate-500">
+              <div className="border-t border-slate-200 pt-4 space-y-2.5 text-xs sm:text-sm md:text-base font-semibold text-slate-500">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Subtotal</span>
                   <span className="font-bold text-slate-700">₹{subtotal}</span>
@@ -1189,9 +1670,9 @@ function CheckoutContent() {
                   </span>
                 </div>
 
-                <div className="flex justify-between text-sm md:text-base font-black text-slate-800 border-t border-slate-100 pt-3">
-                  <span className="text-slate-900 uppercase text-[10px] md:text-[11px] tracking-wider">Grand Total</span>
-                  <span className="text-lg md:text-xl text-rose-600 font-black">₹{total}</span>
+                <div className="flex justify-between text-sm sm:text-base md:text-lg font-black text-slate-800 border-t border-slate-100 pt-3">
+                  <span className="text-slate-900 uppercase text-[10px] sm:text-xs md:text-sm tracking-wider">Grand Total</span>
+                  <span className="text-lg sm:text-xl md:text-2xl text-rose-600 font-black">₹{total}</span>
                 </div>
               </div>
             </div>
@@ -1312,14 +1793,18 @@ function CheckoutContent() {
       {mobileStep === 1 && !otpSent && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-4 py-3 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
           <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Your Total</p>
-              <p className="text-base font-black text-slate-900">₹{total} <span className="text-[9px] font-normal text-slate-400">incl. all</span></p>
+            <div className="min-w-0 cursor-pointer group/money flex flex-col justify-center" onClick={() => setShowCartDrawer(true)}>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 group-hover/money:text-rose-500 transition-colors">
+                Your Total <span className="text-[8px] text-rose-500 font-black font-sans shrink-0 uppercase tracking-widest bg-rose-50 border border-rose-100/50 px-1 rounded-sm">View Details ▲</span>
+              </p>
+              <p className="text-base font-black text-slate-900 leading-tight">₹{total} <span className="text-[9px] font-normal text-slate-400">incl. all</span></p>
             </div>
             <button
               type="button"
               onClick={(e) => {
+                const isDirectStation = !!searchParams.get('station');
                 if (!pnr || pnr.length < 10) { alert('Please enter a valid 10-digit PNR number.'); return; }
+                if (!isDirectStation && !pnrVerified) { alert('Please verify your PNR number first.'); return; }
                 if (!phone || phone.length < 10) { alert('Please enter a valid 10-digit mobile number.'); return; }
                 if (!coach) { alert('Please enter your Coach Number (e.g. S4, B1).'); return; }
                 if (!seat) { alert('Please enter your Seat / Berth Number.'); return; }
@@ -1338,8 +1823,10 @@ function CheckoutContent() {
       {mobileStep === 2 && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-4 py-3 shadow-[0_-4px_24px_rgba(0,0,0,0.10)]">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Grand Total</p>
+            <div className="min-w-0 cursor-pointer group/money flex flex-col justify-center" onClick={() => setShowCartDrawer(true)}>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 group-hover/money:text-rose-500 transition-colors">
+                Grand Total <span className="text-[8px] text-rose-500 font-black font-sans shrink-0 uppercase tracking-widest bg-rose-50 border border-rose-100/50 px-1 rounded-sm">View Details ▲</span>
+              </p>
               <p className="text-lg font-black text-slate-900 leading-tight">₹{total}</p>
             </div>
             <button
@@ -1362,21 +1849,122 @@ function CheckoutContent() {
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-4 py-3 shadow-[0_-4px_24px_rgba(0,0,0,0.10)]">
           <form onSubmit={handlePlaceOrderSubmit}>
             <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Grand Total</p>
+              <div className="min-w-0 cursor-pointer group/money flex flex-col justify-center" onClick={() => setShowCartDrawer(true)}>
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 group-hover/money:text-rose-500 transition-colors">
+                  Grand Total <span className="text-[8px] text-rose-500 font-black font-sans shrink-0 uppercase tracking-widest bg-rose-50 border border-rose-100/50 px-1 rounded-sm">View Details ▲</span>
+                </p>
                 <p className="text-lg font-black text-slate-900 leading-tight">₹{total}</p>
               </div>
               <button
                 type="submit"
-                disabled={isVerifying || isClosed}
+                disabled={isVerifying || isClosed || isPnrNotAllotted}
                 className="flex-shrink-0 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black py-3 px-5 rounded-2xl text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shadow-rose-600/25 disabled:bg-slate-300 disabled:cursor-not-allowed"
               >
-                {isClosed ? 'Closed' : isVerifying ? 'Processing...' : currentUser === phone ? 'Confirm Order' : 'Place Order'}
-                {!isVerifying && !isClosed && <ArrowRight className="w-3.5 h-3.5" />}
+                {isClosed ? 'Closed' : isPnrNotAllotted ? 'Seat Not Allotted' : isVerifying ? 'Processing...' : currentUser === phone ? 'Confirm Order' : 'Place Order'}
+                {!isVerifying && !isClosed && !isPnrNotAllotted && <ArrowRight className="w-3.5 h-3.5" />}
               </button>
             </div>
           </form>
         </div>
+      )}
+
+      {/* 📱 Mobile Bottom Drawer (Basket Details sheet) */}
+      {showCartDrawer && (
+        <>
+          {/* Backdrop */}
+          <div 
+            onClick={() => setShowCartDrawer(false)}
+            className="fixed inset-0 bg-slate-950/60 z-50 backdrop-blur-xs transition-opacity duration-300 animate-fadeIn" 
+          />
+          {/* Drawer content */}
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[32px] shadow-[0_-12px_40px_rgba(0,0,0,0.15)] max-h-[85vh] overflow-y-auto flex flex-col animate-slideUp border-t border-slate-200">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-2">
+                <span className="bg-rose-50 text-rose-600 p-1.5 rounded-lg border border-rose-100">
+                  <ShoppingBag className="w-4.5 h-4.5" />
+                </span>
+                <div>
+                  <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">Your Basket Items</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{cart.length} food items selected</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowCartDrawer(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center font-black transition-all active:scale-90"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* List items block */}
+            <div className="p-5 space-y-4 overflow-y-auto flex-1 scrollbar-hide">
+              {cart.map((item, idx) => {
+                const baseId = item.id.toString().split('_')[0];
+                const matchedItem = (menuItems || []).find(mi => mi.id.toString() === baseId);
+                const displayImage = item.image_url || item.image || matchedItem?.image_url || matchedItem?.image;
+                return (
+                  <div key={idx} className="flex items-center gap-3 bg-slate-50 border border-slate-150 p-3 rounded-2xl">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-white shrink-0 border border-slate-200 flex items-center justify-center">
+                      {displayImage ? (
+                        <img src={displayImage} alt={item.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-slate-350 text-sm">🍴</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-black text-slate-800 truncate leading-snug">{item.name}</h4>
+                        <p className="text-[10px] text-slate-400 font-bold mt-0.5 font-mono">₹{item.price} each</p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        {/* Incrementor Decrementor controls */}
+                        <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden h-7 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateCartItemQuantity(idx, item.quantity - 1);
+                              if (cart.length <= 1 && item.quantity === 1) {
+                                setShowCartDrawer(false);
+                              }
+                            }}
+                            className="px-2.5 h-full text-slate-500 hover:bg-slate-50 text-xs font-black transition-colors"
+                          >
+                            -
+                          </button>
+                          <span className="px-1 text-[11px] font-black text-slate-700 w-4 text-center">{item.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => updateCartItemQuantity(idx, item.quantity + 1)}
+                            className="px-2.5 h-full text-slate-500 hover:bg-slate-50 text-xs font-black transition-colors"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <span className="font-extrabold text-slate-700 text-xs min-w-[45px] text-right font-mono">₹{item.price * item.quantity}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom summary in drawer */}
+            <div className="p-5 border-t border-slate-100 space-y-3.5 bg-slate-50/50">
+              <div className="flex justify-between text-xs font-bold text-slate-500">
+                <span>Items Subtotal</span>
+                <span>₹{subtotal}</span>
+              </div>
+              <div className="flex justify-between text-xs font-bold text-slate-500">
+                <span>Seat Delivery Fee</span>
+                <span>{Number(delivery) === 0 ? 'Free' : `₹${delivery}`}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-black text-slate-800 border-t border-slate-200/80 pt-3">
+                <span className="text-[10px] uppercase tracking-wider">Estimated Total</span>
+                <span className="text-base text-rose-600 font-black font-mono">₹{total}</span>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

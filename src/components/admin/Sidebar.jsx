@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { ChefHat, ClipboardList, Coffee, MapPin, Key, Database, User, Menu, X, LogOut, Phone, Layers } from 'lucide-react';
+import { ChefHat, ClipboardList, Coffee, MapPin, Key, Database, User, Menu, X, LogOut, Phone, Layers, Monitor, Globe } from 'lucide-react';
 
 export default function Sidebar({
   adminType,
@@ -14,9 +14,13 @@ export default function Sidebar({
   const tabs = adminType === 'global' ? [
     { id: 'orders', label: 'Live Orders', icon: ClipboardList },
     { id: 'stations', label: 'Station Manage', icon: MapPin },
+    { id: 'states', label: 'Manage States', icon: Globe },
+    { id: 'global_menu', label: 'Global Menu', icon: Globe },
+    { id: 'global_categories', label: 'Global Categories', icon: Layers },
     { id: 'admins', label: 'Station Logins', icon: Key },
     { id: 'users', label: 'Customers', icon: User },
     { id: 'contacts', label: 'Support Directory', icon: Phone },
+    { id: 'home_custom', label: 'Home Customize', icon: Monitor },
     { id: 'config', label: 'Platform Settings', icon: Database },
   ] : [
     { id: 'orders', label: 'Live Orders Dispatch', icon: ClipboardList },

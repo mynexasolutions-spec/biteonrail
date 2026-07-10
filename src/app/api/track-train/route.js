@@ -28,23 +28,11 @@ export async function GET(request) {
     return NextResponse.json({ error: 'trainNo parameter is required' }, { status: 400 });
   }
 
-  // Fallback to today's live run if date is in the future (prevent RailKit API error)
-  if (date !== 'today') {
-    try {
-      const parts = date.split('-');
-      if (parts.length === 3) {
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const year = parseInt(parts[2], 10);
-        const parsedDate = new Date(year, month, day);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (parsedDate > today) {
-          date = 'today';
-        }
-      }
-    } catch (e) {
-      date = 'today';
+  // Normalize YYYY-MM-DD to DD-MM-YYYY if matched
+  if (date && date !== 'today') {
+    if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [y, m, d] = date.split('-');
+      date = `${d}-${m}-${y}`;
     }
   }
 
@@ -60,7 +48,12 @@ export async function GET(request) {
       headers
     });
     if (!res.ok) {
-      return NextResponse.json({ error: `RailKit track train returned status: ${res.status}` }, { status: res.status });
+      try {
+        const errJson = await res.json();
+        return NextResponse.json(errJson, { status: 200 });
+      } catch (e) {
+        return NextResponse.json({ success: false, error: `RailKit track train returned status: ${res.status}` }, { status: 200 });
+      }
     }
 
     const data = await res.json();

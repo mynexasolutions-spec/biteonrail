@@ -118,7 +118,7 @@ class SupabaseRESTClient {
                 const err = await res.json().catch(() => ({}));
                 return onfulfilled({ data: null, error: err });
               }
-              const data = await res.json();
+              const data = await res.json().catch(() => null);
               return onfulfilled({ data, error: null });
             } catch (err) {
               return onfulfilled({ data: null, error: err });

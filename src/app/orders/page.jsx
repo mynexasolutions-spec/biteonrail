@@ -57,18 +57,18 @@ export default function UserOrdersPage() {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="text-left flex-1 min-w-0">
-            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-1.5 md:gap-2">
-              <ShoppingBag className="w-5 h-5 md:w-8 md:h-8 text-rose-600 shrink-0" />
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-1.5 md:gap-2">
+              <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 text-rose-600 shrink-0" />
               <span>Track Your Orders</span>
             </h1>
-            <p className="text-slate-500 text-xs md:text-sm mt-0.5 font-semibold leading-tight">
+            <p className="text-slate-500 text-xs md:text-base mt-1 font-semibold leading-tight">
               Real-time status updates from our kitchen dispatch hubs.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 px-4 sm:px-6 lg:px-8 pt-4 pb-12 w-full">
+      <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 px-4 sm:px-6 lg:px-8 pt-4 pb-12 w-full md:text-[15px]">
 
         {/* Guest / Not Logged In screen */}
         {!currentUser ? (
@@ -77,8 +77,8 @@ export default function UserOrdersPage() {
               <Train className="w-8 h-8 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-800 tracking-tight">Login to View Orders</h2>
-              <p className="text-[13px] md:text-sm text-slate-550 font-semibold mt-1.5">Enter your registered mobile number to check active bookings.</p>
+              <h2 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Login to View Orders</h2>
+              <p className="text-[13px] md:text-base text-slate-550 font-semibold mt-1.5">Enter your registered mobile number to check active bookings.</p>
             </div>
 
             <form onSubmit={handleMockLogin} className="space-y-4 text-left">
@@ -94,7 +94,7 @@ export default function UserOrdersPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                     placeholder="10-digit number"
-                    className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-mono font-bold text-slate-800"
+                    className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-mono font-bold text-slate-800"
                   />
                 </div>
               </div>
@@ -109,7 +109,7 @@ export default function UserOrdersPage() {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                     placeholder="Test OTP: 123456"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 text-center tracking-[0.2em] font-mono font-black text-slate-800"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 text-center tracking-[0.2em] font-mono font-black text-slate-800"
                   />
                 </div>
               )}
@@ -117,7 +117,7 @@ export default function UserOrdersPage() {
               <button
                 type="submit"
                 disabled={isVerifyingLogin}
-                className="w-full bg-rose-600 hover:bg-rose-500 text-white font-extrabold py-3.5 rounded-xl text-xs tracking-widest uppercase shadow-md transition-colors disabled:bg-slate-300"
+                className="w-full bg-rose-600 hover:bg-rose-500 text-white font-extrabold py-3.5 rounded-xl text-xs md:text-sm tracking-widest uppercase shadow-md transition-colors disabled:bg-slate-300"
               >
                 {isVerifyingLogin ? "Verifying..." : (otpSent ? "Verify & Track Orders" : "Send OTP")}
               </button>
@@ -242,11 +242,11 @@ export default function UserOrdersPage() {
                                 <span className="text-xs md:text-sm font-black text-slate-700 uppercase tracking-wider">{order.paymentMode || 'COD'}</span>
                               </div>
                               {String(order.paymentMode).toUpperCase() === 'ONLINE' ? (
-                                <span className="text-xs md:text-sm font-black text-emerald-700 bg-emerald-50 border border-emerald-250 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                <span className="text-[10px] sm:text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-250 px-2.5 py-1 rounded-full uppercase tracking-wider">
                                   ✓ Paid
                                 </span>
                               ) : (
-                                <span className="text-xs md:text-sm font-black text-amber-700 bg-amber-50 border border-amber-250 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                <span className="text-[10px] sm:text-xs font-black text-amber-700 bg-amber-50 border border-amber-250 px-2.5 py-1 rounded-full uppercase tracking-wider">
                                   ⏱ Pay on Delivery
                                 </span>
                               )}

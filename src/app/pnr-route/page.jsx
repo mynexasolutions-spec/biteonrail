@@ -15,6 +15,8 @@ function PnrRouteContent() {
   const [pnrDetails, setPnrDetails] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [showHubsOnly, setShowHubsOnly] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState('');
+  const [statusNote, setStatusNote] = useState('');
 
   useEffect(() => {
     if (!pnr) {
@@ -76,33 +78,102 @@ function PnrRouteContent() {
             return true; // Default fallback to call API
           })() : true;
 
-          const dateParam = parsed.dateOfJourney ? (() => {
+          const calculateSourceStartDate = (dojStr, boardingStation, routeStops) => {
+            if (!dojStr) return 'today';
             try {
-              const dojDate = new Date(parsed.dateOfJourney);
-              if (!isNaN(dojDate.getTime())) {
-                const mm = String(dojDate.getMonth() + 1).padStart(2, '0');
-                const dd = String(dojDate.getDate()).padStart(2, '0');
-                const yyyy = dojDate.getFullYear();
-                return `${dd}-${mm}-${yyyy}`;
+              const parts = dojStr.split(/[-/]/);
+              let dojDate;
+              if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                  dojDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                } else {
+                  dojDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+                }
+              } else {
+                dojDate = new Date(dojStr);
               }
-            } catch (e) { }
-            return 'today';
-          })() : 'today';
+              if (isNaN(dojDate.getTime())) return dojStr;
 
-          if (isTodayJourney) {
+              let dayOffset = 0;
+              if (Array.isArray(routeStops) && boardingStation) {
+                const match = routeStops.find(s => (s.stationCode || s.code || '').toUpperCase() === boardingStation.toUpperCase());
+                if (match && match.day) {
+                  dayOffset = Math.max(0, parseInt(match.day, 10) - 1);
+                }
+              }
+
+              if (dayOffset > 0) {
+                dojDate.setDate(dojDate.getDate() - dayOffset);
+              }
+
+              const yyyy = dojDate.getFullYear();
+              const mm = String(dojDate.getMonth() + 1).padStart(2, '0');
+              const dd = String(dojDate.getDate()).padStart(2, '0');
+              return `${dd}-${mm}-${yyyy}`;
+            } catch (e) {
+              return dojStr;
+            }
+          };
+
+          const dateParam = parsed.dateOfJourney ? calculateSourceStartDate(parsed.dateOfJourney, parsed.boardingPoint || parsed.sourceStation, parsed.routeStops) : 'today';
+
+          if (dateParam) {
             const liveRes = await fetch(`/api/track-train?trainNo=${parsed.trainNumber}&date=${dateParam}`);
             if (liveRes.ok) {
               const liveData = await liveRes.json();
+              if (liveData.success && liveData.data?.lastUpdate) {
+                setLastUpdated(liveData.data.lastUpdate);
+              }
+              if (liveData.success && liveData.data?.statusNote) {
+                setStatusNote(liveData.data.statusNote);
+              }
+              if (liveData.success === false && liveData.error && String(liveData.error).toLowerCase().includes('greater than today')) {
+                setStatusNote("Yet to start from its source");
+                setLastUpdated("");
+              }
               const stationsArray = liveData.data?.timeline || liveData.data?.stations;
               if (liveData.success && Array.isArray(stationsArray)) {
                 // Update routeStops schedule with actual live ETA and delay values
                 parsed.routeStops = parsed.routeStops.map(stop => {
                   const matchedLive = stationsArray.find(s => (s.stationCode || '').toUpperCase() === stop.code.toUpperCase());
                   if (matchedLive) {
+                    const parseLiveDateTime = (timeStr, baseYear = new Date().getFullYear()) => {
+                      if (!timeStr || timeStr === 'SRC' || timeStr === 'DST' || timeStr === '--') return null;
+                      const cleanStr = timeStr.replace('*', '').trim();
+                      const parts = cleanStr.split(' ');
+                      if (parts.length < 2) return null;
+                      const [timePart, datePart] = parts;
+                      const [hrs, mins] = timePart.split(':').map(Number);
+                      
+                      const dateParts = datePart.split('-');
+                      let day = 1;
+                      let month = 0;
+                      let year = baseYear;
+                      
+                      if (dateParts.length >= 2) {
+                        day = parseInt(dateParts[0], 10);
+                        const monthStr = dateParts[1];
+                        const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+                        const idx = months.findIndex(m => monthStr.toLowerCase().startsWith(m));
+                        if (idx !== -1) {
+                          month = idx;
+                        } else {
+                          month = parseInt(monthStr, 10) - 1;
+                        }
+                      }
+                      if (dateParts.length === 3) {
+                        year = parseInt(dateParts[2], 10);
+                      }
+                      
+                      return new Date(year, month, day, hrs, mins, 0, 0);
+                    };
+
+                    const depDate = parseLiveDateTime(matchedLive.departure?.actual || matchedLive.departure?.scheduled);
+                    const isPassed = depDate ? (depDate.getTime() < new Date().getTime()) : (matchedLive.status === 'departed' || matchedLive.status === 'passed' || matchedLive.departure?.hasDeparted || false);
+
                     const rawDelay = matchedLive.arrival?.delay || matchedLive.departure?.delay || "0";
                     const delayVal = parseInt(String(rawDelay).replace(/[^0-9]/g, '')) || 0;
                     
-                    // Parse ETA (Actual vs Scheduled) cleanly extracting HH:MM (e.g. "20:08 05-Jul*" -> "20:08")
                     const rawActual = matchedLive.arrival?.actual || matchedLive.departure?.actual;
                     const rawScheduled = matchedLive.arrival?.scheduled || matchedLive.departure?.scheduled;
                     
@@ -113,13 +184,12 @@ function PnrRouteContent() {
                     };
 
                     const actualTime = cleanTimeStr(rawActual) || cleanTimeStr(rawScheduled) || stop.time;
-                    const hasDeparted = matchedLive.departure?.hasDeparted || false;
                     
                     return {
                       ...stop,
                       time: actualTime, // Set Clean Live ETA
                       delay: delayVal > 0 ? `Late by ${delayVal} mins` : "Right Time",
-                      isPassed: hasDeparted
+                      isPassed
                     };
                   }
                   return stop;
@@ -189,7 +259,7 @@ function PnrRouteContent() {
               return true;
             })() : true;
 
-            if (isTodayJourney) {
+            if (true) {
               const liveRes = await fetch(`/api/track-train?trainNo=${mockParsed.trainNumber}&date=today`);
               if (liveRes.ok) {
                 const liveData = await liveRes.json();
@@ -252,8 +322,77 @@ function PnrRouteContent() {
       if (pnrDetails.trainName) localStorage.setItem("checkout_train_name", pnrDetails.trainName);
       if (pnrDetails.trainNumber) localStorage.setItem("checkout_train_number", pnrDetails.trainNumber);
     }
-    const stopObj = pnrDetails?.routeStops?.find(s => s.code.toUpperCase() === stationCode.toUpperCase());
+    
+    const allStops = pnrDetails?.routeStops || [];
+    const stopObj = allStops.find(s => s.code.toUpperCase() === stationCode.toUpperCase());
     const arrTime = stopObj?.time || '';
+
+    // Calculate delivery date based on day offset from boarding point
+    let dayOffset = 0;
+    if (pnrDetails && pnrDetails.dateOfJourney) {
+      const boardingPoint = pnrDetails.boardingPoint || pnrDetails.sourceStation || '';
+      const boardingStop = allStops.find(s => s.code.toUpperCase() === boardingPoint.toUpperCase());
+      
+      if (boardingStop && stopObj) {
+        dayOffset = Math.max(0, (stopObj.day || 1) - (boardingStop.day || 1));
+      }
+      
+      // Fallback: midnight crossing calculation
+      const boardingIdx = allStops.findIndex(s => s.code.toUpperCase() === boardingPoint.toUpperCase());
+      const selectedIdx = allStops.findIndex(s => s.code.toUpperCase() === stationCode.toUpperCase());
+      if (boardingIdx !== -1 && selectedIdx !== -1 && selectedIdx > boardingIdx) {
+        let offset = 0;
+        const parseTimeToMinutes = (t) => {
+          if (!t || t === '--' || t === '--:--') return 0;
+          const clean = t.replace(/[^0-9:]/g, '');
+          const parts = clean.split(':');
+          if (parts.length < 2) return 0;
+          return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+        };
+        let prevTime = parseTimeToMinutes(boardingStop?.depTime || boardingStop?.time);
+        for (let k = boardingIdx + 1; k <= selectedIdx; k++) {
+          const currStop = allStops[k];
+          const currTime = parseTimeToMinutes(currStop.time);
+          if (currTime < prevTime) {
+            offset++;
+          }
+          prevTime = parseTimeToMinutes(currStop.depTime || currTime || prevTime);
+        }
+        dayOffset = Math.max(dayOffset, offset);
+      }
+
+      // Add offset to DOJ
+      try {
+        let dojDate = null;
+        const dojStr = pnrDetails.dateOfJourney;
+        if (dojStr.includes('-')) {
+          const parts = dojStr.split('-');
+          if (parts.length === 3) {
+            if (parts[0].length === 4) {
+              dojDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            } else {
+              dojDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+            }
+          }
+        }
+        if (!dojDate || isNaN(dojDate.getTime())) {
+          dojDate = new Date(dojStr);
+        }
+
+        if (dojDate && !isNaN(dojDate.getTime())) {
+          dojDate.setDate(dojDate.getDate() + dayOffset);
+          const dd = String(dojDate.getDate()).padStart(2, '0');
+          const mm = String(dojDate.getMonth() + 1).padStart(2, '0');
+          const yyyy = dojDate.getFullYear();
+          localStorage.setItem("checkout_doj", `${dd}-${mm}-${yyyy}`);
+        } else {
+          localStorage.setItem("checkout_doj", pnrDetails.dateOfJourney);
+        }
+      } catch (e) {
+        localStorage.setItem("checkout_doj", pnrDetails.dateOfJourney);
+      }
+    }
+    
     router.push(`/menu?pnr=${pnr}&station=${stationCode}&arrTime=${encodeURIComponent(arrTime)}`);
   };
 
@@ -311,7 +450,7 @@ function PnrRouteContent() {
         )}
       </header>
 
-      <main className="max-w-6xl mx-auto px-0 sm:px-4 pt-4 md:pt-10 pb-8 relative z-10">
+      <main className="max-w-6xl mx-auto px-0 sm:px-4 pt-20 md:pt-10 pb-8 relative z-10">
         {/* Loading State */}
         {pnrResult === 'checking' && (
           <div className="flex flex-col items-center justify-center min-h-[75vh] py-12">
@@ -341,11 +480,13 @@ function PnrRouteContent() {
             return false;
           };
 
-          const isMaint = isMaintenanceHour() || errorMsg.includes("status: 400") || errorMsg.includes("status: 503");
+          const isAuthError = String(errorMsg).includes("401") || String(errorMsg).toLowerCase().includes("unauthorized") || String(errorMsg).toLowerCase().includes("key") || String(errorMsg).includes("403");
+          const isMaint = isMaintenanceHour() && !isAuthError;
 
           return (
-            <div className="bg-white border border-slate-200 shadow-2xl rounded-3xl p-10 text-center mt-8 max-w-lg mx-auto">
-              <div className="w-16 h-16 bg-red-50 text-red-650 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-100">
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-140px)] py-6 px-4">
+              <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-[32px] p-6 sm:p-10 text-center max-w-lg w-full">
+                <div className="w-16 h-16 bg-red-50 text-red-650 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-100">
                 <AlertCircle className="w-8 h-8 text-rose-600" />
               </div>
 
@@ -355,39 +496,49 @@ function PnrRouteContent() {
                   <p className="text-slate-500 mt-3 text-sm leading-relaxed">
                     Indian Railways passenger databases are offline for daily scheduled maintenance (11:30 PM to 12:45 AM IST). Real-time PNR checking is temporarily unavailable.
                   </p>
-                  <div className="mt-5 p-3.5 bg-rose-50 border border-rose-100 rounded-2xl text-[11px] text-rose-700 font-bold leading-relaxed">
-                    💡 Hint: You can use the Search page to manually enter a train number and browse intermediate hubs/stations to order food!
+                  <div className="mt-5 p-4 bg-rose-50 border border-rose-100 rounded-2xl text-xs sm:text-sm text-rose-700 font-bold leading-relaxed flex items-start gap-2.5 text-left">
+                    <Sparkles className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Hint:</strong> You can use the Search page to manually enter a train number and browse intermediate hubs/stations to order food!
+                    </span>
                   </div>
                 </>
               ) : (
                 <>
                   <h3 className="text-xl font-black text-slate-900">Oops! Fetching Failed</h3>
-                  <p className="text-slate-500 mt-3 text-sm leading-relaxed">{errorMsg}</p>
+                  <p className="text-slate-555 mt-3 text-sm font-bold leading-relaxed">
+                    {isAuthError
+                      ? "Internal Server Error. Please try again after some time."
+                      : errorMsg}
+                  </p>
                 </>
               )}
 
-              <div className="flex flex-col sm:flex-row gap-3 mt-8">
-                <button
-                  onClick={() => router.push('/')}
-                  className="w-full sm:flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider border border-slate-200"
-                >
-                  Go Back
-                </button>
-                <button
-                  onClick={() => router.push('/search')}
-                  className="w-full sm:flex-[2] py-3 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-550 hover:to-amber-550 text-white font-extrabold rounded-xl transition-all shadow-md shadow-rose-200 hover:scale-[1.02] tracking-widest uppercase text-xs"
-                >
-                  Search Train Manually
-                </button>
-              </div>
+              {!isAuthError && (
+                <div className="flex flex-col sm:flex-row gap-3 mt-8">
+                  <button
+                    onClick={() => router.push('/')}
+                    className="w-full sm:flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider border border-slate-200"
+                  >
+                    Go Back
+                  </button>
+                  <button
+                    onClick={() => router.push('/search')}
+                    className="w-full sm:flex-[2] py-3 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-550 hover:to-amber-550 text-white font-extrabold rounded-xl transition-all shadow-md shadow-rose-200 hover:scale-[1.02] tracking-widest uppercase text-xs"
+                  >
+                    Search Train Manually
+                  </button>
+                </div>
+              )}
             </div>
+          </div>
           );
         })()}
 
         {/* Success / Route Timeline */}
         {pnrResult === 'success' && pnrDetails && (
           <div className="space-y-4 sm:space-y-6 animate-fadeIn">
-            <div className="mt-[78px] md:mt-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 border border-emerald-800 rounded-2xl p-3.5 sm:p-4 text-white shadow-md flex items-center gap-3 sm:gap-3.5 relative overflow-hidden mx-3 sm:mx-0 animate-fadeIn">
+            <div className="mt-3 md:mt-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 border border-emerald-800 rounded-2xl p-3.5 sm:p-4 text-white shadow-md flex items-center gap-3 sm:gap-3.5 relative overflow-hidden mx-3 sm:mx-0 animate-fadeIn">
               <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500 bg-opacity-10 rounded-full blur-xl pointer-events-none" />
 
               <div className="w-10 h-10 bg-emerald-500 bg-opacity-20 text-emerald-400 rounded-xl border border-emerald-800 shrink-0 flex items-center justify-center shadow-inner">
@@ -395,11 +546,11 @@ function PnrRouteContent() {
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="font-black text-emerald-400 text-sm md:text-sm leading-tight flex items-center gap-1.5 uppercase tracking-wider">
+                <h3 className="font-black text-emerald-400 text-sm md:text-base leading-tight flex items-center gap-1.5 uppercase tracking-wider">
                   <Sparkles className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
                   {activeHubsCount} Food Delivery Hubs Found
                 </h3>
-                <p className="text-xs md:text-xs text-slate-300 mt-1 font-bold leading-tight">
+                <p className="text-xs md:text-sm text-slate-300 mt-1 font-semibold leading-tight">
                   Active kitchen partners on your route! Order at active stops for direct berth delivery.
                 </p>
               </div>
@@ -428,7 +579,9 @@ function PnrRouteContent() {
                         <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
                           Date of Journey
                         </p>
-                        <p className="text-sm font-black text-rose-655 mt-1">{pnrDetails.dateOfJourney}</p>
+                        <p className="text-sm font-black text-rose-655 mt-1">
+                          {pnrDetails.dateOfJourney ? pnrDetails.dateOfJourney.split(' ').slice(0, 3).join(' ') : ''}
+                        </p>
                       </div>
                     </div>
 
@@ -437,7 +590,7 @@ function PnrRouteContent() {
                       <div className="flex items-center justify-between gap-4">
                         <div className="text-left">
                           <span className="text-xs md:text-xs text-slate-400 font-black uppercase tracking-widest block mb-0.5">Boarding</span>
-                          <p className="font-mono font-black text-slate-900 text-2xl md:text-2xl leading-none">
+                          <p className="font-mono font-black text-slate-900 text-2xl md:text-3xl leading-none">
                             {pnrDetails.boardingPoint || pnrDetails.sourceStation}
                           </p>
                         </div>
@@ -445,7 +598,7 @@ function PnrRouteContent() {
                         {/* Middle Icon and Track */}
                         <div className="flex-1 flex items-center justify-center px-2 relative min-w-[70px]">
                           <div className="absolute left-0 right-0 border-t-2 border-dashed border-slate-200" />
-                          <div className="bg-rose-50 border border-rose-150 p-2 rounded-full shadow-sm relative z-10">
+                          <div className="bg-rose-50 border border-rose-155 p-2 rounded-full shadow-sm relative z-10">
                             <Train className="w-4.5 h-4.5 text-rose-600" />
                           </div>
                         </div>
@@ -453,7 +606,7 @@ function PnrRouteContent() {
                         {/* Right Code */}
                         <div className="text-right">
                           <span className="text-xs md:text-xs text-slate-400 font-black uppercase tracking-widest block mb-0.5">Destination</span>
-                          <p className="font-mono font-black text-slate-900 text-2xl md:text-2xl leading-none">
+                          <p className="font-mono font-black text-slate-900 text-2xl md:text-3xl leading-none">
                             {pnrDetails.destinationStation}
                           </p>
                         </div>
@@ -463,19 +616,19 @@ function PnrRouteContent() {
                       <div className="flex justify-between items-start gap-4 mt-2.5 text-xs">
                         <div className="text-left max-w-[45%]">
                           {pnrDetails.boardingStationName && (
-                            <p className="text-[11px] text-slate-555 font-bold leading-tight">
+                            <p className="text-[11px] md:text-xs text-slate-555 font-bold leading-tight">
                               {pnrDetails.boardingStationName}
                             </p>
                           )}
                         </div>
                         <div className="text-right max-w-[45%] space-y-0.5">
                           {pnrDetails.destinationName && (
-                            <p className="text-[11px] text-slate-555 font-bold leading-tight">
+                            <p className="text-[11px] md:text-xs text-slate-555 font-bold leading-tight">
                               {pnrDetails.destinationName}
                             </p>
                           )}
                           {pnrDetails.destinationDoj && (
-                            <p className="text-[10px] text-rose-600 font-black">
+                            <p className="text-[10px] md:text-[11px] text-rose-600 font-black">
                               Arr: {pnrDetails.destinationDoj}
                             </p>
                           )}
@@ -490,16 +643,28 @@ function PnrRouteContent() {
                   </div>
 
                   <div className="p-6 pt-4">
-                    {pnrDetails.passengers?.length > 0 && (
-                      <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl flex justify-between items-center text-xs">
-                        <span className="text-slate-600 font-bold flex items-center gap-1.5">
-                          <ShieldCheck className="w-4 h-4 text-emerald-600" /> Seat Auto-detect
-                        </span>
-                        <span className="font-black text-rose-655 bg-rose-50 border border-rose-100 px-3.5 py-1 rounded-xl text-[10px] md:text-[10px]">
-                          Coach {pnrDetails.passengers[0].coach || 'N/A'} - Seat {pnrDetails.passengers[0].seat || 'N/A'}
-                        </span>
-                      </div>
-                    )}
+                    {pnrDetails.passengers?.length > 0 && (() => {
+                      const firstPsgr = pnrDetails.passengers[0];
+                      const isNotAllotted = !firstPsgr.coach || firstPsgr.coach === 'N/A';
+                      
+                      return (
+                        <div className="space-y-2.5">
+                          <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl flex justify-between items-center text-xs md:text-sm">
+                            <span className="text-slate-600 font-bold flex items-center gap-1.5 md:text-[13px]">
+                              <ShieldCheck className="w-4 h-4 text-emerald-600" /> Seat Auto-detect
+                            </span>
+                            <span className="font-black text-rose-655 bg-rose-50 border border-rose-100 px-4 py-1.5 rounded-xl text-[10px] md:text-xs">
+                              {isNotAllotted ? 'Not Allotted Yet (N/A)' : `Coach ${firstPsgr.coach} - Seat ${firstPsgr.seat}`}
+                            </span>
+                          </div>
+                          {isNotAllotted && (
+                            <p className="text-[10px] sm:text-xs text-amber-805 bg-amber-50 border border-amber-200/65 p-3.5 rounded-xl font-black leading-relaxed">
+                              ⚠️ <strong>Chart Not Prepared:</strong> Coach/Seat number has not been allocated by Indian Railways yet. Please order only after your seat is allocated!
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -510,12 +675,27 @@ function PnrRouteContent() {
                   {/* Header (Choose a Delivery Station with count) */}
                   <div className="mb-6 pb-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                      <h3 className="text-base sm:text-lg font-black text-slate-900">Choose a Delivery Station</h3>
-                      <p className="text-xs text-slate-555 mt-0.5 font-bold">
+                      <h3 className="text-base sm:text-2xl font-black text-slate-900 leading-tight">Choose a Delivery Station</h3>
+                      <p className="text-xs sm:text-sm text-slate-555 mt-1 font-semibold">
                         {activeHubsCount > 0
                           ? `Select a station to place your food order (Active Hubs: ${activeHubsCount})`
                           : 'No active delivery hubs found on this route.'}
                       </p>
+                      {lastUpdated && (
+                        <p className="text-[10px] text-slate-400 font-extrabold mt-1.5 uppercase tracking-wider flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                          Last Updated: {lastUpdated}
+                        </p>
+                      )}
+                      {statusNote && (
+                        <p className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-150 px-3 py-1.5 rounded-xl font-bold mt-2 w-fit flex items-center gap-1.5 shadow-xs">
+                          <span className="relative flex h-2 w-2 shrink-0">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-650"></span>
+                          </span>
+                          {statusNote}
+                        </p>
+                      )}
                     </div>
                     {/* Toggle Button */}
                     <div className="flex items-center gap-2.5 self-start sm:self-auto bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
@@ -563,16 +743,21 @@ function PnrRouteContent() {
                           <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 w-full ${stop.isActive ? activeCardClass : normalCardClass}`}>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className={`font-black text-[15px] sm:text-[17px] transition-colors ${stop.isPassed ? 'text-slate-405 font-medium'
+                                <h4 className={`font-black text-[15px] sm:text-[19px] transition-colors ${stop.isPassed ? 'text-slate-405 font-medium'
                                   : stop.isActive ? 'text-slate-900 group-hover:text-rose-600'
                                     : stop.isLast ? 'text-indigo-750'
                                       : 'text-slate-800'
                                   }`}>
                                   {stop.name}
                                 </h4>
-                                <span className="text-[11px] sm:text-[11px] font-black text-slate-500 uppercase bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-mono">
+                                <span className="text-[11px] sm:text-xs font-black text-slate-500 uppercase bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200 font-mono">
                                   {stop.code}
                                 </span>
+                                {stop.day && (
+                                  <span className="text-[10px] sm:text-[11px] font-black text-indigo-700 uppercase bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-100 font-mono tracking-wider">
+                                    Day {stop.day}
+                                  </span>
+                                )}
  
                                 {/* Terminus badge for last stop */}
                                 {stop.isLast && (
@@ -582,36 +767,38 @@ function PnrRouteContent() {
                                 )}
                               </div>
  
-                              <div className="flex flex-wrap items-center gap-2 mt-2">
-                                <span className="text-[11px] sm:text-xs font-bold text-slate-500 flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5 text-rose-500/80" /> {stop.time}
+                              <div className="flex flex-wrap items-center gap-3 mt-3 text-xs md:text-sm">
+                                <span className="font-bold text-slate-650 flex items-center gap-1.5">
+                                  <Clock className="w-4 h-4 text-slate-400 shrink-0" /> Arrival: <span className="font-extrabold text-slate-900">{stop.time}</span>
                                 </span>
                                 {stop.haltTime && stop.haltTime !== '--' && (
-                                  <span className="text-[11px] sm:text-xs text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded font-black tracking-wide uppercase">
+                                  <span className="text-slate-550 font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                                     Halt: {stop.haltTime}
                                   </span>
                                 )}
                                 {(!stop.delay || String(stop.delay).toLowerCase().includes('right time') || stop.delay === 0) ? (
-                                  <span className="text-[11px] sm:text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 font-black px-2 py-0.5 rounded flex items-center gap-1">
-                                    <span className="w-1 h-1 rounded-full bg-emerald-600 animate-pulse" /> On Time
+                                  <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 font-black px-2 py-0.5 rounded flex items-center gap-1 text-[11px] md:text-xs">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" /> On Time
                                   </span>
                                 ) : (
-                                  <span className="text-[11px] sm:text-xs text-amber-700 bg-amber-50 border border-amber-250 font-black px-2 py-0.5 rounded">
+                                  <span className="text-amber-700 bg-amber-50 border border-amber-250 font-black px-2 py-0.5 rounded text-[11px] md:text-xs">
                                     {stop.delay}
                                   </span>
                                 )}
-                                {stop.isActive && (() => {
-                                  const matchedStation = stations?.find(s => s.code.toUpperCase() === stop.code.toUpperCase());
-                                  const bufferMins = matchedStation?.buffer_minutes || 60;
-                                  return (
-                                    <span className="text-[11px] sm:text-xs text-indigo-655 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded font-black tracking-wide uppercase">
-                                      ⏱ Order up to {bufferMins}m before
-                                    </span>
-                                  );
-                                })()}
                               </div>
+
+                              {stop.isActive && (() => {
+                                const matchedStation = stations?.find(s => s.code.toUpperCase() === stop.code.toUpperCase());
+                                const bufferMins = matchedStation?.buffer_minutes || 60;
+                                return (
+                                  <div className="mt-3 flex items-center gap-1.5 text-xs text-indigo-700 bg-indigo-50/70 border border-indigo-100 rounded-xl px-3 py-1.5 w-fit font-bold">
+                                    <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                                    <span>Order up to <strong className="text-indigo-900 font-black">{bufferMins} mins</strong> before arrival</span>
+                                  </div>
+                                );
+                              })()}
                             </div>
-                            
+
                             {/* Call-to-action button for active hubs */}
                             {stop.isActive && (() => {
                               const matchedStation = stations?.find(s => s.code.toUpperCase() === stop.code.toUpperCase());
@@ -619,7 +806,7 @@ function PnrRouteContent() {
 
                               // Helper to check if current time is within cutoff buffer of arrival time
                               const isBookingClosed = (arrivalTimeStr, bufferLimit) => {
-                                if (!arrivalTimeStr || arrivalTimeStr === '--:--') return false;
+                                if (!arrivalTimeStr || arrivalTimeStr === '--:--') return true;
                                 try {
                                   const [arrHrs, arrMins] = arrivalTimeStr.split(':').map(Number);
                                   const now = new Date();
@@ -629,17 +816,27 @@ function PnrRouteContent() {
                                   if (pnrDetails?.dateOfJourney) {
                                     const parsedDOJ = new Date(pnrDetails.dateOfJourney);
                                     if (!isNaN(parsedDOJ.getTime())) {
-                                      arrDate = parsedDOJ;
+                                      arrDate = new Date(parsedDOJ);
                                     } else {
                                       const parts = pnrDetails.dateOfJourney.split(/[-/]/);
                                       if (parts.length === 3) {
                                         const day = Number(parts[0]);
                                         const month = Number(parts[1]) - 1;
                                         const year = Number(parts[2]);
-                                        arrDate.setFullYear(year, month, day);
+                                        arrDate = new Date(year, month, day);
                                       }
                                     }
                                   }
+
+                                  // Apply day offset for Day 2+ stops
+                                  let dayOffset = 0;
+                                  const allStops = pnrDetails?.routeStops || [];
+                                  const boardingPoint = pnrDetails?.boardingPoint || pnrDetails?.sourceStation || '';
+                                  const boardingStop = allStops.find(s => s.code.toUpperCase() === boardingPoint.toUpperCase());
+                                  if (boardingStop && stop) {
+                                    dayOffset = Math.max(0, (stop.day || 1) - (boardingStop.day || 1));
+                                  }
+                                  arrDate.setDate(arrDate.getDate() + dayOffset);
 
                                   arrDate.setHours(arrHrs, arrMins, 0, 0);
 
@@ -652,6 +849,17 @@ function PnrRouteContent() {
                               };
 
                               const closed = isBookingClosed(stop.time, bufferMins) || stop.isPassed;
+                              
+                              const firstPsgr = pnrDetails?.passengers?.[0];
+                              const isNotAllotted = !firstPsgr || !firstPsgr.coach || firstPsgr.coach === 'N/A';
+
+                              if (isNotAllotted) {
+                                return (
+                                  <div className="self-start sm:self-auto text-slate-400 bg-slate-100 border border-slate-200 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 cursor-not-allowed" title="Food ordering is disabled because your seat has not been allotted yet.">
+                                    No Seat Allotted
+                                  </div>
+                                );
+                              }
 
                               return closed ? (
                                 <div className="self-start sm:self-auto text-slate-400 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 cursor-not-allowed">
