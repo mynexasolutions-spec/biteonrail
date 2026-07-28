@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { AppProvider, useApp } from '../context/AppContext';
-import { auth, RecaptchaVerifier, signInWithPhoneNumber, isFirebaseConfigured } from '../lib/firebase';
+import { auth, isFirebaseConfigured } from '../lib/firebase';
+import { sendFirebaseOtp, verifyFirebaseOtp } from '../lib/firebaseAuth';
+import OtpBoxInput from '../components/OtpBoxInput';
 import './globals.css';
 import Link from 'next/link';
-import { Phone, LogIn, LogOut, ShieldAlert, ShoppingBag, Mail, MapPin, ShieldCheck, Train, ExternalLink, ClipboardList, Home, Search, User, Gift, Truck, X, Instagram, Facebook, Twitter, Coffee } from 'lucide-react';
+import { Phone, LogIn, LogOut, ShieldAlert, ShoppingBag, Mail, MapPin, ShieldCheck, Train, ExternalLink, ClipboardList, Home, Search, User, Gift, Truck, X, Instagram, Facebook, Twitter, Coffee, Loader2 } from 'lucide-react';
 
 function PromoPopup({ isOpen, onClose }) {
   const { giftThreshold, freeProduct } = useApp();
@@ -89,9 +91,46 @@ function Header() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resendTimer, setResendTimer] = useState(60);
 
-  const handleLoginSubmit = (e) => {
+  useEffect(() => {
+    let interval = null;
+    if (otpSent && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [otpSent, resendTimer]);
+
+  const [showNotice, setShowNotice] = useState(true);
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0 || isLoading) return;
+    setError('');
+    setIsLoading(true);
+    setShowNotice(false);
+
+    const res = await sendFirebaseOtp(phone, 'global-recaptcha-container');
+    setIsLoading(false);
+
+    if (res.success) {
+      setError('');
+      setConfirmationResult(res.confirmationResult);
+      setResendTimer(60);
+      setShowNotice(true);
+    } else {
+      setError(res.error);
+      setShowNotice(true);
+    }
+  };
+
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -100,16 +139,35 @@ function Header() {
         setError('Please enter a valid 10-digit mobile number.');
         return;
       }
-      setOtpSent(true);
+      setIsLoading(true);
+      const res = await sendFirebaseOtp(phone, 'global-recaptcha-container');
+      setIsLoading(false);
+
+      if (res.success) {
+        setConfirmationResult(res.confirmationResult);
+        setOtpSent(true);
+        setResendTimer(60);
+      } else {
+        setError(res.error);
+      }
     } else {
-      if (otp === '123456' || otp.length === 6) {
-        loginUser(phone);
+      if (otp.length < 6) {
+        setError('Please enter complete 6-digit OTP code.');
+        return;
+      }
+      setIsLoading(true);
+      const res = await verifyFirebaseOtp(confirmationResult, otp);
+      setIsLoading(false);
+
+      if (res.success) {
+        loginUser(phone, res.idToken);
         setOtpSent(false);
+        setConfirmationResult(null);
         setShowLoginModal(false);
         setPhone('');
         setOtp('');
       } else {
-        setError("Invalid OTP. Use mock OTP: 123456");
+        setError(res.error);
       }
     }
   };
@@ -191,85 +249,123 @@ function Header() {
       {/* Login Modal — rendered OUTSIDE header for true viewport centering */}
       {showLoginModal && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4"
-          onClick={() => { setShowLoginModal(false); setOtpSent(false); setError(''); }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-3 sm:p-4 pb-16 sm:pb-4 animate-in fade-in duration-200"
         >
           <div
-            className="bg-white rounded-[28px] shadow-2xl w-full max-w-md p-7 relative border border-rose-50 animate-in fade-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl w-full max-w-md max-h-[85vh] sm:max-h-none overflow-y-auto relative border border-slate-100 animate-in zoom-in-95 duration-200"
           >
-            <h2 className="text-xl font-black text-slate-800 mb-2">Track Your Orders</h2>
-            <p className="text-xs text-slate-500 mb-6 font-medium">Enter your mobile number to sign in and view your previous bookings.</p>
+            {/* Modal Top Header Banner */}
+            <div className="bg-gradient-to-br from-slate-900 via-rose-950 to-slate-900 px-5 py-6 sm:px-7 sm:py-8 text-center relative overflow-hidden">
+              <div className="absolute -top-12 -right-12 w-36 h-36 bg-rose-500/20 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-500/15 rounded-full blur-xl pointer-events-none" />
 
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Mobile Number</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-slate-400 text-sm font-semibold">+91</span>
-                  <input
-                    type="tel"
-                    required
-                    maxLength={10}
-                    disabled={otpSent}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Enter 10-digit number"
-                    className="pl-12 pr-4 py-2.5 w-full border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500 disabled:bg-slate-50 disabled:text-slate-500 font-mono"
-                  />
-                </div>
-              </div>
-
-              {otpSent && (
-                <>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">Enter OTP</label>
-                    <input
-                      type="text"
-                      required
-                      maxLength={6}
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                      placeholder="Enter 6-digit OTP"
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500 font-mono"
-                    />
-                  </div>
-                  <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
-                    <ShieldCheck className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-amber-700 font-bold leading-relaxed">
-                      Demo Mode: Use mock OTP <span className="font-mono bg-amber-100 px-1.5 py-0.5 rounded text-amber-800">123456</span> to proceed.
-                    </p>
-                  </div>
-                </>
-              )}
-
-              {error && <p className="text-xs text-rose-500 font-semibold bg-rose-50 p-2.5 rounded-xl">{error}</p>}
-
-              <div id="recaptcha-container"></div>
-
+              {/* Close Button */}
               <button
-                type="submit"
-
-                className="w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-3 rounded-xl text-sm transition-all disabled:bg-slate-300 shadow-md uppercase tracking-wider"
+                onClick={() => { setShowLoginModal(false); setOtpSent(false); setError(''); }}
+                className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-2 bg-white/10 hover:bg-white/20 text-white/90 hover:text-white rounded-full transition-all border border-white/15 hover:scale-110 active:scale-95 z-20 shadow-md backdrop-blur-md"
+                title="Close"
               >
-                {otpSent ? 'Verify OTP' : 'Send OTP'}
+                <X className="w-4 h-4" />
               </button>
 
-              {otpSent && (
+              {/* Icon Badge */}
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center mx-auto mb-2.5 sm:mb-3.5 shadow-inner group">
+                <Train className="w-6 h-6 sm:w-7 sm:h-7 text-rose-400 animate-pulse" />
+              </div>
+
+              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">Track Your Train Orders</h2>
+              <p className="text-[11px] sm:text-xs text-slate-300 font-medium mt-0.5 sm:mt-1">Enter your phone number to sign in & view live bookings</p>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 sm:p-7 space-y-4 sm:space-y-5">
+              <form onSubmit={handleLoginSubmit} className="space-y-3.5 sm:space-y-4">
+                <div>
+                  <label className="block text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5 sm:mb-2">Mobile Number</label>
+                  <div className="flex items-center border-2 border-slate-200 rounded-xl sm:rounded-2xl focus-within:border-rose-500 focus-within:ring-4 focus-within:ring-rose-500/10 bg-white transition-all shadow-xs overflow-hidden">
+                    <div className="bg-slate-100/90 border-r border-slate-200 text-slate-700 text-xs sm:text-sm font-black px-3 py-2.5 sm:px-3.5 sm:py-3 flex items-center gap-1 shrink-0 select-none">
+                      <span>🇮🇳</span>
+                      <span>+91</span>
+                    </div>
+                    <input
+                      type="tel"
+                      required
+                      maxLength={10}
+                      disabled={otpSent}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                      placeholder="Enter 10-digit number"
+                      className="w-full px-3 py-2.5 sm:py-3 text-sm font-mono font-black text-slate-900 focus:outline-none bg-transparent disabled:bg-slate-50 disabled:text-slate-400 placeholder:font-sans placeholder:font-normal placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+
+                {otpSent && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-200 space-y-3 sm:space-y-4">
+                    <div>
+                      <label className="block text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5 sm:mb-2">Enter Verification Code</label>
+                      <OtpBoxInput value={otp} onChange={setOtp} />
+                    </div>
+                    {showNotice && (
+                      <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200/90 text-emerald-900 rounded-xl sm:rounded-2xl p-3 sm:p-3.5 shadow-xs animate-in fade-in duration-200">
+                        <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                        <p className="text-xs sm:text-sm text-emerald-850 font-extrabold leading-snug">
+                          Verification code sent to <span className="font-mono text-emerald-950 font-black">+91-{phone}</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {error && (
+                  <div className="p-3 sm:p-3.5 bg-rose-50 border border-rose-200 rounded-xl sm:rounded-2xl text-xs text-rose-600 font-bold leading-relaxed shadow-xs">
+                    {error}
+                  </div>
+                )}
+
+                <div id="header-recaptcha-container"></div>
+
                 <button
-                  type="button"
-                  onClick={() => { setOtpSent(false); setOtp(''); setError(''); }}
-                  className="w-full text-center text-[10px] text-slate-400 hover:text-rose-600 font-bold uppercase tracking-wider transition-colors"
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-rose-600 via-rose-500 to-rose-600 hover:from-rose-500 hover:to-rose-400 text-white font-black text-xs uppercase tracking-widest rounded-xl sm:rounded-2xl shadow-lg shadow-rose-600/25 hover:shadow-rose-600/35 hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
                 >
-                  ← Change Number
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{otpSent ? 'Verifying OTP...' : 'Sending OTP...'}</span>
+                    </>
+                  ) : (
+                    <span>{otpSent ? 'Verify OTP & Sign In' : 'Send OTP'}</span>
+                  )}
                 </button>
-              )}
-            </form>
-            <button
-              onClick={() => { setShowLoginModal(false); setOtpSent(false); setError(''); }}
-              className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-500 transition-colors"
-            >
-              ✕
-            </button>
+
+                {otpSent && (
+                  <div className="flex items-center justify-between text-[10px] sm:text-[11px] pt-1.5 border-t border-slate-100/80 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setOtpSent(false); setOtp(''); setError(''); setResendTimer(60); }}
+                      className="text-slate-400 hover:text-rose-600 font-extrabold uppercase tracking-wider transition-colors text-left"
+                    >
+                      Change Mobile Number
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={resendTimer > 0 || isLoading}
+                      onClick={handleResendOtp}
+                      className={`font-extrabold uppercase tracking-wider transition-colors text-right ${
+                        resendTimer > 0 || isLoading
+                          ? 'text-slate-400 cursor-not-allowed'
+                          : 'text-rose-600 hover:text-rose-700 underline cursor-pointer'
+                      }`}
+                    >
+                      {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
+                    </button>
+                  </div>
+                )}
+              </form>
+            </div>
           </div>
         </div>
       )}
@@ -340,6 +436,12 @@ function Footer() {
               </li>
               <li>
                 <Link href="/faqs" className="hover:text-rose-600 transition-colors">FAQs &amp; Info</Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-rose-600 transition-colors">Privacy Policy</Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-rose-600 transition-colors">Terms of Service</Link>
               </li>
             </ul>
           </div>
@@ -453,6 +555,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className="antialiased bg-slate-50 text-slate-900 min-h-screen flex flex-col">
         <AppProvider>
+          <div id="global-recaptcha-container"></div>
           <PromoPopup isOpen={showPromoPopup} onClose={handleClosePromo} />
           {!isAdminRoute && (
             <div className={pathname === '/pnr-route' ? 'hidden md:block sticky top-0 z-40' : (pathname && (pathname.startsWith('/menu') || pathname === '/search') ? 'hidden md:block sticky top-0 z-40' : 'sticky top-0 z-40')}>

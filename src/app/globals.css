@@ -20,6 +20,11 @@ body {
   min-height: 100vh;
 }
 
+/* Hide Google reCAPTCHA floating badge to prevent mobile DOM overlap and style errors */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}
+
 /* Custom Micro-animations */
 .hover-scale {
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);

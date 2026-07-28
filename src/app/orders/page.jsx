@@ -2,39 +2,59 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useRouter } from 'next/navigation';
+import { sendFirebaseOtp, verifyFirebaseOtp } from '../../lib/firebaseAuth';
+import OtpBoxInput from '../../components/OtpBoxInput';
 import { ShoppingBag, Train, Clock, Gift, Phone, LogIn, ArrowRight, ShieldCheck, X, Compass, ArrowLeft, User, MapPin } from 'lucide-react';
 
 export default function UserOrdersPage() {
   const router = useRouter();
   const { orders, currentUser, loginUser } = useApp();
 
-  // Local login states (for guest view fallback)
+  // Local login states
   const [phone, setPhone] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [error, setError] = useState('');
   const [isVerifyingLogin, setIsVerifyingLogin] = useState(false);
 
-  const handleMockLogin = (e) => {
+  const handleFirebaseLogin = async (e) => {
     e.preventDefault();
-    if (phone.length < 10) {
-      alert("Please enter a valid 10-digit number.");
-      return;
-    }
+    setError('');
+
     if (!otpSent) {
-      setOtpSent(true);
-    } else {
+      if (phone.length < 10) {
+        setError("Please enter a valid 10-digit number.");
+        return;
+      }
       setIsVerifyingLogin(true);
-      setTimeout(() => {
-        if (otp === '123456' || otp.length === 6) {
-          loginUser(phone);
-          setOtpSent(false);
-          setPhone('');
-          setOtp('');
-        } else {
-          alert("Verification OTP: 123456");
-        }
-        setIsVerifyingLogin(false);
-      }, 600);
+      const res = await sendFirebaseOtp(phone, 'global-recaptcha-container');
+      setIsVerifyingLogin(false);
+
+      if (res.success) {
+        setConfirmationResult(res.confirmationResult);
+        setOtpSent(true);
+      } else {
+        setError(res.error);
+      }
+    } else {
+      if (otp.length < 6) {
+        setError("Please enter complete 6-digit OTP code.");
+        return;
+      }
+      setIsVerifyingLogin(true);
+      const res = await verifyFirebaseOtp(confirmationResult, otp);
+      setIsVerifyingLogin(false);
+
+      if (res.success) {
+        loginUser(phone, res.idToken);
+        setOtpSent(false);
+        setConfirmationResult(null);
+        setPhone('');
+        setOtp('');
+      } else {
+        setError(res.error);
+      }
     }
   };
 
@@ -81,7 +101,7 @@ export default function UserOrdersPage() {
               <p className="text-[13px] md:text-base text-slate-550 font-semibold mt-1.5">Enter your registered mobile number to check active bookings.</p>
             </div>
 
-            <form onSubmit={handleMockLogin} className="space-y-4 text-left">
+            <form onSubmit={handleFirebaseLogin} className="space-y-4 text-left">
               <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5">Mobile Number</label>
                 <div className="relative">
@@ -102,17 +122,15 @@ export default function UserOrdersPage() {
               {otpSent && (
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5">Enter OTP Code</label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={6}
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Test OTP: 123456"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 text-center tracking-[0.2em] font-mono font-black text-slate-800"
-                  />
+                  <OtpBoxInput value={otp} onChange={setOtp} />
                 </div>
               )}
+
+              {error && (
+                <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 p-3 rounded-xl font-bold">{error}</p>
+              )}
+
+              <div id="orders-recaptcha-container"></div>
 
               <button
                 type="submit"

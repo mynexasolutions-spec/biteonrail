@@ -1,8 +1,10 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../context/AppContext';
-import { User, Phone, ShoppingBag, HelpCircle, LogOut, ShieldCheck, ChevronRight, Lock, MessageSquare, ArrowLeft, Mail, Star, Compass, Award } from 'lucide-react';
+import { sendFirebaseOtp, verifyFirebaseOtp } from '../../lib/firebaseAuth';
+import OtpBoxInput from '../../components/OtpBoxInput';
+import { User, Phone, ShoppingBag, HelpCircle, LogOut, ShieldCheck, ChevronRight, Lock, MessageSquare, ArrowLeft, Mail, Star, Compass, Award, Loader2 } from 'lucide-react';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -12,10 +14,46 @@ export default function AccountPage() {
 
   const [otpSent, setOtpSent] = useState(false);
   const [otpInput, setOtpInput] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState(null);
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [resendTimer, setResendTimer] = useState(60);
 
-  const handleLoginSubmit = (e) => {
+  useEffect(() => {
+    let interval = null;
+    if (otpSent && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [otpSent, resendTimer]);
+
+  const [showNotice, setShowNotice] = useState(true);
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0 || isLoggingIn) return;
+    setLoginError('');
+    setIsLoggingIn(true);
+    setShowNotice(false);
+
+    const res = await sendFirebaseOtp(phoneInput, 'global-recaptcha-container');
+    setIsLoggingIn(false);
+
+    if (res.success) {
+      setLoginError('');
+      setConfirmationResult(res.confirmationResult);
+      setResendTimer(60);
+      setShowNotice(true);
+    } else {
+      setLoginError(res.error);
+      setShowNotice(true);
+    }
+  };
+
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLoginError('');
 
@@ -24,20 +62,35 @@ export default function AccountPage() {
         setLoginError("Please enter a valid 10-digit mobile number");
         return;
       }
-      setOtpSent(true);
-    } else {
       setIsLoggingIn(true);
-      setTimeout(() => {
-        if (otpInput === '123456' || otpInput.length === 6) {
-          loginUser(phoneInput);
-          setOtpSent(false);
-          setPhoneInput('');
-          setOtpInput('');
-        } else {
-          setLoginError("Invalid OTP. Use mock OTP: 123456");
-        }
-        setIsLoggingIn(false);
-      }, 600);
+      const res = await sendFirebaseOtp(phoneInput, 'global-recaptcha-container');
+      setIsLoggingIn(false);
+
+      if (res.success) {
+        setConfirmationResult(res.confirmationResult);
+        setOtpSent(true);
+        setResendTimer(60);
+      } else {
+        setLoginError(res.error);
+      }
+    } else {
+      if (otpInput.length < 6) {
+        setLoginError("Please enter complete 6-digit OTP code");
+        return;
+      }
+      setIsLoggingIn(true);
+      const res = await verifyFirebaseOtp(confirmationResult, otpInput);
+      setIsLoggingIn(false);
+
+      if (res.success) {
+        loginUser(phoneInput, res.idToken);
+        setOtpSent(false);
+        setConfirmationResult(null);
+        setPhoneInput('');
+        setOtpInput('');
+      } else {
+        setLoginError(res.error);
+      }
     }
   };
 
@@ -124,9 +177,12 @@ export default function AccountPage() {
 
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5 tracking-widest">Mobile Number</label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400 font-mono">+91</span>
+                    <label className="block text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5 sm:mb-2">Mobile Number</label>
+                    <div className="flex items-center border-2 border-slate-200 rounded-xl sm:rounded-2xl focus-within:border-rose-500 focus-within:ring-4 focus-within:ring-rose-500/10 bg-white transition-all shadow-xs overflow-hidden">
+                      <div className="bg-slate-100/90 border-r border-slate-200 text-slate-700 text-xs sm:text-sm font-black px-3 py-2.5 sm:px-3.5 sm:py-3 flex items-center gap-1 shrink-0 select-none">
+                        <span>🇮🇳</span>
+                        <span>+91</span>
+                      </div>
                       <input
                         type="tel"
                         required
@@ -135,54 +191,74 @@ export default function AccountPage() {
                         value={phoneInput}
                         onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, ''))}
                         placeholder="Enter 10-digit number"
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500 focus:bg-white font-mono font-black text-slate-800 transition-all placeholder-slate-400"
+                        className="w-full px-3 py-2.5 sm:py-3 text-sm font-mono font-black text-slate-900 focus:outline-none bg-transparent disabled:bg-slate-50 disabled:text-slate-400 placeholder:font-sans placeholder:font-normal placeholder:text-slate-400"
                       />
                     </div>
                   </div>
 
                   {otpSent && (
-                    <div className="animate-slideDown space-y-4">
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-200 space-y-3 sm:space-y-4">
                       <div>
-                        <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5 tracking-widest">Enter OTP Code</label>
-                        <input
-                          type="text"
-                          required
-                          maxLength={6}
-                          value={otpInput}
-                          onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
-                          placeholder="Test OTP: 123456"
-                          className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500 focus:bg-white text-center tracking-[0.2em] font-mono font-black text-slate-800 transition-all"
-                        />
+                        <label className="block text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5 sm:mb-2">Enter Verification Code</label>
+                        <OtpBoxInput value={otpInput} onChange={setOtpInput} />
                       </div>
-                      <div className="flex items-start gap-2 bg-amber-50/50 border border-amber-200 rounded-xl px-3 py-2.5">
-                        <ShieldCheck className="w-4 h-4 text-amber-550 shrink-0 mt-0.5" />
-                        <p className="text-[11px] text-amber-700 font-bold leading-relaxed">
-                          Demo Mode: Use mock OTP <span className="font-mono bg-amber-100 px-1.5 py-0.5 rounded text-amber-800 font-black">123456</span> to proceed.
-                        </p>
-                      </div>
+                      {showNotice && (
+                        <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200/90 text-emerald-900 rounded-xl sm:rounded-2xl p-3 sm:p-3.5 shadow-xs animate-in fade-in duration-200">
+                          <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                          <p className="text-xs sm:text-sm text-emerald-850 font-extrabold leading-snug">
+                            Verification code sent to <span className="font-mono text-emerald-950 font-black">+91-{phoneInput}</span>
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {loginError && (
-                    <p className="text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-xl px-3.5 py-2 font-semibold">{loginError}</p>
+                    <div className="p-3 sm:p-3.5 bg-rose-50 border border-rose-200 rounded-xl sm:rounded-2xl text-xs text-rose-600 font-bold leading-relaxed shadow-xs">
+                      {loginError}
+                    </div>
                   )}
+
+                  <div id="account-recaptcha-container"></div>
 
                   <button
                     type="submit"
                     disabled={isLoggingIn}
-                    className="w-full py-3.5 bg-rose-600 hover:bg-rose-500 active:scale-[0.99] text-white font-black rounded-xl text-xs uppercase tracking-widest transition-all shadow-md shadow-rose-600/10 hover:shadow-rose-500/25"
+                    className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-rose-600 via-rose-500 to-rose-600 hover:from-rose-500 hover:to-rose-400 text-white font-black text-xs uppercase tracking-widest rounded-xl sm:rounded-2xl shadow-lg shadow-rose-600/25 hover:shadow-rose-600/35 hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
                   >
-                    {isLoggingIn ? 'Verifying...' : (otpSent ? 'Verify OTP' : 'Send Verification OTP')}
+                    {isLoggingIn ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>{otpSent ? 'Verifying OTP...' : 'Sending OTP...'}</span>
+                      </>
+                    ) : (
+                      <span>{otpSent ? 'Verify OTP & Sign In' : 'Send Verification OTP'}</span>
+                    )}
                   </button>
 
                   {otpSent && (
-                    <button
-                      type="button"
-                      onClick={() => { setOtpSent(false); setOtpInput(''); setLoginError(''); }}
-                      className="w-full text-center text-[10px] text-slate-400 hover:text-rose-600 font-bold uppercase tracking-wider transition-colors"
-                    >
-                      ← Change Number
-                    </button>
+                    <div className="flex items-center justify-between text-[10px] sm:text-[11px] pt-1.5 border-t border-slate-100 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setOtpSent(false); setOtpInput(''); setLoginError(''); setResendTimer(60); }}
+                        className="text-slate-400 hover:text-rose-600 font-bold uppercase tracking-wider transition-colors text-left"
+                      >
+                        Change Number
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={resendTimer > 0 || isLoggingIn}
+                        onClick={handleResendOtp}
+                        className={`font-bold uppercase tracking-wider transition-colors text-right ${
+                          resendTimer > 0 || isLoggingIn
+                            ? 'text-slate-400 cursor-not-allowed'
+                            : 'text-rose-600 hover:text-rose-700 underline cursor-pointer'
+                        }`}
+                      >
+                        {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
+                      </button>
+                    </div>
                   )}
                 </form>
 
@@ -223,7 +299,7 @@ export default function AccountPage() {
                       Verified Account
                     </span>
                     <span className="text-[10px] text-slate-400 font-black tracking-wide font-sans">
-                      BITEONRAIL CLUB
+                      BITEONRAIL
                     </span>
                   </div>
                 </div>

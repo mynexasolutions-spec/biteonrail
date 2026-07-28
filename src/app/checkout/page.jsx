@@ -2,7 +2,9 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../../context/AppContext';
-import { auth, RecaptchaVerifier, signInWithPhoneNumber, isFirebaseConfigured } from '../../lib/firebase';
+import { auth, isFirebaseConfigured } from '../../lib/firebase';
+import { sendFirebaseOtp, verifyFirebaseOtp } from '../../lib/firebaseAuth';
+import OtpBoxInput from '../../components/OtpBoxInput';
 import { Phone, CheckCircle, Clock, CreditCard, Gift, AlertCircle, Coins, User, Train, MapPin, ArrowRight, ArrowLeft, Lock, Ticket, ClipboardList, Calendar, ShoppingBag } from 'lucide-react';
 
 const loadRazorpay = () => {
@@ -787,18 +789,28 @@ function CheckoutContent() {
     }
 
     setIsVerifying(true);
-    // Bypass Firebase phone authentication and use local mock OTP (123456)
-    setConfirmationResult(null);
-    setOtpSent(true);
+    const res = await sendFirebaseOtp(phone, 'global-recaptcha-container');
     setIsVerifying(false);
+
+    if (res.success) {
+      setConfirmationResult(res.confirmationResult);
+      setOtpSent(true);
+    } else {
+      alert(res.error);
+    }
   };
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
+    if (otp.length < 6) {
+      alert('Please enter complete 6-digit OTP code.');
+      return;
+    }
     setIsVerifying(true);
 
-    const onOtpVerified = () => {
-      loginUser(phone);
+    const res = await verifyFirebaseOtp(confirmationResult, otp);
+    if (res.success) {
+      loginUser(phone, res.idToken);
       const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
       if (mobileStep === 1 && !isDesktop) {
         setOtpSent(false);
@@ -808,30 +820,20 @@ function CheckoutContent() {
       } else {
         processOrderPlacement();
       }
-    };
-
-    if (confirmationResult) {
-      try {
-        const result = await confirmationResult.confirm(otp);
-        onOtpVerified();
-      } catch (err) {
-        console.error("OTP Verification Error:", err);
-        alert('Invalid OTP. Please check the code and try again.');
-        setIsVerifying(false);
-      }
     } else {
-      if (otp === '123456' || otp.length === 6) {
-        setTimeout(() => {
-          onOtpVerified();
-        }, 1000);
-      } else {
-        alert("Incorrect OTP. Enter the test OTP: 123456");
-        setIsVerifying(false);
-      }
+      alert(res.error);
+      setIsVerifying(false);
     }
   };
 
   const processOrderPlacement = async () => {
+    // Strict OTP Enforcement Guard: Unauthenticated users cannot place orders
+    if (!currentUser || currentUser !== phone) {
+      alert("Mobile OTP verification is required before placing an order.");
+      setIsVerifying(false);
+      return;
+    }
+
     if (paymentMode === 'online') {
       setIsVerifying(true);
 
@@ -1519,7 +1521,7 @@ function CheckoutContent() {
                     </div>
                   </div>
 
-                  <div id="recaptcha-container"></div>
+                  <div id="checkout-recaptcha-container"></div>
 
                   {/* Desktop submit button */}
                   <button
@@ -1543,15 +1545,7 @@ function CheckoutContent() {
 
                   <div className="py-2">
                     <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2.5">Enter Verification Code</label>
-                    <input
-                      type="text"
-                      required
-                      maxLength={6}
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                      placeholder={isFirebaseConfigured() ? "Enter 6-digit OTP" : "Enter test OTP: 123456"}
-                      className="w-full max-w-[200px] px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10 text-center tracking-[0.25em] text-lg font-black font-mono mx-auto text-slate-850"
-                    />
+                    <OtpBoxInput value={otp} onChange={setOtp} />
                   </div>
 
                   <div className="flex gap-4 pt-2">

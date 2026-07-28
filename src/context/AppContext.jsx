@@ -61,12 +61,21 @@ export function AppProvider({ children }) {
     if (typeof window !== 'undefined') {
       try {
         const storedUser = localStorage.getItem("s_user");
-        if (storedUser && storedUser !== "undefined") setCurrentUser(JSON.parse(storedUser));
+        const sessionExpiry = localStorage.getItem("s_session_expiry");
+
+        // Check if 30-day session token has expired
+        if (sessionExpiry && Date.now() > Number(sessionExpiry)) {
+          console.log("30-day JWT session expired. Automatically logging out.");
+          setCurrentUser(null);
+          localStorage.removeItem("s_user");
+          localStorage.removeItem("s_token");
+          localStorage.removeItem("s_session_expiry");
+        } else if (storedUser && storedUser !== "undefined") {
+          setCurrentUser(JSON.parse(storedUser));
+        }
       } catch (e) {
-        console.error("Error parsing stored user:", e);
+        console.error("Error parsing stored user session:", e);
       }
-
-
     }
 
     const parseOrderObj = (o) => {
@@ -438,10 +447,16 @@ export function AppProvider({ children }) {
     }
   };
 
-  const loginUser = async (phone) => {
+  const loginUser = async (phone, idToken = null, daysToKeep = 30) => {
     const cleanPhone = String(phone).replace(/[^\d+]/g, '');
+    const expiryTimestamp = Date.now() + (daysToKeep * 24 * 60 * 60 * 1000); // 30 days expiry
+
     setCurrentUser(cleanPhone);
     localStorage.setItem("s_user", JSON.stringify(cleanPhone));
+    localStorage.setItem("s_session_expiry", String(expiryTimestamp));
+    if (idToken) {
+      localStorage.setItem("s_token", idToken);
+    }
     if (isSupabaseConfigured()) {
       try {
         const { error } = await supabase.from('users').upsert({
@@ -460,6 +475,8 @@ export function AppProvider({ children }) {
   const logoutUser = () => {
     setCurrentUser(null);
     localStorage.removeItem("s_user");
+    localStorage.removeItem("s_token");
+    localStorage.removeItem("s_session_expiry");
   };
 
   const updateHomepageHeroDesktop = async (val) => {
