@@ -4,6 +4,17 @@ import { supabase, isSupabaseConfigured, officialSupabase } from '../lib/supabas
 
 const AppContext = createContext();
 
+function parseOrderObj(o) {
+  if (!o) return o;
+  return {
+    ...o,
+    items: typeof o.items === 'string' ? (() => { try { return JSON.parse(o.items); } catch (e) { return []; } })() : (o.items || []),
+    onDemandRequests: typeof o.onDemandRequests === 'string'
+      ? (() => { try { return JSON.parse(o.onDemandRequests); } catch (e) { return []; } })()
+      : (o.onDemandRequests || [])
+  };
+}
+
 export function AppProvider({ children }) {
   const [stations, setStations] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
@@ -18,9 +29,10 @@ export function AppProvider({ children }) {
   const [supportPhone, setSupportPhone] = useState("");
   const [supportEmail, setSupportEmail] = useState("");
   const [supportContacts, setSupportContacts] = useState([]);
+  const [siteFaqs, setSiteFaqs] = useState([]);
   const [categories, setCategories] = useState([]);
   const [homepageHeroDesktop, setHomepageHeroDesktop] = useState("/herobanner.png");
-  const [homepageHeroMobile, setHomepageHeroMobile] = useState("/vande_bharat.png");
+  const [homepageHeroMobile, setHomepageHeroMobile] = useState("/mobile_hero.png");
   const [homepageShowcase1, setHomepageShowcase1] = useState("/vande_bharat.png");
   const [homepageShowcase2, setHomepageShowcase2] = useState("/train_food_delivery.png");
   const [homepagePopularDishes, setHomepagePopularDishes] = useState(() => {
@@ -41,7 +53,7 @@ export function AppProvider({ children }) {
   const [statsEateries, setStatsEateries] = useState("80+");
   const [statsRating, setStatsRating] = useState("4.8");
   const [statsJunctions, setStatsJunctions] = useState("");
-  const [homepageLogo, setHomepageLogo] = useState("/logo.png");
+  const [homepageLogo, setHomepageLogo] = useState("/logo-white.png");
   const [homepageLogoWhite, setHomepageLogoWhite] = useState("/logo-white.png");
   const [loading, setLoading] = useState(true);
   const [globalOverrides, setGlobalOverrides] = useState(() => {
@@ -77,17 +89,6 @@ export function AppProvider({ children }) {
         console.error("Error parsing stored user session:", e);
       }
     }
-
-    const parseOrderObj = (o) => {
-      if (!o) return o;
-      return {
-        ...o,
-        items: typeof o.items === 'string' ? (() => { try { return JSON.parse(o.items); } catch (e) { return []; } })() : (o.items || []),
-        onDemandRequests: typeof o.onDemandRequests === 'string'
-          ? (() => { try { return JSON.parse(o.onDemandRequests); } catch (e) { return []; } })()
-          : (o.onDemandRequests || [])
-      };
-    };
 
     if (isSupabaseConfigured()) {
       const syncFromSupabase = async () => {
@@ -129,47 +130,52 @@ export function AppProvider({ children }) {
           // Toggle loading off immediately after critical data is loaded!
           setLoading(false);
 
-          // Fetch other configurations asynchronously in the background
+          // Fetch other configurations asynchronously in the background.
+          // Note: orders are NOT loaded here — they used to be fetched in full for
+          // every visitor via the anon key (a data leak). Admins fetch their scoped
+          // orders from /api/admin/orders; customers fetch their own via /api/orders/mine.
           Promise.all([
-            supabase.from('orders').select('*').order('created_at', { ascending: false }),
             supabase.from('config').select('*')
-          ]).then(([ordersRes, configRes]) => {
-            if (ordersRes.data) {
-              setOrders(ordersRes.data.map(parseOrderObj));
-            }
+          ]).then(([configRes]) => {
             if (configRes.data) {
               configRes.data.forEach(cfg => {
+                const val = typeof cfg.value === 'string' ? cfg.value.trim() : cfg.value;
+                const isFalsy = !val || val === 'undefined' || val === 'null' || val === 'none';
                 switch (cfg.key) {
-                  case 'free_product': setFreeProduct(cfg.value); break;
-                  case 'cod_policy': setCodPolicy(cfg.value); break;
-                  case 'cod_cutoff_hour': setCodCutoffHour(Number(cfg.value)); break;
-                  case 'delivery_charge': setDeliveryCharge(Number(cfg.value)); break;
-                  case 'gift_threshold': setGiftThreshold(Number(cfg.value)); break;
-                  case 'support_phone': setSupportPhone(cfg.value); break;
-                  case 'support_email': setSupportEmail(cfg.value); break;
-                  case 'homepage_hero_desktop': setHomepageHeroDesktop(cfg.value); break;
-                  case 'homepage_hero_mobile': setHomepageHeroMobile(cfg.value); break;
-                  case 'homepage_showcase_1': setHomepageShowcase1(cfg.value); break;
-                  case 'homepage_showcase_2': setHomepageShowcase2(cfg.value); break;
-                  case 'social_instagram': setSocialInstagram(cfg.value); break;
-                  case 'social_facebook': setSocialFacebook(cfg.value); break;
-                  case 'social_twitter': setSocialTwitter(cfg.value); break;
-                  case 'stats_passengers': setStatsPassengers(cfg.value); break;
-                  case 'stats_eateries': setStatsEateries(cfg.value); break;
-                  case 'stats_rating': setStatsRating(cfg.value); break;
-                  case 'stats_junctions': setStatsJunctions(cfg.value); break;
-                  case 'homepage_logo': setHomepageLogo(cfg.value); break;
-                  case 'homepage_logo_white': setHomepageLogoWhite(cfg.value); break;
+                  case 'free_product': setFreeProduct(val); break;
+                  case 'cod_policy': setCodPolicy(val); break;
+                  case 'cod_cutoff_hour': setCodCutoffHour(Number(val)); break;
+                  case 'delivery_charge': setDeliveryCharge(Number(val)); break;
+                  case 'gift_threshold': setGiftThreshold(Number(val)); break;
+                  case 'support_phone': setSupportPhone(val); break;
+                  case 'support_email': setSupportEmail(val); break;
+                  case 'homepage_hero_desktop': setHomepageHeroDesktop(prev => (!isFalsy && prev !== val) ? val : prev); break;
+                  case 'homepage_hero_mobile': setHomepageHeroMobile(prev => (!isFalsy && prev !== val) ? val : prev); break;
+                  case 'homepage_showcase_1': setHomepageShowcase1(prev => (!isFalsy && prev !== val) ? val : prev); break;
+                  case 'homepage_showcase_2': setHomepageShowcase2(prev => (!isFalsy && prev !== val) ? val : prev); break;
+                  case 'social_instagram': setSocialInstagram(val); break;
+                  case 'social_facebook': setSocialFacebook(val); break;
+                  case 'social_twitter': setSocialTwitter(val); break;
+                  case 'stats_passengers': setStatsPassengers(val); break;
+                  case 'stats_eateries': setStatsEateries(val); break;
+                  case 'stats_rating': setStatsRating(val); break;
+                  case 'stats_junctions': setStatsJunctions(val); break;
+                  case 'homepage_logo': setHomepageLogo(prev => (!isFalsy && prev !== val) ? val : prev); break;
+                  case 'homepage_logo_white': setHomepageLogoWhite(prev => (!isFalsy && prev !== val) ? val : prev); break;
                   case 'homepage_popular_dishes':
                     try {
-                      const parsed = JSON.parse(cfg.value);
+                      const parsed = JSON.parse(val);
                       setHomepagePopularDishes(parsed);
                       localStorage.setItem("s_homepage_popular_dishes", JSON.stringify(parsed));
                     } catch (e) { }
                     break;
 
                   case 'hq_support_contacts':
-                    try { setSupportContacts(JSON.parse(cfg.value)); } catch (e) { }
+                    try { setSupportContacts(JSON.parse(val)); } catch (e) { }
+                    break;
+
+                  case 'site_faqs':
+                    try { setSiteFaqs(JSON.parse(val)); } catch (e) { }
                     break;
                 }
               });
@@ -183,33 +189,9 @@ export function AppProvider({ children }) {
       };
       syncFromSupabase();
 
-      // Set up Realtime WebSockets listener for orders
-      const channel = officialSupabase
-        .channel('orders-realtime-channel')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
-          console.log('Realtime Order Event:', payload);
-          if (payload.eventType === 'INSERT') {
-            setOrders(prev => {
-              if (prev.some(o => o.id === payload.new.id)) return prev;
-              const updated = [parseOrderObj(payload.new), ...prev];
-              localStorage.setItem("s_orders", JSON.stringify(updated));
-              return updated;
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            setOrders(prev => {
-              const updated = prev.map(o => o.id === payload.new.id ? parseOrderObj(payload.new) : o);
-              localStorage.setItem("s_orders", JSON.stringify(updated));
-              return updated;
-            });
-          } else if (payload.eventType === 'DELETE') {
-            setOrders(prev => {
-              const updated = prev.filter(o => o.id !== payload.old.id);
-              localStorage.setItem("s_orders", JSON.stringify(updated));
-              return updated;
-            });
-          }
-        })
-        .subscribe();
+      // Note: the old anon-key Realtime subscription for orders was removed —
+      // it required anon SELECT access on `orders`, which is now locked down.
+      // Admins poll /api/admin/orders instead (see fetchAdminOrders below).
 
       // Set up Realtime WebSockets listener for stations
       const stationsChannel = officialSupabase
@@ -272,7 +254,6 @@ export function AppProvider({ children }) {
       }, 5000);
 
       return () => {
-        officialSupabase.removeChannel(channel);
         officialSupabase.removeChannel(stationsChannel);
         clearInterval(pollInterval);
       };
@@ -280,75 +261,57 @@ export function AppProvider({ children }) {
   }, []);
 
   const saveStations = async (newStations) => {
-    // Find deleted stations by comparing previous state with new array
-    const currentIds = stations.map(s => s.id);
-    const newIds = newStations.map(s => s.id);
-    const deletedIds = currentIds.filter(id => !newIds.includes(id));
-
+    const previous = stations;
     setStations(newStations);
     localStorage.setItem("s_stations", JSON.stringify(newStations));
 
-    if (isSupabaseConfigured()) {
-      try {
-        // 1. Delete removed stations
-        if (deletedIds.length > 0) {
-          const { error: deleteError } = await supabase
-            .from('stations')
-            .delete()
-            .in('id', deletedIds);
-          if (deleteError) {
-            console.error("Supabase Stations Delete Error:", deleteError);
-          }
-        }
-
-        // 2. Upsert remaining stations (only if there are stations to upsert)
-        if (newStations.length > 0) {
-          const cleanStations = newStations.map(({ created_at, ...rest }) => rest);
-          const { error: upsertError } = await supabase.from('stations').upsert(cleanStations);
-          if (upsertError) {
-            console.error("Supabase Stations Upsert Error:", upsertError);
-          }
-        }
-      } catch (err) {
-        console.error("Supabase Stations Catch Error:", err);
+    try {
+      const res = await fetch('/api/admin/stations/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stations: newStations })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.error("Stations sync error:", data.error);
+        setStations(previous);
+        localStorage.setItem("s_stations", JSON.stringify(previous));
+        return { error: data.error || 'Failed to save stations' };
       }
+    } catch (err) {
+      console.error("Stations sync catch error:", err);
+      setStations(previous);
+      localStorage.setItem("s_stations", JSON.stringify(previous));
+      return { error: 'Network error saving stations' };
     }
+    return { error: null };
   };
 
   const saveMenuItems = async (newMenu) => {
-    // Find deleted menu items by comparing previous state with new array
-    const currentIds = menuItems.map(item => item.id);
-    const newIds = newMenu.map(item => item.id);
-    const deletedIds = currentIds.filter(id => !newIds.includes(id));
-
+    const previous = menuItems;
     setMenuItems(newMenu);
     localStorage.setItem("s_menu", JSON.stringify(newMenu));
 
-    if (isSupabaseConfigured()) {
-      try {
-        // 1. Delete removed menu items
-        if (deletedIds.length > 0) {
-          const { error: deleteError } = await supabase
-            .from('menu_items')
-            .delete()
-            .in('id', deletedIds);
-          if (deleteError) {
-            console.error("Supabase MenuItems Delete Error:", deleteError);
-          }
-        }
-
-        // 2. Upsert remaining menu items
-        if (newMenu.length > 0) {
-          const cleanMenu = newMenu.map(({ created_at, ...rest }) => rest);
-          const { error: upsertError } = await supabase.from('menu_items').upsert(cleanMenu);
-          if (upsertError) {
-            console.error("Supabase MenuItems Upsert Error:", upsertError);
-          }
-        }
-      } catch (err) {
-        console.error("Supabase MenuItems Catch Error:", err);
+    try {
+      const res = await fetch('/api/admin/menu-items/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ menuItems: newMenu })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.error("Menu items sync error:", data.error);
+        setMenuItems(previous);
+        localStorage.setItem("s_menu", JSON.stringify(previous));
+        return { error: data.error || 'Failed to save menu items' };
       }
+    } catch (err) {
+      console.error("Menu items sync catch error:", err);
+      setMenuItems(previous);
+      localStorage.setItem("s_menu", JSON.stringify(previous));
+      return { error: 'Network error saving menu items' };
     }
+    return { error: null };
   };
 
   const addOrder = async (order) => {
@@ -398,33 +361,41 @@ export function AppProvider({ children }) {
     }
   };
 
-  const updateOrderStatus = async (orderId, status) => {
-    const updated = orders.map(o => o.id === orderId ? { ...o, status } : o);
-    setOrders(updated);
-    localStorage.setItem("s_orders", JSON.stringify(updated));
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('orders').update({ status }).eq('id', orderId);
-      } catch (err) {
-        console.error(err);
+  const patchOrder = async (orderId, body) => {
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.error('Order update error:', data.error);
+        return false;
       }
+      return true;
+    } catch (err) {
+      console.error('Order update catch error:', err);
+      return false;
     }
+  };
+
+  const updateOrderStatus = async (orderId, status) => {
+    const previous = orders;
+    setOrders(orders.map(o => o.id === orderId ? { ...o, status } : o));
+    const ok = await patchOrder(orderId, { status });
+    if (!ok) setOrders(previous);
   };
 
   const updateOrderRider = async (orderId, riderName) => {
-    const updated = orders.map(o => o.id === orderId ? { ...o, rider_name: riderName } : o);
-    setOrders(updated);
-    localStorage.setItem("s_orders", JSON.stringify(updated));
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('orders').update({ rider_name: riderName }).eq('id', orderId);
-      } catch (err) {
-        console.warn("Failed to update rider in Supabase. Make sure rider_name column exists:", err);
-      }
-    }
+    const previous = orders;
+    setOrders(orders.map(o => o.id === orderId ? { ...o, rider_name: riderName } : o));
+    const ok = await patchOrder(orderId, { rider_name: riderName });
+    if (!ok) setOrders(previous);
   };
 
   const updateOnDemandStatus = async (orderId, reqIndex, status) => {
+    const previous = orders;
     const updated = orders.map(o => {
       if (o.id === orderId) {
         const reqs = [...o.onDemandRequests];
@@ -434,16 +405,35 @@ export function AppProvider({ children }) {
       return o;
     });
     setOrders(updated);
-    localStorage.setItem("s_orders", JSON.stringify(updated));
-    if (isSupabaseConfigured()) {
-      try {
-        const targetOrder = updated.find(o => o.id === orderId);
-        if (targetOrder) {
-          await supabase.from('orders').update({ onDemandRequests: targetOrder.onDemandRequests }).eq('id', orderId);
-        }
-      } catch (err) {
-        console.error(err);
-      }
+    const targetOrder = updated.find(o => o.id === orderId);
+    const ok = await patchOrder(orderId, { onDemandRequests: targetOrder.onDemandRequests });
+    if (!ok) setOrders(previous);
+  };
+
+  // Admin-side: fetch orders scoped to the logged-in admin's session (global = all,
+  // station = their own station). Requires an authenticated Admin-Session cookie.
+  const fetchAdminOrders = async () => {
+    try {
+      const res = await fetch('/api/admin/orders');
+      if (!res.ok) return;
+      const data = await res.json();
+      setOrders((data.orders || []).map(parseOrderObj));
+    } catch (err) {
+      console.warn('Failed to fetch admin orders:', err);
+    }
+  };
+
+  // Customer-side: fetch only the given phone's own orders (replaces the old
+  // pattern of loading the entire orders table for every visitor).
+  const fetchMyOrders = async (phone) => {
+    if (!phone) return;
+    try {
+      const res = await fetch(`/api/orders/mine?phone=${encodeURIComponent(phone)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setOrders((data.orders || []).map(parseOrderObj));
+    } catch (err) {
+      console.warn('Failed to fetch my orders:', err);
     }
   };
 
@@ -479,420 +469,185 @@ export function AppProvider({ children }) {
     localStorage.removeItem("s_session_expiry");
   };
 
-  const updateHomepageHeroDesktop = async (val) => {
-    setHomepageHeroDesktop(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'homepage_hero_desktop', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
+  // Generic authenticated config key/value setter (global-admin only server-side).
+  const saveConfig = async (key, value) => {
+    try {
+      const res = await fetch('/api/admin/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.error(`Config save error (${key}):`, data.error);
       }
+    } catch (err) {
+      console.error(`Config save catch error (${key}):`, err);
     }
   };
 
-  const updateHomepageHeroMobile = async (val) => {
-    setHomepageHeroMobile(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'homepage_hero_mobile', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateHomepageShowcase1 = async (val) => {
-    setHomepageShowcase1(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'homepage_showcase_1', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateHomepageShowcase2 = async (val) => {
-    setHomepageShowcase2(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'homepage_showcase_2', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
+  const updateHomepageHeroDesktop = async (val) => { setHomepageHeroDesktop(val); await saveConfig('homepage_hero_desktop', val); };
+  const updateHomepageHeroMobile = async (val) => { setHomepageHeroMobile(val); await saveConfig('homepage_hero_mobile', val); };
+  const updateHomepageShowcase1 = async (val) => { setHomepageShowcase1(val); await saveConfig('homepage_showcase_1', val); };
+  const updateHomepageShowcase2 = async (val) => { setHomepageShowcase2(val); await saveConfig('homepage_showcase_2', val); };
   const updateHomepagePopularDishes = async (val) => {
     setHomepagePopularDishes(val);
     localStorage.setItem("s_homepage_popular_dishes", JSON.stringify(val));
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'homepage_popular_dishes', value: JSON.stringify(val) }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
+    await saveConfig('homepage_popular_dishes', JSON.stringify(val));
   };
-
-  const updateSocialInstagram = async (val) => {
-    setSocialInstagram(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'social_instagram', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateSocialFacebook = async (val) => {
-    setSocialFacebook(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'social_facebook', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateSocialTwitter = async (val) => {
-    setSocialTwitter(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'social_twitter', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateStatsPassengers = async (val) => {
-    setStatsPassengers(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'stats_passengers', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateStatsEateries = async (val) => {
-    setStatsEateries(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'stats_eateries', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateStatsRating = async (val) => {
-    setStatsRating(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'stats_rating', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateStatsJunctions = async (val) => {
-    setStatsJunctions(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'stats_junctions', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateHomepageLogo = async (val) => {
-    setHomepageLogo(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'homepage_logo', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateHomepageLogoWhite = async (val) => {
-    setHomepageLogoWhite(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert({ key: 'homepage_logo_white', value: val }, { onConflict: 'key' });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateFreeProduct = async (prod) => {
-    setFreeProduct(prod);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert([{ key: 'free_product', value: prod }]);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateCodPolicy = async (val) => {
-    setCodPolicy(val);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert([{ key: 'cod_policy', value: val }]);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const updateCodCutoffHour = async (val) => {
-    const hr = Number(val);
-    setCodCutoffHour(hr);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('config').upsert([{ key: 'cod_cutoff_hour', value: String(hr) }]);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
+  const updateSocialInstagram = async (val) => { setSocialInstagram(val); await saveConfig('social_instagram', val); };
+  const updateSocialFacebook = async (val) => { setSocialFacebook(val); await saveConfig('social_facebook', val); };
+  const updateSocialTwitter = async (val) => { setSocialTwitter(val); await saveConfig('social_twitter', val); };
+  const updateStatsPassengers = async (val) => { setStatsPassengers(val); await saveConfig('stats_passengers', val); };
+  const updateStatsEateries = async (val) => { setStatsEateries(val); await saveConfig('stats_eateries', val); };
+  const updateStatsRating = async (val) => { setStatsRating(val); await saveConfig('stats_rating', val); };
+  const updateStatsJunctions = async (val) => { setStatsJunctions(val); await saveConfig('stats_junctions', val); };
+  const updateHomepageLogo = async (val) => { setHomepageLogo(val); await saveConfig('homepage_logo', val); };
+  const updateHomepageLogoWhite = async (val) => { setHomepageLogoWhite(val); await saveConfig('homepage_logo_white', val); };
+  const updateFreeProduct = async (prod) => { setFreeProduct(prod); await saveConfig('free_product', prod); };
+  const updateCodPolicy = async (val) => { setCodPolicy(val); await saveConfig('cod_policy', val); };
+  const updateCodCutoffHour = async (val) => { const hr = Number(val); setCodCutoffHour(hr); await saveConfig('cod_cutoff_hour', String(hr)); };
+  const updateSupportPhone = async (newValue) => { const val = String(newValue).trim(); setSupportPhone(val); await saveConfig('support_phone', val); };
+  const updateSupportEmail = async (newValue) => { const val = String(newValue).trim(); setSupportEmail(val); await saveConfig('support_email', val); };
+  const updateSupportContacts = async (newList) => { setSupportContacts(newList); await saveConfig('hq_support_contacts', JSON.stringify(newList)); };
+  const updateSiteFaqs = async (newList) => { setSiteFaqs(newList); await saveConfig('site_faqs', JSON.stringify(newList)); };
+  const updateDeliveryCharge = async (newValue) => { const val = Number(newValue) || 0; setDeliveryCharge(val); await saveConfig('delivery_charge', String(val)); };
+  const updateGiftThreshold = async (newValue) => { const val = Number(newValue) || 0; setGiftThreshold(val); await saveConfig('gift_threshold', String(val)); };
 
   const addAvailableState = async (stateName) => {
     const trimmed = stateName.trim();
     if (!trimmed) return;
     if (availableStates.includes(trimmed)) return;
-
-    const updated = [...availableStates, trimmed];
-    setAvailableStates(updated);
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('states').insert([{ name: trimmed }]);
-        if (error) {
-          console.error("Error adding state to DB:", error);
-        }
-      } catch (err) {
-        console.error("Error adding state to DB catch:", err);
-      }
+    const previous = availableStates;
+    setAvailableStates([...availableStates, trimmed]);
+    try {
+      const res = await fetch('/api/admin/states', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed })
+      });
+      if (!res.ok) setAvailableStates(previous);
+    } catch (err) {
+      console.error("Error adding state:", err);
+      setAvailableStates(previous);
     }
   };
 
   const removeAvailableState = async (stateName) => {
-    const updated = availableStates.filter(s => s !== stateName);
-    setAvailableStates(updated);
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('states').delete().eq('name', stateName);
-        if (error) {
-          console.error("Error deleting state from DB:", error);
-        }
-      } catch (err) {
-        console.error("Error deleting state from DB catch:", err);
-      }
+    const previous = availableStates;
+    setAvailableStates(availableStates.filter(s => s !== stateName));
+    try {
+      const res = await fetch(`/api/admin/states?name=${encodeURIComponent(stateName)}`, { method: 'DELETE' });
+      if (!res.ok) setAvailableStates(previous);
+    } catch (err) {
+      console.error("Error deleting state:", err);
+      setAvailableStates(previous);
     }
   };
 
   const renameAvailableState = async (oldName, newName) => {
     const trimmedNew = newName.trim();
     if (!trimmedNew || trimmedNew === oldName) return;
-
-    const updated = availableStates.map(s => s === oldName ? trimmedNew : s);
-    setAvailableStates(updated);
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('states').update({ name: trimmedNew }).eq('name', oldName);
-        if (error) {
-          console.error("Error renaming state in DB:", error);
-        }
-      } catch (err) {
-        console.error("Error renaming state in DB catch:", err);
-      }
-    }
-  };
-
-  const updateSupportPhone = async (newValue) => {
-    const val = String(newValue).trim();
-    setSupportPhone(val);
+    const previous = availableStates;
+    setAvailableStates(availableStates.map(s => s === oldName ? trimmedNew : s));
     try {
-      if (isSupabaseConfigured()) {
-        await supabase.from('config').upsert({ key: 'support_phone', value: val }, { onConflict: 'key' });
-      }
-    } catch (e) {
-      console.warn("Failed to save support phone in Supabase:", e);
-    }
-  };
-
-  const updateSupportEmail = async (newValue) => {
-    const val = String(newValue).trim();
-    setSupportEmail(val);
-    try {
-      if (isSupabaseConfigured()) {
-        await supabase.from('config').upsert({ key: 'support_email', value: val }, { onConflict: 'key' });
-      }
-    } catch (e) {
-      console.warn("Failed to save support email in Supabase:", e);
-    }
-  };
-
-  const updateSupportContacts = async (newList) => {
-    setSupportContacts(newList);
-    try {
-      if (isSupabaseConfigured()) {
-        await supabase.from('config').upsert({ key: 'hq_support_contacts', value: JSON.stringify(newList) }, { onConflict: 'key' });
-      }
-    } catch (e) {
-      console.warn("Failed to save support contacts in Supabase:", e);
-    }
-  };
-
-  const updateDeliveryCharge = async (newValue) => {
-    const val = Number(newValue) || 0;
-    setDeliveryCharge(val);
-    try {
-      if (isSupabaseConfigured()) {
-        await supabase.from('config').upsert({ key: 'delivery_charge', value: String(val) }, { onConflict: 'key' });
-      }
-    } catch (e) {
-      console.warn("Failed to save delivery charge in Supabase:", e);
-    }
-  };
-
-  const updateGiftThreshold = async (newValue) => {
-    const val = Number(newValue) || 0;
-    setGiftThreshold(val);
-    try {
-      if (isSupabaseConfigured()) {
-        await supabase.from('config').upsert({ key: 'gift_threshold', value: String(val) }, { onConflict: 'key' });
-      }
-    } catch (e) {
-      console.warn("Failed to save gift threshold in Supabase:", e);
+      const res = await fetch('/api/admin/states', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldName, newName: trimmedNew })
+      });
+      if (!res.ok) setAvailableStates(previous);
+    } catch (err) {
+      console.error("Error renaming state:", err);
+      setAvailableStates(previous);
     }
   };
 
   const addCategory = async (name, stationCode = 'ALL', image = '') => {
     const code = (stationCode || 'ALL').toUpperCase();
     const exists = categories.some(c => (c.name || '').toLowerCase() === name.toLowerCase() && (c.station_code || 'ALL').toUpperCase() === code);
-    if (exists) return;
+    if (exists) return { error: 'Category already exists' };
 
     const newCat = { name, station_code: code, image };
-    const updated = [...categories, newCat];
-    setCategories(updated);
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('categories').insert([newCat]);
-        if (error) {
-          console.error("Supabase insert category error:", error);
-          alert("Database insert error: " + error.message);
-        }
-      } catch (e) {
-        console.error("Error inserting category:", e);
+    const previous = categories;
+    setCategories([...categories, newCat]);
+    try {
+      const res = await fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCat)
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setCategories(previous);
+        return { error: data.error || 'Failed to add category' };
       }
+    } catch (e) {
+      console.error("Error inserting category:", e);
+      setCategories(previous);
+      return { error: 'Network error adding category' };
     }
+    return { error: null };
   };
 
   const removeCategory = async (name, stationCode = 'ALL') => {
     const code = (stationCode || 'ALL').toUpperCase();
-    const legacyName = `${code}:${name}`;
+    const previousCats = categories;
+    const previousMenu = menuItems;
 
-    const updatedCats = categories.filter(c => {
-      const matchExact = (c.name || '').toLowerCase() === name.toLowerCase() && (c.station_code || 'ALL').toUpperCase() === code;
-      const matchLegacy = c.name && c.name.includes(':') && c.name.split(':')[1].toLowerCase() === name.toLowerCase() && c.name.split(':')[0].toUpperCase() === code;
-      return !(matchExact || matchLegacy);
-    });
-    setCategories(updatedCats);
-
-    const updatedMenu = menuItems.map(item => {
+    setCategories(categories.filter(c => !((c.name || '').toLowerCase() === name.toLowerCase() && (c.station_code || 'ALL').toUpperCase() === code)));
+    setMenuItems(menuItems.map(item => {
       const isThisStation = item.station_code && item.station_code.toUpperCase() === code;
-      const matchesCategory = item.category === name || item.category === legacyName;
-      if (isThisStation && matchesCategory) {
-        return { ...item, category: 'Uncategorized' };
-      }
+      if (isThisStation && item.category === name) return { ...item, category: 'Uncategorized' };
       return item;
-    });
-    setMenuItems(updatedMenu);
+    }));
 
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('categories').delete().eq('name', name).eq('station_code', code);
-        await supabase.from('categories').delete().eq('name', legacyName);
-
-        await supabase.from('menu_items').update({ category: 'Uncategorized' }).eq('category', name).eq('station_code', code);
-        await supabase.from('menu_items').update({ category: 'Uncategorized' }).eq('category', legacyName).eq('station_code', code);
-      } catch (e) {
-        console.error("Error deleting category and updating items:", e);
+    try {
+      const res = await fetch(`/api/admin/categories?name=${encodeURIComponent(name)}&station_code=${encodeURIComponent(code)}`, { method: 'DELETE' });
+      if (!res.ok) {
+        setCategories(previousCats);
+        setMenuItems(previousMenu);
       }
+    } catch (e) {
+      console.error("Error deleting category:", e);
+      setCategories(previousCats);
+      setMenuItems(previousMenu);
     }
   };
 
   const updateCategory = async (oldName, newName, stationCode = 'ALL', image = null) => {
     if (!newName) return;
     const code = (stationCode || 'ALL').toUpperCase();
+    const previousCats = categories;
+    const previousMenu = menuItems;
 
-    const getCleanName = (n) => {
-      if (!n) return '';
-      return n.includes(':') ? n.split(':')[1] : n;
-    };
-
-    const cleanOldName = getCleanName(oldName);
-    const cleanNewName = getCleanName(newName);
-    const legacyOldName = `${code}:${cleanOldName}`;
-
-    // 1. Update categories in local state
-    const updatedCats = categories.map(c => {
-      const cClean = getCleanName(c.name).toLowerCase();
-      const match = cClean === cleanOldName.toLowerCase() && (c.station_code || 'ALL').toUpperCase() === code;
-      if (match) {
-        const newObj = { ...c, name: newName };
-        if (image !== null) newObj.image = image;
-        return newObj;
-      }
-      return c;
-    });
-    setCategories(updatedCats);
-
-    // 2. Update menuItems category reference in local state
-    const updatedMenu = menuItems.map(item => {
+    setCategories(categories.map(c => {
+      const match = (c.name || '').toLowerCase() === oldName.toLowerCase() && (c.station_code || 'ALL').toUpperCase() === code;
+      if (!match) return c;
+      const newObj = { ...c, name: newName };
+      if (image !== null) newObj.image = image;
+      return newObj;
+    }));
+    setMenuItems(menuItems.map(item => {
       const isThisStation = (item.station_code || 'ALL').toUpperCase() === code;
-      const itemCleanCat = getCleanName(item.category).toLowerCase();
-      if (isThisStation && (item.category === oldName || itemCleanCat === cleanOldName.toLowerCase() || item.category === legacyOldName)) {
-        return { ...item, category: newName };
-      }
+      if (isThisStation && item.category === oldName) return { ...item, category: newName };
       return item;
-    });
-    setMenuItems(updatedMenu);
+    }));
 
-    // 3. Database operations
-    if (isSupabaseConfigured()) {
-      try {
-        const updatePayload = { name: newName };
-        if (image !== null) updatePayload.image = image;
-
-        // Update in categories table
-        await supabase.from('categories').update(updatePayload).eq('name', oldName).eq('station_code', code);
-        await supabase.from('categories').update(updatePayload).eq('name', cleanOldName).eq('station_code', code);
-        await supabase.from('categories').update(updatePayload).eq('name', legacyOldName);
-
-        // Update in menu_items table
-        await supabase.from('menu_items').update({ category: newName }).eq('category', oldName).eq('station_code', code);
-        await supabase.from('menu_items').update({ category: newName }).eq('category', cleanOldName).eq('station_code', code);
-        await supabase.from('menu_items').update({ category: newName }).eq('category', legacyOldName).eq('station_code', code);
-
-      } catch (e) {
-        console.error("Error updating category details:", e);
+    try {
+      const res = await fetch('/api/admin/categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldName, newName, station_code: code, image })
+      });
+      if (!res.ok) {
+        setCategories(previousCats);
+        setMenuItems(previousMenu);
       }
+    } catch (e) {
+      console.error("Error updating category:", e);
+      setCategories(previousCats);
+      setMenuItems(previousMenu);
     }
   };
 
@@ -917,21 +672,18 @@ export function AppProvider({ children }) {
       return updated;
     });
 
-    if (isSupabaseConfigured()) {
-      try {
-        const { data: existingRows } = await supabase
-          .from('global_item_overrides')
-          .select('*')
-          .eq('item_id', itemStr)
-          .eq('station_code', code);
-        if (existingRows && existingRows.length > 0) {
-          await supabase.from('global_item_overrides').update({ available }).eq('item_id', itemStr).eq('station_code', code);
-        } else {
-          await supabase.from('global_item_overrides').insert([{ item_id: itemStr, station_code: code, available }]);
-        }
-      } catch (e) {
-        console.error('Error saving global item override:', e);
+    try {
+      const res = await fetch('/api/admin/overrides', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: itemStr, station_code: code, available })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.error('Error saving global item override:', data.error);
       }
+    } catch (e) {
+      console.error('Error saving global item override:', e);
     }
   };
 
@@ -964,6 +716,8 @@ export function AppProvider({ children }) {
       updateOrderStatus,
       updateOrderRider,
       updateOnDemandStatus,
+      fetchAdminOrders,
+      fetchMyOrders,
       currentUser,
       loginUser,
       logoutUser,
@@ -988,6 +742,8 @@ export function AppProvider({ children }) {
       updateSupportEmail,
       supportContacts,
       updateSupportContacts,
+      siteFaqs,
+      updateSiteFaqs,
       categories,
       addCategory,
       removeCategory,

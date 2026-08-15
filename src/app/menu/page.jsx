@@ -650,22 +650,13 @@ function MenuContent() {
   };
 
   const getCategoryCount = (category) => {
-    if (!menuItems) return 0;
-    const stationItems = stationCode
-      ? menuItems.filter(item => item.station_code && item.station_code.toLowerCase() === stationCode.toLowerCase() && item.available)
-      : menuItems.filter(item => item.available);
-    
-    // Group unique by name
-    const uniqueMap = new Map();
-    stationItems.forEach(item => {
-      uniqueMap.set(item.name.toLowerCase().trim(), item);
-    });
-    const uniqueItems = Array.from(uniqueMap.values());
-    
+    if (!consolidatedMenuItems) return 0;
+    const availableItems = consolidatedMenuItems.filter(item => item.available);
+
     if (category === 'All') {
-      return uniqueItems.length;
+      return availableItems.length;
     }
-    return uniqueItems.filter(item => item.category === category).length;
+    return availableItems.filter(item => item.category === category).length;
   };
 
   const getCategoryColor = (category, isActive) => {
@@ -695,8 +686,8 @@ function MenuContent() {
           <div className="absolute inset-0 rounded-full border-4 border-rose-600 border-t-transparent animate-spin" />
         </div>
         <div className="text-center space-y-1">
-          <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">Loading Pantry Menu</h3>
-          <p className="text-xs text-slate-400 font-semibold">Connecting to station kitchen databases...</p>
+          <h3 className="font-black text-slate-800 text-base tracking-tight uppercase">Loading Pantry Menu</h3>
+          <p className="text-sm text-slate-400 font-semibold">Connecting to station kitchen databases...</p>
         </div>
       </div>
     );
@@ -727,14 +718,14 @@ function MenuContent() {
           </Link>
           
           <div className="flex-1 min-w-0 flex flex-col">
-            <h1 className="text-sm font-black text-slate-900 leading-tight flex items-center gap-1.5">
+            <h1 className="text-base font-black text-slate-900 leading-tight flex items-center gap-1.5">
               <span className="truncate">{selectedStation ? selectedStation.name : 'Station Hub'}</span>
               <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-mono uppercase border border-slate-200 shrink-0">
                 {stationCode || 'N/A'}
               </span>
             </h1>
             {selectedStation?.state && (
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mt-0.5">
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mt-0.5">
                 {selectedStation.state}
               </span>
             )}
@@ -791,7 +782,7 @@ function MenuContent() {
             <Train className="w-6 h-6 text-rose-600" />
           </div>
           <div className="space-y-1.5">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
               {selectedStation ? selectedStation.name : 'Station Hub'}
             </h1>
             <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500 font-bold">
@@ -839,12 +830,12 @@ function MenuContent() {
           {pnr ? (
             <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-left min-w-[180px] shadow-xs">
               <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block">PASSENGER PNR</span>
-              <span className="font-mono text-sm font-black text-slate-800 tracking-wider block mt-0.5">{pnr}</span>
+              <span className="font-mono text-base font-black text-slate-800 tracking-wider block mt-0.5">{pnr}</span>
             </div>
           ) : (
             <div className="bg-emerald-50/60 border border-emerald-200 p-3 rounded-2xl text-left min-w-[180px] shadow-xs">
               <span className="text-[9px] text-emerald-800 font-black uppercase tracking-wider block">Delivery Status</span>
-              <span className="text-xs font-bold text-emerald-800 block mt-0.5">Direct Station Delivery</span>
+              <span className="text-sm font-bold text-emerald-800 block mt-0.5">Direct Station Delivery</span>
             </div>
           )}
         </div>
@@ -854,11 +845,11 @@ function MenuContent() {
       <TrackDivider light />
 
       {/* MRP Packaged Items Info Banner */}
-      <div className="w-fit max-w-full bg-amber-50 border border-amber-200 rounded-2xl p-3 mb-6 text-xs sm:text-sm text-amber-900 font-bold flex items-center gap-3 shadow-xs">
+      <div className="w-fit max-w-full bg-amber-50 border border-amber-200 rounded-2xl p-3 mb-6 text-sm sm:text-base text-amber-900 font-bold flex items-center gap-3 shadow-xs">
         <span className="bg-amber-550/10 text-amber-600 p-2 sm:p-2.5 rounded-xl shrink-0 flex items-center justify-center">
           <Tag className="w-4 h-4 sm:w-5 sm:h-5" />
         </span>
-        <div className="text-xs sm:text-sm leading-snug">
+        <div className="text-sm sm:text-base leading-snug">
           <span className="font-extrabold text-amber-950 mr-1.5">Packaged Items:</span>
           <span className="text-amber-800 font-semibold">Drinks, water, and snacks are delivered strictly at printed MRP.</span>
         </div>
@@ -866,34 +857,35 @@ function MenuContent() {
 
       {/* Dynamic Station Selector Bar */}
       {!stationCode && (
-        <div className="bg-white rounded-[24px] border border-slate-200 p-4 sm:p-5 shadow-xs mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
-          <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-rose-600 rounded-l-[24px]" />
-          <div className="flex items-center gap-3">
-            <div className="bg-rose-550/5 text-rose-600 p-2.5 rounded-xl border border-rose-100 shrink-0 shadow-sm">
-              <MapPin className="w-5 h-5 text-rose-600" />
+        <div className="bg-white rounded-[28px] border border-slate-200/80 p-5 sm:p-6 shadow-sm mb-8 flex flex-col md:flex-row md:items-center justify-between gap-5 relative">
+          <div className="absolute top-0 left-0 bottom-0 w-2 bg-gradient-to-b from-rose-600 to-rose-500 rounded-l-[28px]" />
+          
+          <div className="flex items-center gap-4">
+            <div className="bg-rose-50 text-rose-600 p-3.5 rounded-2xl border border-rose-100 shrink-0 shadow-xs flex items-center justify-center">
+              <MapPin className="w-6 h-6 text-rose-600 animate-bounce" style={{ animationDuration: '3s' }} />
             </div>
             <div>
-              <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block">DELIVERY LOCATION STATUS</span>
-              <span className="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-tight block">
-                {selectedStation ? `${selectedStation.name} (${selectedStation.code}) - Hub Active` : 'Showing All Hubs (Browse Mode)'}
+              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block">DELIVERY LOCATION</span>
+              <span className="text-base sm:text-lg font-black text-slate-800 tracking-tight block mt-0.5">
+                {selectedStation ? `${selectedStation.name} (${selectedStation.code})` : 'Showing All Hubs (Browse Mode)'}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-[380px] md:w-[420px] shrink-0">
-            <span className="text-xs text-slate-450 font-bold hidden sm:inline shrink-0">Active Station Hub:</span>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-[480px] shrink-0">
+            <span className="text-sm text-slate-500 font-bold hidden sm:inline shrink-0 uppercase tracking-wider text-[11px]">Junction:</span>
             
             {/* Custom Searchable Dropdown Container */}
             <div className="relative w-full">
               <button
                 type="button"
                 onClick={() => setShowHubDropdown(!showHubDropdown)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl focus:outline-none focus:border-rose-500 cursor-pointer flex justify-between items-center gap-2"
+                className="w-full bg-slate-50/70 hover:bg-slate-100/60 border border-slate-200 text-slate-800 text-sm sm:text-base font-extrabold py-3.5 px-5 rounded-2xl focus:outline-none focus:border-rose-500/85 focus:ring-4 focus:ring-rose-500/5 transition-all cursor-pointer flex justify-between items-center gap-3 shadow-xs"
               >
-                <span className="truncate">
-                  {selectedStation ? `${selectedStation.name} (${selectedStation.code})` : 'Show All Stations (Browse Mode)'}
+                <span className="truncate text-slate-800 font-black">
+                  {selectedStation ? `${selectedStation.name} (${selectedStation.code})` : 'Select Junction (Browse Mode)'}
                 </span>
-                <span className="text-slate-400 text-[10px]">▼</span>
+                <span className="text-slate-400 text-xs transition-transform duration-300 transform group-hover:translate-y-0.5">▼</span>
               </button>
 
               {/* Dropdown Menu Overlay */}
@@ -902,25 +894,25 @@ function MenuContent() {
                   {/* Backdrop to close on clicking outside */}
                   <div className="fixed inset-0 z-40" onClick={() => { setShowHubDropdown(false); setHubSearchQuery(''); }} />
                   
-                  <div className="absolute right-4 md:right-0 top-full mt-2 w-full min-w-[280px] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-2.5 animate-fadeIn">
+                  <div className="absolute right-0 top-full mt-3 w-full min-w-[320px] sm:min-w-[400px] bg-white border border-slate-200/90 rounded-[24px] shadow-2xl z-50 p-4 space-y-3 animate-fadeIn border-t-rose-500 border-t-2">
                     {/* Search Input inside Dropdown */}
                     <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 flex items-center justify-center">
-                        <Search className="w-3.5 h-3.5" />
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 flex items-center justify-center">
+                        <Search className="w-4 h-4" />
                       </span>
                       <input
                         type="text"
                         value={hubSearchQuery}
                         onChange={(e) => setHubSearchQuery(e.target.value)}
-                        placeholder="Search station or code..."
-                        className="w-full pl-8 pr-7 py-2 border border-slate-150 rounded-xl text-xs font-bold text-slate-855 focus:outline-none focus:border-rose-500 bg-slate-50 font-sans"
+                        placeholder="Search railway station or code..."
+                        className="w-full pl-10 pr-9 py-3 border border-slate-200 rounded-xl text-sm sm:text-base font-bold text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 bg-slate-50/60 transition-all font-sans"
                         onClick={(e) => e.stopPropagation()}
                       />
                       {hubSearchQuery && (
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setHubSearchQuery(''); }}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-655 text-xs font-black"
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-sm font-black"
                         >
                           ✕
                         </button>
@@ -928,7 +920,7 @@ function MenuContent() {
                     </div>
 
                     {/* Scrollable Hub List */}
-                    <div className="max-h-[220px] overflow-y-auto pr-1 space-y-1 scrollbar-thin">
+                    <div className="max-h-[260px] overflow-y-auto pr-1 space-y-2 scrollbar-thin">
                       {/* Browse Option */}
                       <button
                         type="button"
@@ -940,7 +932,7 @@ function MenuContent() {
                           setHubSearchQuery('');
                           router.push(`${window.location.pathname}?${params.toString()}`);
                         }}
-                        className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold transition-colors ${!stationCode ? 'bg-rose-50 text-rose-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                        className={`w-full text-left px-4 py-3 rounded-xl text-sm sm:text-base font-black transition-all ${!stationCode ? 'bg-rose-50 text-rose-700 border border-rose-100 shadow-xs' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
                       >
                         Show All Stations (Browse Mode)
                       </button>
@@ -955,7 +947,7 @@ function MenuContent() {
 
                         if (filtered.length === 0) {
                           return (
-                            <div className="text-center py-4 text-slate-400 text-[11px] font-bold">
+                            <div className="text-center py-6 text-slate-400 text-sm font-bold bg-slate-50 rounded-xl border border-dashed border-slate-200">
                               No active hubs found.
                             </div>
                           );
@@ -973,13 +965,16 @@ function MenuContent() {
                               setHubSearchQuery('');
                               router.push(`${window.location.pathname}?${params.toString()}`);
                             }}
-                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-colors flex justify-between items-center ${stationCode === s.code ? 'bg-rose-50 text-rose-700' : 'text-slate-650 hover:bg-slate-50'}`}
+                            className={`w-full text-left px-4 py-3 rounded-xl transition-all border flex justify-between items-center group/item hover:scale-[1.01] ${stationCode === s.code ? 'bg-rose-50/60 text-rose-700 border-rose-100/70' : 'text-slate-700 hover:bg-rose-50/30 border-slate-100 hover:border-rose-100/50 bg-slate-50/40'}`}
                           >
-                            <div className="min-w-0 mr-2">
-                              <span className="block truncate font-extrabold">{s.name}</span>
-                              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block font-mono mt-0.5">{s.code} · {s.state}</span>
+                            <div className="min-w-0 mr-3">
+                              <span className="block truncate text-base sm:text-lg font-black text-slate-800 group-hover/item:text-rose-600 transition-colors">{s.name}</span>
+                              <span className="text-[11px] sm:text-xs text-slate-450 font-bold uppercase tracking-wider block font-mono mt-0.5">{s.code} · {s.state}</span>
                             </div>
-                            <span className="text-[9px] text-emerald-650 bg-emerald-50 border border-emerald-100/50 px-1.5 py-0.5 rounded font-extrabold shrink-0">Active</span>
+                            <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-100/80 px-2 py-0.5 rounded-md font-extrabold shrink-0 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
+                              Active
+                            </span>
                           </button>
                         ));
                       })()}
@@ -1002,10 +997,10 @@ function MenuContent() {
               <Info className="w-5 h-5 text-rose-600" />
             </div>
             <div>
-              <h4 className="font-black text-sm uppercase tracking-wider text-rose-700">
+              <h4 className="font-black text-base uppercase tracking-wider text-rose-700">
                 {isSuspended ? '🛑 Kitchen Suspended' : isHours ? '🕒 Operational Hours Closed' : '⏱ Delivery Cutoff Reached'}
               </h4>
-              <p className="text-xs text-rose-800 font-semibold mt-0.5 leading-relaxed">
+              <p className="text-sm text-rose-800 font-semibold mt-0.5 leading-relaxed">
                 {reasonText.substring(reasonText.indexOf(':') + 2)}
               </p>
             </div>
@@ -1022,8 +1017,8 @@ function MenuContent() {
             /* Show Categories Grid */
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Browse Categories</h2>
-                <p className="text-xs text-slate-500 font-semibold mt-1">Select a category to explore fresh train-cooked meals.</p>
+                <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Browse Categories</h2>
+                <p className="text-sm text-slate-500 font-semibold mt-1">Select a category to explore fresh train-cooked meals.</p>
               </div>
 
               <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
@@ -1053,8 +1048,8 @@ function MenuContent() {
                       </div>
 
                       <div className="space-y-0.5">
-                        <span className="font-black text-slate-800 text-[10px] sm:text-xs md:text-sm block group-hover:text-rose-600 transition-colors uppercase tracking-tight">{cat}</span>
-                        <span className="text-[8px] sm:text-[10px] text-slate-400 font-bold block">{itemCount} Dishes</span>
+                        <span className="font-black text-slate-800 text-xs sm:text-sm md:text-base block group-hover:text-rose-600 transition-colors uppercase tracking-tight">{cat}</span>
+                        <span className="text-[10px] sm:text-xs text-slate-400 font-bold block">{itemCount} Dishes</span>
                       </div>
                     </button>
                   );
@@ -1068,13 +1063,13 @@ function MenuContent() {
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <button
                   onClick={() => setActiveCategory(null)}
-                  className="flex items-center gap-2 text-xs font-black text-rose-600 bg-rose-50 border border-rose-100 px-4 py-2.5 rounded-2xl hover:bg-rose-100 transition-all shadow-xs shrink-0"
+                  className="flex items-center gap-2 text-sm font-black text-rose-600 bg-rose-50 border border-rose-100 px-4 py-2.5 rounded-2xl hover:bg-rose-100 transition-all shadow-xs shrink-0"
                 >
                   <ArrowLeft className="w-4 h-4 text-rose-600" /> Back to Categories
                 </button>
                 <div className="text-right">
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">Selected Category</span>
-                  <span className="text-base font-black text-slate-800 uppercase tracking-tight">{activeCategory}</span>
+                  <span className="text-lg font-black text-slate-800 uppercase tracking-tight">{activeCategory}</span>
                 </div>
               </div>
 
@@ -1089,7 +1084,7 @@ function MenuContent() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={`Search in ${activeCategory}...`}
-                      className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 text-xs focus:outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 transition-all placeholder-slate-400 font-bold bg-slate-50/50 focus:bg-white"
+                      className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 transition-all placeholder-slate-400 font-bold bg-slate-50/50 focus:bg-white"
                     />
                   </div>
 
@@ -1097,7 +1092,7 @@ function MenuContent() {
                   <div className="flex items-center gap-2 self-start sm:self-auto overflow-x-auto scrollbar-none pb-1 sm:pb-0">
                     <button
                       onClick={() => setFoodTypeFilter(foodTypeFilter === 'veg' ? 'all' : 'veg')}
-                      className={`px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all border flex items-center gap-1.5 shrink-0 ${foodTypeFilter === 'veg'
+                      className={`px-3 py-2 rounded-xl text-sm font-black uppercase tracking-wider transition-all border flex items-center gap-1.5 shrink-0 ${foodTypeFilter === 'veg'
                         ? 'bg-emerald-600 border-emerald-655 text-white shadow-xs'
                         : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'
                         }`}
@@ -1110,7 +1105,7 @@ function MenuContent() {
 
                     <button
                       onClick={() => setFoodTypeFilter(foodTypeFilter === 'nonveg' ? 'all' : 'nonveg')}
-                      className={`px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all border flex items-center gap-1.5 shrink-0 ${foodTypeFilter === 'nonveg'
+                      className={`px-3 py-2 rounded-xl text-sm font-black uppercase tracking-wider transition-all border flex items-center gap-1.5 shrink-0 ${foodTypeFilter === 'nonveg'
                         ? 'bg-amber-900 border-amber-955 text-white shadow-xs'
                         : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'
                         }`}
@@ -1125,7 +1120,7 @@ function MenuContent() {
 
                     <button
                       onClick={() => setFoodTypeFilter(foodTypeFilter === 'standard' ? 'all' : 'standard')}
-                      className={`px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all border flex items-center gap-1.5 shrink-0 ${foodTypeFilter === 'standard'
+                      className={`px-3 py-2 rounded-xl text-sm font-black uppercase tracking-wider transition-all border flex items-center gap-1.5 shrink-0 ${foodTypeFilter === 'standard'
                         ? 'bg-slate-700 border-slate-750 text-white shadow-xs'
                         : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'
                         }`}
@@ -1191,7 +1186,7 @@ function MenuContent() {
 
                       <div className="p-3 pl-1.5 sm:p-5 flex-1 flex flex-col justify-between gap-2 sm:gap-3 min-w-0">
                         <div className="space-y-1">
-                          <h3 className="font-extrabold text-slate-800 text-sm sm:text-[15px] lg:text-base tracking-tight leading-snug group-hover:text-rose-600 transition-colors flex items-center gap-1.5">
+                          <h3 className="font-extrabold text-slate-800 text-base sm:text-lg lg:text-lg tracking-tight leading-snug group-hover:text-rose-600 transition-colors flex items-center gap-1.5">
                             {hasType && (
                               <span className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center shrink-0 ${isVeg ? 'border-emerald-600' : 'border-amber-800'}`}>
                                 {isVeg ? (
@@ -1206,7 +1201,7 @@ function MenuContent() {
                             <span className="truncate">{item.name}</span>
                           </h3>
                           {item.description && (
-                            <p className="text-[11px] sm:text-[13px] lg:text-sm text-slate-450 line-clamp-2 sm:line-clamp-3 leading-relaxed">{item.description}</p>
+                            <p className="text-xs sm:text-sm lg:text-base text-slate-450 line-clamp-2 sm:line-clamp-3 leading-relaxed">{item.description}</p>
                           )}
                           {!stationCode && (
                             <span className="inline-block text-[9px] bg-rose-50 text-rose-600 border border-rose-100 font-extrabold px-2 py-0.5 rounded-lg uppercase tracking-wider w-fit mt-1">
@@ -1217,9 +1212,9 @@ function MenuContent() {
 
                         <div className="flex items-center justify-between mt-1 sm:mt-2">
                           <div className="flex flex-col">
-                            <span className="text-slate-800 font-extrabold text-base sm:text-lg font-mono">₹{item.price}</span>
+                            <span className="text-slate-800 font-extrabold text-lg sm:text-xl font-mono">₹{item.price}</span>
                             {item.mrp > item.price && (
-                              <span className="text-[10px] sm:text-xs text-slate-400 line-through font-mono">MRP: ₹{item.mrp}</span>
+                              <span className="text-xs sm:text-sm text-slate-400 line-through font-mono">MRP: ₹{item.mrp}</span>
                             )}
                           </div>
 
@@ -1227,7 +1222,7 @@ function MenuContent() {
                             {isClosed ? (
                               <button
                                 disabled
-                                className="bg-slate-50 text-slate-400 text-[11px] font-black uppercase tracking-wider py-1.5 rounded-xl cursor-not-allowed border border-slate-200 w-20 sm:w-24 text-center shrink-0"
+                                className="bg-slate-50 text-slate-400 text-xs font-black uppercase tracking-wider py-1.5 rounded-xl cursor-not-allowed border border-slate-200 w-20 sm:w-24 text-center shrink-0"
                               >
                                 Closed
                               </button>
@@ -1254,7 +1249,7 @@ function MenuContent() {
                             ) : (
                               <button
                                 onClick={() => addToCart(item)}
-                                className="bg-rose-550/5 hover:bg-rose-600 hover:text-white text-rose-650 border border-rose-200/80 text-xs sm:text-sm font-black uppercase tracking-wider py-2 rounded-xl transition-all duration-300 flex items-center justify-center gap-0.5 shadow-xs w-20 sm:w-24 shrink-0"
+                                className="bg-rose-550/5 hover:bg-rose-600 hover:text-white text-rose-650 border border-rose-200/80 text-sm sm:text-base font-black uppercase tracking-wider py-2 rounded-xl transition-all duration-300 flex items-center justify-center gap-0.5 shadow-xs w-20 sm:w-24 shrink-0"
                               >
                                 <Plus className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" /> Add
                               </button>
@@ -1271,8 +1266,8 @@ function MenuContent() {
                       <Utensils className="w-7 h-7 text-rose-500" />
                     </div>
                     <div className="space-y-1.5 w-full">
-                      <h3 className="font-black text-slate-800 text-base uppercase tracking-tight">No Dishes Available</h3>
-                      <p className="text-xs text-slate-450 font-bold max-w-xs md:max-w-md lg:max-w-lg mx-auto leading-relaxed">
+                      <h3 className="font-black text-slate-800 text-lg uppercase tracking-tight">No Dishes Available</h3>
+                      <p className="text-sm text-slate-450 font-bold max-w-xs md:max-w-md lg:max-w-lg mx-auto leading-relaxed">
                         We couldn't find any dishes in this category matching your search. Try changing your filters or searching another keyword.
                       </p>
                     </div>
@@ -1290,10 +1285,10 @@ function MenuContent() {
 
               {/* Ticket upper header */}
               <div className="bg-slate-900 text-white rounded-t-3xl p-5 flex justify-between items-center border-b border-slate-800">
-                <h2 className="font-black text-sm flex items-center gap-2">
+                <h2 className="font-black text-base flex items-center gap-2">
                   <ShoppingCart className="w-4 h-4 text-amber-405" /> PANTRY ORDER CART
                 </h2>
-                <span className="font-mono text-xs text-slate-400 font-bold">STATION: {stationCode || 'ALL'}</span>
+                <span className="font-mono text-sm text-slate-400 font-bold">STATION: {stationCode || 'ALL'}</span>
               </div>
 
               {/* Perforated ticket notch */}
@@ -1321,8 +1316,8 @@ function MenuContent() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0 pr-1">
-                            <h4 className="font-bold text-slate-800 tracking-tight truncate">{item.name}</h4>
-                            <span className="text-[10px] text-slate-450 font-medium">₹{item.price} &times; {item.quantity}</span>
+                            <h4 className="font-bold text-slate-800 tracking-tight truncate text-sm">{item.name}</h4>
+                            <span className="text-xs text-slate-450 font-medium">₹{item.price} &times; {item.quantity}</span>
                           </div>
                           <div className="flex items-center gap-2 bg-white border border-slate-250 rounded-lg px-1.5 py-0.5 shadow-sm">
                             <button onClick={() => removeFromCart(item.id)} className="p-0.5 hover:bg-slate-100 rounded text-slate-550 transition-colors">
@@ -1338,7 +1333,7 @@ function MenuContent() {
                     })}
                   </div>
                 ) : (
-                  <div className="py-12 text-center text-slate-400 text-xs flex flex-col items-center gap-3">
+                  <div className="py-12 text-center text-slate-400 text-sm flex flex-col items-center gap-3">
                     <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center border border-slate-150">
                       <ShoppingBag className="w-6 h-6 text-slate-350" />
                     </div>
@@ -1348,7 +1343,7 @@ function MenuContent() {
 
                 {/* Progress bar towards Free Gift */}
                 {subtotal > 0 && subtotal < (giftThreshold || 300) && (
-                  <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-xs space-y-2">
+                  <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-sm space-y-2">
                     <div className="flex justify-between font-bold text-slate-650">
                       <span className="flex items-center gap-1"><Gift className="w-3.5 h-3.5 text-rose-500" /> Free Gift Progress</span>
                       <span>₹{subtotal} / ₹{giftThreshold || 300}</span>
@@ -1359,13 +1354,13 @@ function MenuContent() {
                         style={{ width: `${Math.min((subtotal / (giftThreshold || 300)) * 100, 100)}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-450 font-semibold">Add ₹{(giftThreshold || 300) - subtotal} more to unlock a free <strong className="text-rose-600">{freeProduct}</strong>!</p>
+                    <p className="text-xs text-slate-450 font-semibold">Add ₹{(giftThreshold || 300) - subtotal} more to unlock a free <strong className="text-rose-600">{freeProduct}</strong>!</p>
                   </div>
                 )}
 
                 {/* Special Free Gift Alert */}
                 {subtotal >= (giftThreshold || 300) && (
-                  <div className="bg-gradient-to-br from-amber-500/10 via-rose-500/5 to-transparent border border-amber-200 rounded-2xl p-4 text-slate-800 text-xs flex gap-3 items-start animate-pulse">
+                  <div className="bg-gradient-to-br from-amber-500/10 via-rose-500/5 to-transparent border border-amber-200 rounded-2xl p-4 text-slate-800 text-sm flex gap-3 items-start animate-pulse">
                     <Gift className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-black text-amber-700 uppercase tracking-wider block">Eligible for Free Gift! 🎁</span>
@@ -1375,7 +1370,7 @@ function MenuContent() {
                 )}
 
                 {/* Price Calculations */}
-                <div className="space-y-3 border-t border-slate-100 pt-4 text-xs font-bold text-slate-500">
+                <div className="space-y-3 border-t border-slate-100 pt-4 text-sm font-bold text-slate-500">
                   <div className="flex justify-between">
                     <span>Pantry Subtotal</span>
                     <span className="text-slate-800">₹{subtotal}</span>
@@ -1387,9 +1382,9 @@ function MenuContent() {
                     </span>
                   </div>
 
-                  <div className="flex justify-between text-sm font-black text-slate-800 border-t border-slate-150 pt-3">
+                  <div className="flex justify-between text-base font-black text-slate-800 border-t border-slate-150 pt-3">
                     <span>Total Payable</span>
-                    <span className="text-rose-600 text-base">₹{total}</span>
+                    <span className="text-rose-600 text-lg">₹{total}</span>
                   </div>
                 </div>
 
@@ -1397,7 +1392,7 @@ function MenuContent() {
                   <button
                     onClick={handleCheckoutProceed}
                     disabled={cart.length === 0 || isClosed}
-                    className="w-full bg-rose-600 hover:bg-rose-500 disabled:bg-slate-200 disabled:text-slate-400 text-white font-black uppercase tracking-wider py-3 rounded-2xl transition-all shadow-md text-xs flex items-center justify-center gap-1.5"
+                    className="w-full bg-rose-600 hover:bg-rose-500 disabled:bg-slate-200 disabled:text-slate-400 text-white font-black uppercase tracking-wider py-3 rounded-2xl transition-all shadow-md text-sm flex items-center justify-center gap-1.5"
                   >
                     {isClosed ? 'Ordering Closed' : 'PROCEED TO SEAT DETAILS'}
                   </button>
@@ -1419,7 +1414,7 @@ function MenuContent() {
                 <span className="text-[10px] text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-0.5 rounded font-black uppercase tracking-wider flex items-center gap-1 w-fit">
                   <MapPin className="w-3 h-3 text-rose-500" /> Select Delivery Junction
                 </span>
-                <h3 className="text-[19px] sm:text-xl font-black text-slate-800 tracking-tight mt-1.5 leading-snug">Where should we deliver {stationPickerItem.name}?</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight mt-1.5 leading-snug">Where should we deliver {stationPickerItem.name}?</h3>
               </div>
               <button
                 onClick={() => { setStationPickerItem(null); setStationSearchQuery(''); }}
@@ -1429,7 +1424,7 @@ function MenuContent() {
               </button>
             </div>
 
-            <p className="text-xs sm:text-[13px] text-slate-500 leading-normal font-semibold">
+            <p className="text-sm sm:text-base text-slate-500 leading-normal font-semibold">
               This item is freshly cooked and served at the following active junctions. Please select one to add to your order:
             </p>
 
@@ -1443,7 +1438,7 @@ function MenuContent() {
                 value={stationSearchQuery}
                 onChange={(e) => setStationSearchQuery(e.target.value)}
                 placeholder="Search station by name or code..."
-                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/10 bg-slate-50 transition-all font-sans"
+                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-sm sm:text-base font-bold text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/10 bg-slate-50 transition-all font-sans"
               />
               {stationSearchQuery && (
                 <button
@@ -1466,7 +1461,7 @@ function MenuContent() {
 
                 if (filtered.length === 0) {
                   return (
-                    <div className="text-center py-8 text-slate-400 text-xs sm:text-sm font-bold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    <div className="text-center py-8 text-slate-400 text-sm sm:text-base font-bold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                       Sorry! This item is not available at this station.
                     </div>
                   );
@@ -1482,11 +1477,11 @@ function MenuContent() {
                     className="w-full flex justify-between items-center bg-slate-50 hover:bg-rose-50/50 border border-slate-150 hover:border-rose-100 p-3.5 rounded-2xl transition-all text-xs font-bold text-slate-800 hover:text-rose-700 hover:scale-[1.01]"
                   >
                     <div className="text-left">
-                      <span className="font-extrabold block text-slate-800 text-sm sm:text-[15px]">{opt.stationName}</span>
+                      <span className="font-extrabold block text-slate-800 text-base sm:text-lg">{opt.stationName}</span>
                       <span className="text-[10px] sm:text-[11px] text-slate-400 uppercase tracking-widest font-bold font-mono mt-0.5 block">{opt.station_code} · {opt.stationState}</span>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className="text-rose-600 font-mono font-black text-sm sm:text-base block">₹{opt.price}</span>
+                      <span className="text-rose-600 font-mono font-black text-base sm:text-lg block">₹{opt.price}</span>
                       <span className="text-[9px] text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded font-bold mt-0.5 block">In Stock</span>
                     </div>
                   </button>
@@ -1497,7 +1492,7 @@ function MenuContent() {
             <div className="border-t border-slate-100 pt-3 text-center">
               <button
                 onClick={() => { setStationPickerItem(null); setStationSearchQuery(''); }}
-                className="text-xs text-slate-450 hover:text-slate-655 font-black uppercase tracking-wider py-1"
+                className="text-sm text-slate-450 hover:text-slate-655 font-black uppercase tracking-wider py-1"
               >
                 Cancel
               </button>
@@ -1516,7 +1511,7 @@ function MenuContent() {
                 <span className="text-[9px] text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-0.5 rounded font-black uppercase tracking-wider">
                   Select Size
                 </span>
-                <h3 className="text-lg font-black text-slate-800 tracking-tight mt-1">{variantSelectModalItem.name}</h3>
+                <h3 className="text-xl font-black text-slate-800 tracking-tight mt-1">{variantSelectModalItem.name}</h3>
               </div>
               <button
                 onClick={() => setVariantSelectModalItem(null)}
@@ -1526,7 +1521,7 @@ function MenuContent() {
               </button>
             </div>
 
-            <p className="text-xs text-slate-400 leading-normal font-semibold">
+            <p className="text-sm text-slate-400 leading-normal font-semibold">
               {variantSelectModalItem.description || 'Tasty meal prepared with standard safety guidelines.'}
             </p>
 
@@ -1538,13 +1533,13 @@ function MenuContent() {
                     addToCart(variantSelectModalItem, v);
                     setVariantSelectModalItem(null);
                   }}
-                  className="w-full flex justify-between items-center bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-100 p-4 rounded-2xl transition-all text-xs font-bold text-slate-800 hover:text-rose-700 hover:scale-[1.01] shadow-sm"
+                  className="w-full flex justify-between items-center bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-100 p-4 rounded-2xl transition-all text-sm font-bold text-slate-800 hover:text-rose-700 hover:scale-[1.01] shadow-sm"
                 >
                   <span className="flex items-center gap-2">
                     <Coffee className="w-4 h-4 text-rose-600 shrink-0" />
                     <span>{v.name}</span>
                   </span>
-                  <span className="text-rose-600 font-black text-sm">₹{v.price}</span>
+                  <span className="text-rose-600 font-black text-base">₹{v.price}</span>
                 </button>
               ))}
             </div>
@@ -1552,7 +1547,7 @@ function MenuContent() {
             <div className="border-t border-slate-100 pt-3 text-center">
               <button
                 onClick={() => setVariantSelectModalItem(null)}
-                className="text-[10px] text-slate-450 hover:text-slate-650 font-black uppercase tracking-wider"
+                className="text-xs text-slate-450 hover:text-slate-650 font-black uppercase tracking-wider"
               >
                 Go Back
               </button>
@@ -1567,7 +1562,7 @@ function MenuContent() {
         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md text-slate-800 z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] border-t border-slate-150 animate-slideUp flex flex-col">
 
           {/* Free Gift Promo Strip */}
-          <div className="bg-amber-500/10 border-b border-amber-500/5 px-5 py-1.5 text-xs font-bold text-amber-800 text-center flex items-center justify-center gap-1">
+          <div className="bg-amber-500/10 border-b border-amber-500/5 px-5 py-1.5 text-sm font-bold text-amber-800 text-center flex items-center justify-center gap-1">
             <Gift className="w-3 h-3 text-amber-600 shrink-0" />
             {subtotal < (giftThreshold || 300) ? (
               <span>Add <strong className="font-black">₹{(giftThreshold || 300) - subtotal}</strong> more to unlock a free <strong className="text-rose-600 font-black">{freeProduct}</strong>!</span>
@@ -1581,11 +1576,11 @@ function MenuContent() {
               <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider flex items-center gap-1">
                 Total Payable <span className="text-[8px] text-rose-600 font-black shrink-0 bg-rose-50 border border-rose-100 px-1 rounded-sm">View Details ▲</span>
               </span>
-              <span className="text-rose-600 font-black text-base font-mono">₹{total}</span>
+              <span className="text-rose-600 font-black text-lg font-mono">₹{total}</span>
             </div>
             <button
               onClick={handleCheckoutProceed}
-              className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase tracking-wider py-2.5 px-5 rounded-xl transition-all shadow-md flex items-center gap-1.5"
+              className="bg-rose-600 hover:bg-rose-500 text-white text-sm font-black uppercase tracking-wider py-2.5 px-5 rounded-xl transition-all shadow-md flex items-center gap-1.5"
             >
               <span>Proceed ({cart.reduce((sum, item) => sum + item.quantity, 0)})</span>
             </button>
@@ -1609,8 +1604,8 @@ function MenuContent() {
                   <ShoppingBag className="w-4.5 h-4.5" />
                 </span>
                 <div>
-                  <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">Your Basket</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{cart.length} food items selected</p>
+                  <h3 className="font-black text-slate-800 text-base uppercase tracking-wider">Your Basket</h3>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5">{cart.length} food items selected</p>
                 </div>
               </div>
               <button 
@@ -1638,8 +1633,8 @@ function MenuContent() {
                     </div>
                     <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <h4 className="text-xs font-black text-slate-800 truncate leading-snug">{item.name}</h4>
-                        <p className="text-[10px] text-slate-400 font-bold mt-0.5 font-mono">₹{item.price} each</p>
+                        <h4 className="text-sm font-black text-slate-800 truncate leading-snug">{item.name}</h4>
+                        <p className="text-xs text-slate-400 font-bold mt-0.5 font-mono">₹{item.price} each</p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden h-7 shrink-0">
@@ -1682,7 +1677,7 @@ export default function Menu() {
     <Suspense fallback={
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-rose-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-slate-400 font-extrabold text-[10px] uppercase tracking-widest animate-pulse">Loading Menu...</p>
+        <p className="text-slate-400 font-extrabold text-xs uppercase tracking-widest animate-pulse">Loading Menu...</p>
       </div>
     }>
       <MenuContent />

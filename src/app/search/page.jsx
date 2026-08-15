@@ -115,7 +115,7 @@ function SearchContent() {
         {/* Search Header */}
         <div className="mb-6 text-center hidden md:block">
           <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Explore BiteOnRail</h1>
-          <p className="text-slate-500 text-xs md:text-sm mt-1">Search Station, Search Trains</p>
+          <p className="text-slate-500 text-sm md:text-base mt-1">Search Station, Search Trains</p>
         </div>
 
         {/* Floating Search Box */}
@@ -129,7 +129,7 @@ function SearchContent() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search Station, Train No..."
-                className="pl-11 pr-4 py-3.5 w-full bg-slate-50 border border-slate-100 rounded-xl text-[15px] md:text-lg focus:outline-none focus:border-rose-500 font-sans font-bold text-slate-800 placeholder-slate-400"
+                className="pl-11 pr-4 py-3.5 w-full bg-slate-50 border border-slate-100 rounded-xl text-lg md:text-xl focus:outline-none focus:border-rose-500 font-sans font-bold text-slate-800 placeholder-slate-400"
               />
             </div>
             <button
@@ -147,7 +147,7 @@ function SearchContent() {
           <div className="space-y-6">
             {/* Popular Trains */}
             <div>
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-3.5 flex items-center gap-1.5">
+              <h3 className="text-base font-black text-slate-400 uppercase tracking-widest mb-3.5 flex items-center gap-1.5">
                 <Train className="w-3.5 h-3.5 text-rose-500 animate-pulse" /> Popular Trains
               </h3>
               <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 overflow-hidden">
@@ -158,10 +158,10 @@ function SearchContent() {
                     className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
                   >
                     <div>
-                      <p className="font-extrabold text-slate-800 text-[13px] md:text-[15px]">{train.name}</p>
-                      <span className="text-[11px] md:text-[13px] text-slate-400 font-bold uppercase tracking-wider">{train.route}</span>
+                      <p className="font-extrabold text-slate-800 text-sm md:text-base">{train.name}</p>
+                      <span className="text-xs md:text-sm text-slate-400 font-bold uppercase tracking-wider">{train.route}</span>
                     </div>
-                    <span className="text-xs md:text-[15px] font-black text-rose-655 bg-rose-50 px-2.5 py-1 rounded-lg">{train.number}</span>
+                    <span className="text-sm md:text-base font-black text-rose-655 bg-rose-50 px-2.5 py-1 rounded-lg">{train.number}</span>
                   </div>
                 ))}
               </div>
@@ -169,7 +169,7 @@ function SearchContent() {
 
             {/* Popular Junctions */}
             <div>
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-3.5 flex items-center gap-1.5">
+              <h3 className="text-base font-black text-slate-400 uppercase tracking-widest mb-3.5 flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-rose-500" /> Popular Junctions
               </h3>
               <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
@@ -180,10 +180,10 @@ function SearchContent() {
                     className="bg-white border border-slate-200/80 p-3 sm:p-4 rounded-xl sm:rounded-2xl cursor-pointer hover:border-rose-300 hover:shadow-md transition-all flex items-center justify-between"
                   >
                     <div className="min-w-0 pr-1">
-                      <p className="font-extrabold text-slate-800 text-[12px] sm:text-[15px] whitespace-normal">{station.name}</p>
-                      <span className="text-[8px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-wider block whitespace-normal">{station.state}</span>
+                      <p className="font-extrabold text-slate-800 text-xs sm:text-lg whitespace-normal">{station.name}</p>
+                      <span className="text-xs sm:text-sm text-slate-400 font-bold uppercase tracking-wider block whitespace-normal">{station.state}</span>
                     </div>
-                    <span className="text-[10px] sm:text-[15px] font-black text-rose-600 bg-rose-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg shrink-0">{station.code}</span>
+                    <span className="text-xs sm:text-lg font-black text-rose-600 bg-rose-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg shrink-0">{station.code}</span>
                   </div>
                 ))}
               </div>
@@ -202,14 +202,14 @@ function SearchContent() {
                   {/* Center static train icon */}
                   <Train className="w-6 h-6 text-rose-600" />
                 </div>
-                <span className="text-xs font-bold uppercase tracking-wider animate-pulse">Fetching trains running status...</span>
+                <span className="text-sm font-bold uppercase tracking-wider animate-pulse">Fetching trains running status...</span>
               </div>
             )}
 
             {/* Trains Matching */}
             {apiTrains.length > 0 && (
               <div>
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Matching Trains</h3>
+                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-3">Matching Trains</h3>
                 <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 overflow-hidden shadow-sm">
                   {apiTrains.map(train => (
                     <div
@@ -220,11 +220,11 @@ function SearchContent() {
                       <div className="flex items-center gap-2.5">
                         <Train className="w-4 h-4 text-slate-400 shrink-0" />
                         <div>
-                          <p className="text-[13px] md:text-[15px] font-black text-slate-800">{train.name}</p>
-                          <span className="text-[11px] md:text-[13px] text-slate-400 font-bold uppercase tracking-wider">{train.route}</span>
+                          <p className="text-sm md:text-base font-black text-slate-800">{train.name}</p>
+                          <span className="text-xs md:text-sm text-slate-400 font-bold uppercase tracking-wider">{train.route}</span>
                         </div>
                       </div>
-                      <span className="text-xs md:text-[15px] font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg">{train.number}</span>
+                      <span className="text-sm md:text-base font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg">{train.number}</span>
                     </div>
                   ))}
                 </div>
@@ -234,7 +234,7 @@ function SearchContent() {
             {/* Stations Matching */}
             {filteredStations.length > 0 && (
               <div>
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Matching Stations</h3>
+                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-3">Matching Stations</h3>
                 <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 overflow-hidden shadow-sm">
                   {filteredStations.map(station => (
                     <div
@@ -245,11 +245,11 @@ function SearchContent() {
                       <div className="flex items-center gap-2.5">
                         <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
                         <div>
-                          <p className="text-[13px] md:text-[15px] font-black text-slate-800">{station.name}</p>
-                          <span className="text-[9px] md:text-xs text-slate-400 font-bold uppercase tracking-wider">{station.state}</span>
+                          <p className="text-sm md:text-base font-black text-slate-800">{station.name}</p>
+                          <span className="text-xs md:text-sm text-slate-400 font-bold uppercase tracking-wider">{station.state}</span>
                         </div>
                       </div>
-                      <span className="text-xs md:text-[15px] font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg">{station.code}</span>
+                      <span className="text-sm md:text-base font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg">{station.code}</span>
                     </div>
                   ))}
                 </div>
@@ -258,8 +258,8 @@ function SearchContent() {
 
             {filteredStations.length === 0 && apiTrains.length === 0 && !loadingTrains && (
               <div className="text-center py-16 bg-white border border-slate-250 rounded-2xl">
-                <p className="text-sm font-black text-slate-800">No match found</p>
-                <p className="text-xs text-slate-500 mt-1">Try searching for other trains or stations.</p>
+                <p className="text-base font-black text-slate-800">No match found</p>
+                <p className="text-sm text-slate-500 mt-1">Try searching for other trains or stations.</p>
               </div>
             )}
           </div>
@@ -269,10 +269,10 @@ function SearchContent() {
         {selectedTrain && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 relative border border-rose-50 animate-in fade-in zoom-in-95 duration-200">
-              <h2 className="text-lg font-black text-slate-900 mb-1 flex items-center gap-1.5">
+              <h2 className="text-xl font-black text-slate-900 mb-1 flex items-center gap-1.5">
                 <Train className="w-5 h-5 text-rose-600 animate-pulse" /> {selectedTrain.name}
               </h2>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-5">Train No: {selectedTrain.number}</p>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-5">Train No: {selectedTrain.number}</p>
 
               <form onSubmit={(e) => {
                 e.preventDefault();
@@ -281,7 +281,7 @@ function SearchContent() {
                 setSelectedTrain(null);
               }} className="space-y-4">
                 {/* Helpful tip for overnight trains */}
-                <div className="bg-amber-50 border border-amber-250/70 rounded-xl p-3 text-[10px] sm:text-[11px] text-amber-850 font-semibold leading-normal flex items-start gap-2">
+                <div className="bg-amber-50 border border-amber-250/70 rounded-xl p-3 text-xs sm:text-sm text-amber-850 font-semibold leading-normal flex items-start gap-2">
                   <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
                     <strong>Note for Passengers:</strong> Please select the <strong>actual date you will board the train</strong> (your Boarding Date). Our system will automatically calculate and track the correct train starting date.
@@ -289,7 +289,7 @@ function SearchContent() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-extrabold text-slate-500 uppercase mb-2">Select Boarding Date</label>
+                  <label className="block text-sm font-extrabold text-slate-500 uppercase mb-2">Select Boarding Date</label>
 
                   {/* Quick Select Buttons */}
                   <div className="grid grid-cols-2 gap-2 mb-3">
@@ -313,7 +313,7 @@ function SearchContent() {
                           <button
                             type="button"
                             onClick={() => setBoardingDate(todayStr)}
-                            className={`py-2 px-3 rounded-xl border text-xs font-black uppercase tracking-wider transition-all
+                            className={`py-2 px-3 rounded-xl border text-sm font-black uppercase tracking-wider transition-all
                               ${boardingDate === todayStr
                                 ? 'bg-slate-900 border-slate-900 text-white'
                                 : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}
@@ -323,7 +323,7 @@ function SearchContent() {
                           <button
                             type="button"
                             onClick={() => setBoardingDate(tomorrowStr)}
-                            className={`py-2 px-3 rounded-xl border text-xs font-black uppercase tracking-wider transition-all
+                            className={`py-2 px-3 rounded-xl border text-sm font-black uppercase tracking-wider transition-all
                               ${boardingDate === tomorrowStr
                                 ? 'bg-slate-900 border-slate-900 text-white'
                                 : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}
@@ -341,7 +341,7 @@ function SearchContent() {
                     required
                     value={boardingDate}
                     onChange={(e) => setBoardingDate(e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-rose-500"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-base font-bold text-slate-800 focus:outline-none focus:border-rose-500"
                   />
                 </div>
 
@@ -349,13 +349,13 @@ function SearchContent() {
                   <button
                     type="button"
                     onClick={() => setSelectedTrain(null)}
-                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs uppercase transition-colors"
+                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm uppercase transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl text-xs uppercase tracking-wide transition-colors"
+                    className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl text-sm uppercase tracking-wide transition-colors"
                   >
                     Proceed
                   </button>

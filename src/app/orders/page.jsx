@@ -8,7 +8,11 @@ import { ShoppingBag, Train, Clock, Gift, Phone, LogIn, ArrowRight, ShieldCheck,
 
 export default function UserOrdersPage() {
   const router = useRouter();
-  const { orders, currentUser, loginUser } = useApp();
+  const { orders, currentUser, loginUser, fetchMyOrders } = useApp();
+
+  React.useEffect(() => {
+    if (currentUser) fetchMyOrders(currentUser);
+  }, [currentUser]);
 
   // Local login states
   const [phone, setPhone] = useState('');
@@ -58,12 +62,8 @@ export default function UserOrdersPage() {
     }
   };
 
-  const userOrders = currentUser
-    ? (orders || []).filter(o => {
-      const cleanedPhone = p => String(p).replace(/\D/g, '').slice(-10);
-      return cleanedPhone(o.phone) === cleanedPhone(currentUser);
-    })
-    : [];
+  // orders is already scoped to the logged-in phone via fetchMyOrders(currentUser).
+  const userOrders = currentUser ? (orders || []) : [];
 
   return (
     <div className="min-h-screen bg-slate-50 md:py-12 font-sans flex flex-col">
@@ -77,18 +77,18 @@ export default function UserOrdersPage() {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="text-left flex-1 min-w-0">
-            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-1.5 md:gap-2">
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-1.5 md:gap-2">
               <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 text-rose-600 shrink-0" />
               <span>Track Your Orders</span>
             </h1>
-            <p className="text-slate-500 text-xs md:text-base mt-1 font-semibold leading-tight">
+            <p className="text-slate-500 text-sm md:text-lg mt-1 font-semibold leading-tight">
               Real-time status updates from our kitchen dispatch hubs.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 px-4 sm:px-6 lg:px-8 pt-4 pb-12 w-full md:text-[15px]">
+      <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 px-4 sm:px-6 lg:px-8 pt-4 pb-12 w-full md:text-lg">
 
         {/* Guest / Not Logged In screen */}
         {!currentUser ? (
@@ -98,14 +98,14 @@ export default function UserOrdersPage() {
             </div>
             <div>
               <h2 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Login to View Orders</h2>
-              <p className="text-[13px] md:text-base text-slate-550 font-semibold mt-1.5">Enter your registered mobile number to check active bookings.</p>
+              <p className="text-sm md:text-lg text-slate-550 font-semibold mt-1.5">Enter your registered mobile number to check active bookings.</p>
             </div>
 
             <form onSubmit={handleFirebaseLogin} className="space-y-4 text-left">
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5">Mobile Number</label>
+                <label className="block text-sm font-black uppercase tracking-wider text-slate-400 mb-1.5">Mobile Number</label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-3.5 text-slate-400 text-xs font-bold font-mono">+91</span>
+                  <span className="absolute left-3.5 top-3.5 text-slate-400 text-sm font-bold font-mono">+91</span>
                   <input
                     type="tel"
                     required
@@ -114,20 +114,20 @@ export default function UserOrdersPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                     placeholder="10-digit number"
-                    className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-mono font-bold text-slate-800"
+                    className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-mono font-bold text-slate-800"
                   />
                 </div>
               </div>
 
               {otpSent && (
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5">Enter OTP Code</label>
+                  <label className="block text-sm font-black uppercase tracking-wider text-slate-400 mb-1.5">Enter OTP Code</label>
                   <OtpBoxInput value={otp} onChange={setOtp} />
                 </div>
               )}
 
               {error && (
-                <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 p-3 rounded-xl font-bold">{error}</p>
+                <p className="text-sm text-rose-600 bg-rose-50 border border-rose-100 p-3 rounded-xl font-bold">{error}</p>
               )}
 
               <div id="orders-recaptcha-container"></div>
@@ -135,7 +135,7 @@ export default function UserOrdersPage() {
               <button
                 type="submit"
                 disabled={isVerifyingLogin}
-                className="w-full bg-rose-600 hover:bg-rose-500 text-white font-extrabold py-3.5 rounded-xl text-xs md:text-sm tracking-widest uppercase shadow-md transition-colors disabled:bg-slate-300"
+                className="w-full bg-rose-600 hover:bg-rose-500 text-white font-extrabold py-3.5 rounded-xl text-sm md:text-base tracking-widest uppercase shadow-md transition-colors disabled:bg-slate-300"
               >
                 {isVerifyingLogin ? "Verifying..." : (otpSent ? "Verify & Track Orders" : "Send OTP")}
               </button>
@@ -146,10 +146,10 @@ export default function UserOrdersPage() {
           <div className="space-y-6 animate-fadeIn">
             {userOrders.length === 0 ? (
               <div className="bg-white border border-slate-200 rounded-[32px] p-12 text-center space-y-4 shadow-sm">
-                <p className="text-slate-455 text-sm font-semibold">No active orders found for +91 {currentUser}.</p>
+                <p className="text-slate-455 text-base font-semibold">No active orders found for +91 {currentUser}.</p>
                 <button
                   onClick={() => router.push('/menu')}
-                  className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-black px-6 py-3 rounded-xl transition-all shadow"
+                  className="bg-rose-600 hover:bg-rose-500 text-white text-sm font-black px-6 py-3 rounded-xl transition-all shadow"
                 >
                   View Food Menu Catalog
                 </button>
@@ -166,23 +166,23 @@ export default function UserOrdersPage() {
                       {/* Order Header Bar */}
                       <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-3 md:px-6 md:py-4 flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-black text-rose-400 bg-rose-950/50 px-2.5 py-1 rounded-lg border border-rose-800/30 uppercase tracking-wider">{order.id}</span>
-                          <span className="text-xs text-slate-400 font-bold">{order.timestamp}</span>
+                          <span className="text-sm font-black text-rose-400 bg-rose-950/50 px-2.5 py-1 rounded-lg border border-rose-800/30 uppercase tracking-wider">{order.id}</span>
+                          <span className="text-sm text-slate-400 font-bold">{order.timestamp}</span>
                         </div>
-                        <span className="text-lg md:text-xl font-black text-white">₹{order.total}</span>
+                        <span className="text-xl md:text-2xl font-black text-white">₹{order.total}</span>
                       </div>
 
                       <div className="p-4 md:p-6 space-y-5">
 
                         {/* Coach & Station Info */}
                         <div className="flex flex-wrap gap-2">
-                          <span className="text-xs font-black text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 uppercase tracking-wider flex items-center gap-1">
+                          <span className="text-sm font-black text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 uppercase tracking-wider flex items-center gap-1">
                             <Train className="w-3.5 h-3.5 text-slate-500" /> Coach {order.coach}
                           </span>
-                          <span className="text-xs font-black text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 uppercase tracking-wider flex items-center gap-1">
+                          <span className="text-sm font-black text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 uppercase tracking-wider flex items-center gap-1">
                             <User className="w-3.5 h-3.5 text-slate-500" /> Berth {order.seat}
                           </span>
-                          <span className="text-xs font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 uppercase tracking-wider flex items-center gap-1">
+                          <span className="text-sm font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 uppercase tracking-wider flex items-center gap-1">
                             <MapPin className="w-3.5 h-3.5 text-amber-600" /> {order.stationCode || 'N/A'}
                           </span>
                         </div>
@@ -226,16 +226,16 @@ export default function UserOrdersPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-4">
                           {/* Left Side: Pantry Items */}
                           <div className="space-y-3">
-                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">Ordered Items</span>
+                            <span className="text-sm font-black text-slate-400 uppercase tracking-widest block">Ordered Items</span>
                             <div className="space-y-1.5 bg-slate-50 border border-slate-100 p-3 rounded-xl">
                               {order.items?.map((item, idx) => (
-                                <div key={idx} className="flex justify-between text-xs md:text-sm font-semibold text-slate-700 py-0.5">
+                                <div key={idx} className="flex justify-between text-sm md:text-base font-semibold text-slate-700 py-0.5">
                                   <span className="truncate mr-2">{item.name} × {item.quantity}</span>
                                   <span className="text-slate-900 font-extrabold whitespace-nowrap">₹{item.price * item.quantity}</span>
                                 </div>
                               ))}
 
-                              <div className="border-t border-slate-200/60 pt-2 mt-1.5 space-y-1 text-xs md:text-sm">
+                              <div className="border-t border-slate-200/60 pt-2 mt-1.5 space-y-1 text-sm md:text-base">
                                 <div className="flex justify-between text-slate-500 font-bold">
                                   <span>Subtotal</span>
                                   <span>₹{order.subtotal || (order.total - (order.delivery || 30))}</span>
@@ -256,8 +256,8 @@ export default function UserOrdersPage() {
                             {/* Payment Badge */}
                             <div className="flex items-center justify-between bg-slate-50 border border-slate-200/60 px-3 py-2.5 rounded-xl">
                               <div>
-                                <span className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-wider block">Payment</span>
-                                <span className="text-xs md:text-sm font-black text-slate-700 uppercase tracking-wider">{order.paymentMode || 'COD'}</span>
+                                <span className="text-xs md:text-sm font-black text-slate-400 uppercase tracking-wider block">Payment</span>
+                                <span className="text-sm md:text-base font-black text-slate-700 uppercase tracking-wider">{order.paymentMode || 'COD'}</span>
                               </div>
                               {String(order.paymentMode).toUpperCase() === 'ONLINE' ? (
                                 <span className="text-[10px] sm:text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-250 px-2.5 py-1 rounded-full uppercase tracking-wider">
@@ -273,14 +273,14 @@ export default function UserOrdersPage() {
 
                           {/* Right Side: Comfort Requests */}
                           <div className="space-y-3">
-                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">Comfort Requests</span>
+                            <span className="text-sm font-black text-slate-400 uppercase tracking-widest block">Comfort Requests</span>
                             {order.onDemandRequests?.length > 0 ? (
                               <div className="space-y-2">
                                 {order.onDemandRequests.map((req, idx) => (
-                                  <div key={idx} className="flex justify-between items-center bg-slate-50 border border-slate-100 p-3 rounded-xl text-xs md:text-sm">
+                                  <div key={idx} className="flex justify-between items-center bg-slate-50 border border-slate-100 p-3 rounded-xl text-sm md:text-base">
                                     <div className="min-w-0 mr-2">
                                       <span className="font-extrabold text-slate-750 block truncate">{req.name}</span>
-                                      <span className="text-[10px] text-slate-400 font-bold block mt-0.5">{req.price > 0 ? `₹${req.price}` : 'MRP / Free'}</span>
+                                      <span className="text-xs text-slate-400 font-bold block mt-0.5">{req.price > 0 ? `₹${req.price}` : 'MRP / Free'}</span>
                                     </div>
                                     <span className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-black uppercase tracking-wider border shrink-0 ${req.status === 'Accepted'
                                       ? 'bg-emerald-50 text-emerald-650 border-emerald-150'
@@ -294,7 +294,7 @@ export default function UserOrdersPage() {
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-xs md:text-sm text-slate-400 font-bold bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">No comfort requests added.</p>
+                              <p className="text-sm md:text-base text-slate-400 font-bold bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">No comfort requests added.</p>
                             )}
                           </div>
                         </div>

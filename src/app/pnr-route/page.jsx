@@ -427,11 +427,11 @@ function PnrRouteContent() {
                 <Train className="w-2.5 h-2.5" />
                 {pnrDetails.trainNumber}
               </span>
-              <h2 className="text-sm font-black text-slate-900 tracking-tight uppercase truncate">
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase truncate">
                 {pnrDetails.trainName}
               </h2>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-extrabold flex-wrap">
+            <div className="flex items-center gap-1.5 text-sm text-slate-500 font-extrabold flex-wrap">
               <span className="text-rose-655 font-black font-mono">Boarding: {pnrDetails.boardingPoint || pnrDetails.sourceStation}</span>
               <span className="text-slate-350">•</span>
               <span>DOJ: {pnrDetails.dateOfJourney ? pnrDetails.dateOfJourney.split(' ').slice(0, 3).join(' ') : 'N/A'}</span>
@@ -441,11 +441,11 @@ function PnrRouteContent() {
           </div>
         ) : (
           <div>
-            <h1 className="text-sm font-black tracking-tight text-slate-900 flex items-center gap-2">
+            <h1 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
               <Train className="w-4 h-4 text-rose-600 animate-pulse" />
               Locating Train Route...
             </h1>
-            <p className="text-[10px] text-rose-600 font-black tracking-wider uppercase">PNR: {pnr || 'N/A'}</p>
+            <p className="text-xs text-rose-600 font-black tracking-wider uppercase">PNR: {pnr || 'N/A'}</p>
           </div>
         )}
       </header>
@@ -461,8 +461,8 @@ function PnrRouteContent() {
                 <Train className="w-6 h-6 text-rose-600 animate-bounce" />
               </div>
             </div>
-            <p className="mt-8 text-slate-800 font-black text-base animate-pulse tracking-wide text-center">Locating Train & Station Hubs...</p>
-            <p className="text-[11px] text-slate-550 mt-2 font-semibold tracking-widest uppercase text-center">Bypassing restrictions and compiling timetable</p>
+            <p className="mt-8 text-slate-800 font-black text-lg animate-pulse tracking-wide text-center">Locating Train & Station Hubs...</p>
+            <p className="text-xs text-slate-550 mt-2 font-semibold tracking-widest uppercase text-center">Bypassing restrictions and compiling timetable</p>
           </div>
         )}
 
@@ -493,10 +493,10 @@ function PnrRouteContent() {
               {isMaint ? (
                 <>
                   <h3 className="text-xl font-black text-slate-900">IRCTC Server Under Maintenance</h3>
-                  <p className="text-slate-500 mt-3 text-sm leading-relaxed">
+                  <p className="text-slate-500 mt-3 text-base leading-relaxed">
                     Indian Railways passenger databases are offline for daily scheduled maintenance (11:30 PM to 12:45 AM IST). Real-time PNR checking is temporarily unavailable.
                   </p>
-                  <div className="mt-5 p-4 bg-rose-50 border border-rose-100 rounded-2xl text-xs sm:text-sm text-rose-700 font-bold leading-relaxed flex items-start gap-2.5 text-left">
+                  <div className="mt-5 p-4 bg-rose-50 border border-rose-100 rounded-2xl text-sm sm:text-base text-rose-700 font-bold leading-relaxed flex items-start gap-2.5 text-left">
                     <Sparkles className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                     <span>
                       <strong>Hint:</strong> You can use the Search page to manually enter a train number and browse intermediate hubs/stations to order food!
@@ -506,7 +506,7 @@ function PnrRouteContent() {
               ) : (
                 <>
                   <h3 className="text-xl font-black text-slate-900">Oops! Fetching Failed</h3>
-                  <p className="text-slate-555 mt-3 text-sm font-bold leading-relaxed">
+                  <p className="text-slate-555 mt-3 text-base font-bold leading-relaxed">
                     {isAuthError
                       ? "Internal Server Error. Please try again after some time."
                       : errorMsg}
@@ -518,13 +518,13 @@ function PnrRouteContent() {
                 <div className="flex flex-col sm:flex-row gap-3 mt-8">
                   <button
                     onClick={() => router.push('/')}
-                    className="w-full sm:flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider border border-slate-200"
+                    className="w-full sm:flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all text-sm uppercase tracking-wider border border-slate-200"
                   >
                     Go Back
                   </button>
                   <button
                     onClick={() => router.push('/search')}
-                    className="w-full sm:flex-[2] py-3 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-550 hover:to-amber-550 text-white font-extrabold rounded-xl transition-all shadow-md shadow-rose-200 hover:scale-[1.02] tracking-widest uppercase text-xs"
+                    className="w-full sm:flex-[2] py-3 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-550 hover:to-amber-550 text-white font-extrabold rounded-xl transition-all shadow-md shadow-rose-200 hover:scale-[1.02] tracking-widest uppercase text-sm"
                   >
                     Search Train Manually
                   </button>
@@ -546,11 +546,11 @@ function PnrRouteContent() {
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="font-black text-emerald-400 text-sm md:text-base leading-tight flex items-center gap-1.5 uppercase tracking-wider">
+                <h3 className="font-black text-emerald-400 text-base md:text-lg leading-tight flex items-center gap-1.5 uppercase tracking-wider">
                   <Sparkles className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
                   {activeHubsCount} Food Delivery Hubs Found
                 </h3>
-                <p className="text-xs md:text-sm text-slate-300 mt-1 font-semibold leading-tight">
+                <p className="text-sm md:text-base text-slate-300 mt-1 font-semibold leading-tight">
                   Active kitchen partners on your route! Order at active stops for direct berth delivery.
                 </p>
               </div>
@@ -579,7 +579,7 @@ function PnrRouteContent() {
                         <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
                           Date of Journey
                         </p>
-                        <p className="text-sm font-black text-rose-655 mt-1">
+                        <p className="text-base font-black text-rose-655 mt-1">
                           {pnrDetails.dateOfJourney ? pnrDetails.dateOfJourney.split(' ').slice(0, 3).join(' ') : ''}
                         </p>
                       </div>
@@ -616,19 +616,19 @@ function PnrRouteContent() {
                       <div className="flex justify-between items-start gap-4 mt-2.5 text-xs">
                         <div className="text-left max-w-[45%]">
                           {pnrDetails.boardingStationName && (
-                            <p className="text-[11px] md:text-xs text-slate-555 font-bold leading-tight">
+                            <p className="text-xs md:text-sm text-slate-555 font-bold leading-tight">
                               {pnrDetails.boardingStationName}
                             </p>
                           )}
                         </div>
                         <div className="text-right max-w-[45%] space-y-0.5">
                           {pnrDetails.destinationName && (
-                            <p className="text-[11px] md:text-xs text-slate-555 font-bold leading-tight">
+                            <p className="text-xs md:text-sm text-slate-555 font-bold leading-tight">
                               {pnrDetails.destinationName}
                             </p>
                           )}
                           {pnrDetails.destinationDoj && (
-                            <p className="text-[10px] md:text-[11px] text-rose-600 font-black">
+                            <p className="text-xs md:text-sm text-rose-600 font-black">
                               Arr: {pnrDetails.destinationDoj}
                             </p>
                           )}
@@ -649,8 +649,8 @@ function PnrRouteContent() {
                       
                       return (
                         <div className="space-y-2.5">
-                          <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl flex justify-between items-center text-xs md:text-sm">
-                            <span className="text-slate-600 font-bold flex items-center gap-1.5 md:text-[13px]">
+                          <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl flex justify-between items-center text-sm md:text-base">
+                            <span className="text-slate-600 font-bold flex items-center gap-1.5 md:text-sm">
                               <ShieldCheck className="w-4 h-4 text-emerald-600" /> Seat Auto-detect
                             </span>
                             <span className="font-black text-rose-655 bg-rose-50 border border-rose-100 px-4 py-1.5 rounded-xl text-[10px] md:text-xs">
@@ -658,7 +658,7 @@ function PnrRouteContent() {
                             </span>
                           </div>
                           {isNotAllotted && (
-                            <p className="text-[10px] sm:text-xs text-amber-805 bg-amber-50 border border-amber-200/65 p-3.5 rounded-xl font-black leading-relaxed">
+                            <p className="text-xs sm:text-sm text-amber-805 bg-amber-50 border border-amber-200/65 p-3.5 rounded-xl font-black leading-relaxed">
                               ⚠️ <strong>Chart Not Prepared:</strong> Coach/Seat number has not been allocated by Indian Railways yet. Please order only after your seat is allocated!
                             </p>
                           )}
@@ -675,20 +675,20 @@ function PnrRouteContent() {
                   {/* Header (Choose a Delivery Station with count) */}
                   <div className="mb-6 pb-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                      <h3 className="text-base sm:text-2xl font-black text-slate-900 leading-tight">Choose a Delivery Station</h3>
-                      <p className="text-xs sm:text-sm text-slate-555 mt-1 font-semibold">
+                      <h3 className="text-lg sm:text-2xl font-black text-slate-900 leading-tight">Choose a Delivery Station</h3>
+                      <p className="text-sm sm:text-base text-slate-555 mt-1 font-semibold">
                         {activeHubsCount > 0
                           ? `Select a station to place your food order (Active Hubs: ${activeHubsCount})`
                           : 'No active delivery hubs found on this route.'}
                       </p>
                       {lastUpdated && (
-                        <p className="text-[10px] text-slate-400 font-extrabold mt-1.5 uppercase tracking-wider flex items-center gap-1">
+                        <p className="text-xs text-slate-400 font-extrabold mt-1.5 uppercase tracking-wider flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
                           Last Updated: {lastUpdated}
                         </p>
                       )}
                       {statusNote && (
-                        <p className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-150 px-3 py-1.5 rounded-xl font-bold mt-2 w-fit flex items-center gap-1.5 shadow-xs">
+                        <p className="text-sm text-indigo-700 bg-indigo-50 border border-indigo-150 px-3 py-1.5 rounded-xl font-bold mt-2 w-fit flex items-center gap-1.5 shadow-xs">
                           <span className="relative flex h-2 w-2 shrink-0">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-650"></span>
@@ -699,7 +699,7 @@ function PnrRouteContent() {
                     </div>
                     {/* Toggle Button */}
                     <div className="flex items-center gap-2.5 self-start sm:self-auto bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-                      <span className="text-xs font-black text-slate-600 uppercase tracking-wide">Show Hubs Only</span>
+                      <span className="text-sm font-black text-slate-600 uppercase tracking-wide">Show Hubs Only</span>
                       <button
                         onClick={() => setShowHubsOnly(!showHubsOnly)}
                         className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${showHubsOnly ? 'bg-emerald-600' : 'bg-slate-300'}`}
@@ -743,7 +743,7 @@ function PnrRouteContent() {
                           <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 w-full ${stop.isActive ? activeCardClass : normalCardClass}`}>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className={`font-black text-[15px] sm:text-[19px] transition-colors ${stop.isPassed ? 'text-slate-405 font-medium'
+                                <h4 className={`font-black text-lg sm:text-2xl transition-colors ${stop.isPassed ? 'text-slate-405 font-medium'
                                   : stop.isActive ? 'text-slate-900 group-hover:text-rose-600'
                                     : stop.isLast ? 'text-indigo-750'
                                       : 'text-slate-800'
@@ -767,7 +767,7 @@ function PnrRouteContent() {
                                 )}
                               </div>
  
-                              <div className="flex flex-wrap items-center gap-3 mt-3 text-xs md:text-sm">
+                              <div className="flex flex-wrap items-center gap-3 mt-3 text-sm md:text-base">
                                 <span className="font-bold text-slate-650 flex items-center gap-1.5">
                                   <Clock className="w-4 h-4 text-slate-400 shrink-0" /> Arrival: <span className="font-extrabold text-slate-900">{stop.time}</span>
                                 </span>
@@ -791,7 +791,7 @@ function PnrRouteContent() {
                                 const matchedStation = stations?.find(s => s.code.toUpperCase() === stop.code.toUpperCase());
                                 const bufferMins = matchedStation?.buffer_minutes || 60;
                                 return (
-                                  <div className="mt-3 flex items-center gap-1.5 text-xs text-indigo-700 bg-indigo-50/70 border border-indigo-100 rounded-xl px-3 py-1.5 w-fit font-bold">
+                                  <div className="mt-3 flex items-center gap-1.5 text-sm text-indigo-700 bg-indigo-50/70 border border-indigo-100 rounded-xl px-3 py-1.5 w-fit font-bold">
                                     <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                                     <span>Order up to <strong className="text-indigo-900 font-black">{bufferMins} mins</strong> before arrival</span>
                                   </div>
@@ -868,7 +868,7 @@ function PnrRouteContent() {
                               ) : (
                                 <button
                                   onClick={() => handleOrderFood(stop.code)}
-                                  className={`w-fit flex items-center justify-center gap-2 px-6 py-3 active:scale-[0.98] text-white font-black text-sm rounded-xl shadow-md shadow-emerald-600/10 hover:shadow-lg transition-all uppercase tracking-wider ${orderBtnClass}`}
+                                  className={`w-fit flex items-center justify-center gap-2 px-6 py-3 active:scale-[0.98] text-white font-black text-base rounded-xl shadow-md shadow-emerald-600/10 hover:shadow-lg transition-all uppercase tracking-wider ${orderBtnClass}`}
                                 >
                                   <ShoppingBag className="w-4 h-4 shrink-0" />
                                   <span>Order Food</span>

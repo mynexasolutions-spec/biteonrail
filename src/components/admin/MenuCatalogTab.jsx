@@ -132,6 +132,8 @@ export default function MenuCatalogTab({
             </div>
           </div>
 
+
+
           {/* Header Title & Filter Controls */}
           <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm space-y-5">
             <div className="flex justify-between items-center flex-wrap gap-3">
@@ -1505,4 +1507,75 @@ export default function MenuCatalogTab({
   }
 
   return null;
+}
+
+// Per-station availability grid for global (station_code='ALL') menu items —
+// lets a head admin see/toggle at a glance which stations have a global item disabled.
+function GlobalOverrideMatrix({ baseMenuItems, stations, resolveItemAvailability, toggleGlobalItemAvailability }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const globalItems = baseMenuItems.filter(item => !item.station_code || item.station_code.toUpperCase() === 'ALL');
+  const activeStations = (stations || []).filter(s => s.is_active !== false);
+
+  if (globalItems.length === 0 || activeStations.length === 0) return null;
+
+  const disabledCount = globalItems.reduce((sum, item) => (
+    sum + activeStations.filter(st => !resolveItemAvailability(item, st.code)).length
+  ), 0);
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Globe className="w-4 h-4 text-rose-550" />
+          <span className="text-sm font-black text-slate-800 uppercase tracking-widest">Station Availability Matrix</span>
+          <span className="text-[10px] font-bold text-slate-450 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+            {disabledCount} disabled overrides
+          </span>
+        </div>
+        <span className="text-xs font-black text-rose-600">{expanded ? 'Hide' : 'Show'}</span>
+      </button>
+
+      {expanded && (
+        <div className="overflow-x-auto border-t border-slate-100">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="py-3 px-4 font-black text-slate-455 uppercase tracking-wider sticky left-0 bg-slate-50">Item</th>
+                {activeStations.map(st => (
+                  <th key={st.id} className="py-3 px-3 font-black text-slate-455 uppercase tracking-wider text-center whitespace-nowrap">{st.code}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {globalItems.map(item => (
+                <tr key={item.id} className="hover:bg-slate-50/60">
+                  <td className="py-2.5 px-4 font-bold text-slate-700 whitespace-nowrap sticky left-0 bg-white">{item.name}</td>
+                  {activeStations.map(st => {
+                    const enabled = resolveItemAvailability(item, st.code);
+                    return (
+                      <td key={st.id} className="py-2.5 px-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => toggleGlobalItemAvailability(item.id, st.code, !enabled)}
+                          title={`${item.name} @ ${st.code}: ${enabled ? 'available' : 'disabled'} — click to toggle`}
+                          className={`w-5 h-5 rounded-md border-2 transition-colors ${enabled
+                            ? 'bg-emerald-500 border-emerald-500'
+                            : 'bg-white border-slate-300 hover:border-rose-400'
+                            }`}
+                        />
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 }

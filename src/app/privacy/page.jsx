@@ -48,7 +48,7 @@ export default function PrivacyPolicyPage() {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg md:text-xl font-black text-slate-900 leading-tight flex items-center gap-1.5">
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 leading-tight flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-rose-500 shrink-0" />
               <span>Privacy Policy</span>
             </h1>
@@ -58,13 +58,13 @@ export default function PrivacyPolicyPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 pt-4 md:pt-10 pb-12 w-full space-y-6">
-        <p className="text-xs md:text-sm text-slate-400 font-semibold">Last updated: {new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        <p className="text-sm md:text-base text-slate-400 font-semibold">Last updated: {new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 
         <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
           {SECTIONS.map((section) => (
             <div key={section.title} className="space-y-2">
-              <h2 className="text-sm md:text-base font-black text-slate-900">{section.title}</h2>
-              <p className="text-sm md:text-base text-slate-500 leading-relaxed font-semibold">{section.body}</p>
+              <h2 className="text-base md:text-lg font-black text-slate-900">{section.title}</h2>
+              <p className="text-base md:text-lg text-slate-500 leading-relaxed font-semibold">{section.body}</p>
             </div>
           ))}
         </div>

@@ -1,17 +1,19 @@
 "use client";
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useApp } from '../../context/AppContext';
 import { ArrowLeft, HelpCircle, ChevronRight, ShieldCheck } from 'lucide-react';
 
 export default function FaqsPage() {
   const router = useRouter();
+  const { siteFaqs } = useApp();
   const [faqOpen, setFaqOpen] = useState(null);
 
   const toggleFaq = (index) => {
     setFaqOpen(faqOpen === index ? null : index);
   };
 
-  const faqs = [
+  const defaultFaqs = [
     {
       q: "How does seat delivery work?",
       a: "Our delivery partner receives your live coach/berth details via your PNR or checkout inputs and brings the hot food directly to your train berth when the train reaches the platform."
@@ -38,10 +40,12 @@ export default function FaqsPage() {
     }
   ];
 
+  const faqs = siteFaqs && siteFaqs.length > 0 ? siteFaqs : defaultFaqs;
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 pb-20 selection:bg-rose-600 selection:text-white font-sans relative flex flex-col">
       {/* Sticky/Fixed Header Title on Mobile */}
-      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 md:relative md:top-auto md:z-0 md:bg-transparent md:border-b-0 md:px-0 md:py-0 md:max-w-md md:max-w-6xl md:mx-auto md:w-full">
+      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 md:relative md:top-auto md:z-0 md:bg-transparent md:border-b-0 md:px-0 md:pt-10 md:pb-0 md:max-w-6xl md:mx-auto md:w-full">
         <header className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
@@ -50,7 +54,7 @@ export default function FaqsPage() {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg md:text-xl font-black text-slate-900 leading-tight flex items-center gap-1.5">
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 leading-tight flex items-center gap-1.5">
               <HelpCircle className="w-4 h-4 md:w-5 md:h-5 text-rose-500 shrink-0" />
               <span>FAQs</span>
             </h1>
@@ -66,8 +70,8 @@ export default function FaqsPage() {
           
           {/* Intro Card (Left side on laptop) */}
           <div className="md:col-span-4 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-2">
-            <h2 className="text-sm md:text-base font-black text-slate-400 uppercase tracking-widest">Help Center</h2>
-            <p className="text-sm md:text-base text-slate-500 leading-relaxed font-semibold">
+            <h2 className="text-base md:text-lg font-black text-slate-400 uppercase tracking-widest">Help Center</h2>
+            <p className="text-base md:text-lg text-slate-500 leading-relaxed font-semibold">
               Find quick answers to common questions about ordering, timings, PNR tracking, and payments on BiteOnRail.
             </p>
           </div>
@@ -82,14 +86,14 @@ export default function FaqsPage() {
                     onClick={() => toggleFaq(index)}
                     className="p-4 sm:p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
                   >
-                    <span className="text-sm md:text-base font-black text-slate-850 flex items-center gap-2.5 pr-2">
+                    <span className="text-base md:text-lg font-black text-slate-850 flex items-center gap-2.5 pr-2">
                       <HelpCircle className="w-4 h-4 md:w-4.5 md:h-4.5 text-rose-500 shrink-0" />
                       {faq.q}
                     </span>
                     <ChevronRight className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${isOpen ? 'rotate-90 text-rose-600' : ''}`} />
                   </div>
                   {isOpen && (
-                    <div className="px-5 pb-5 pl-11 text-xs md:text-sm text-slate-500 leading-relaxed font-semibold bg-slate-50 border-t border-dashed border-slate-100">
+                    <div className="px-5 pb-5 pl-11 text-sm md:text-base text-slate-500 leading-relaxed font-semibold bg-slate-50 border-t border-dashed border-slate-100">
                       {faq.a}
                     </div>
                   )}

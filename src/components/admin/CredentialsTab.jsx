@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import {
-  Pencil, Plus, Check, Key, Search, EyeOff, Eye, Trash, X, Phone
+  Pencil, Plus, Check, Key, Search, RotateCcw, Trash, X, Phone
 } from 'lucide-react';
 
 export default function CredentialsTab({
@@ -27,8 +27,7 @@ export default function CredentialsTab({
   setIsAdminModalOpen,
   handleCreateStationAdmin,
   adminsLoading,
-  visiblePasswords,
-  setVisiblePasswords,
+  handleResetAdminPassword,
   handleDeleteAdmin
 }) {
   if (activeSubTab !== 'admins' || adminType !== 'global') return null;
@@ -102,7 +101,7 @@ export default function CredentialsTab({
 
         <div>
           <label className="block text-xs font-bold text-slate-500 mb-1.5 flex justify-between items-center">
-            <span>Login Password</span>
+            <span>Login Password{editingAdmin ? ' (leave blank to keep current)' : ''}</span>
             <button
               type="button"
               onClick={() => {
@@ -120,10 +119,11 @@ export default function CredentialsTab({
           </label>
           <input
             type="text"
-            required
+            required={!editingAdmin}
+            minLength={6}
             value={newAdminPassword}
             onChange={(e) => setNewAdminPassword(e.target.value)}
-            placeholder="Set password key"
+            placeholder={editingAdmin ? 'Leave blank to keep current password' : 'Set password key (min. 6 characters)'}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-855 placeholder-slate-400 text-xs font-mono font-black focus:outline-none focus:border-rose-500"
           />
         </div>
@@ -292,17 +292,15 @@ export default function CredentialsTab({
                                 })()}
                               </td>
                               <td className="py-3.5 px-5 font-mono font-black text-slate-855">
-                                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-150 px-2.5 py-1.5 rounded-lg w-fit">
-                                  <span className="tracking-wider text-xs lg:text-sm">{visiblePasswords[admin.id] ? admin.password : '••••••••'}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => setVisiblePasswords(prev => ({ ...prev, [admin.id]: !prev[admin.id] }))}
-                                    className="text-slate-400 hover:text-slate-655 p-0.5 rounded-md hover:bg-slate-200 transition-colors"
-                                    title={visiblePasswords[admin.id] ? "Hide Password" : "Show Password"}
-                                  >
-                                    {visiblePasswords[admin.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                  </button>
-                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetAdminPassword(admin)}
+                                  className="flex items-center gap-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-150 hover:border-indigo-150 px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-indigo-650 transition-colors"
+                                  title="Generate a new password"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  <span className="text-[10px] lg:text-xs uppercase tracking-wider">Reset Password</span>
+                                </button>
                               </td>
                               <td className="py-3.5 px-5 text-center text-slate-400 font-bold">
                                 {admin.created_at ? new Date(admin.created_at).toLocaleDateString() : 'N/A'}
@@ -313,7 +311,7 @@ export default function CredentialsTab({
                                     onClick={() => {
                                       setEditingAdmin(admin);
                                       setNewAdminEmail(admin.email);
-                                      setNewAdminPassword(admin.password);
+                                      setNewAdminPassword('');
                                       setNewAdminStationCode(admin.station_code || '');
                                       setNewAdminName(admin.manager_name || admin.name || '');
                                       setNewAdminPhone(admin.manager_phone || admin.phone || '');
@@ -364,7 +362,7 @@ export default function CredentialsTab({
                                 onClick={() => {
                                   setEditingAdmin(admin);
                                   setNewAdminEmail(admin.email);
-                                  setNewAdminPassword(admin.password);
+                                  setNewAdminPassword('');
                                   setNewAdminStationCode(admin.station_code || '');
                                   setNewAdminName(admin.manager_name || admin.name || '');
                                   setNewAdminPhone(admin.manager_phone || admin.phone || '');
@@ -408,21 +406,14 @@ export default function CredentialsTab({
                             </div>
                           </div>
 
-                          <div className="flex justify-between items-center bg-slate-50 border border-slate-150 p-2 rounded-xl">
-                            <div className="flex flex-col">
-                              <span className="text-[8px] text-slate-400 font-extrabold uppercase tracking-widest">Password Key</span>
-                              <span className="font-mono font-black text-slate-800 text-xs mt-0.5 tracking-wider">
-                                {visiblePasswords[admin.id] ? admin.password : '••••••••'}
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setVisiblePasswords(prev => ({ ...prev, [admin.id]: !prev[admin.id] }))}
-                              className="text-slate-400 hover:text-slate-655 p-1 rounded-md hover:bg-slate-200 transition-colors"
-                            >
-                              {visiblePasswords[admin.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleResetAdminPassword(admin)}
+                            className="w-full flex items-center justify-center gap-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-150 hover:border-indigo-150 p-2 rounded-xl text-slate-500 hover:text-indigo-650 transition-colors"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span className="text-[10px] uppercase tracking-wider font-black">Reset Password</span>
+                          </button>
                         </div>
                       );
                     })

@@ -318,8 +318,8 @@ function TrainRouteContent() {
           <div className="absolute inset-0 rounded-full border-4 border-rose-600 border-t-transparent animate-spin" />
         </div>
         <div className="text-center space-y-1">
-          <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">Loading Train Route</h3>
-          <p className="text-xs text-slate-400 font-bold">Matching database delivery junctions...</p>
+          <h3 className="font-black text-slate-800 text-base tracking-tight uppercase">Loading Train Route</h3>
+          <p className="text-sm text-slate-400 font-bold">Matching database delivery junctions...</p>
         </div>
       </div>
     );
@@ -329,11 +329,11 @@ function TrainRouteContent() {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
         <AlertCircle className="w-12 h-12 text-rose-500 mb-3" />
-        <h3 className="font-black text-slate-800 text-base uppercase tracking-tight">Error Loading Route</h3>
-        <p className="text-xs text-slate-555 max-w-xs mx-auto mt-1 font-bold">{errorMsg}</p>
+        <h3 className="font-black text-slate-800 text-lg uppercase tracking-tight">Error Loading Route</h3>
+        <p className="text-sm text-slate-555 max-w-xs mx-auto mt-1 font-bold">{errorMsg}</p>
         <button
           onClick={() => router.back()}
-          className="mt-6 inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest px-6 py-3 rounded-full transition-all"
+          className="mt-6 inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm uppercase tracking-widest px-6 py-3 rounded-full transition-all"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Go Back
         </button>
@@ -356,7 +356,7 @@ function TrainRouteContent() {
           </button>
           <div className="min-w-0 flex-1">
             <h1 className="text-[10px] md:text-sm font-black text-slate-450 uppercase tracking-widest leading-none">Train Live Route</h1>
-            <p className="text-sm md:text-lg font-black text-slate-900 mt-0.5 md:mt-1 truncate">{trainName} ({trainNo})</p>
+            <p className="text-base md:text-xl font-black text-slate-900 mt-0.5 md:mt-1 truncate">{trainName} ({trainNo})</p>
           </div>
         </div>
 
@@ -369,11 +369,11 @@ function TrainRouteContent() {
           </div>
 
           <div className="min-w-0 flex-1">
-            <h3 className="font-black text-emerald-400 text-sm md:text-base leading-tight flex items-center gap-1.5 uppercase tracking-wider">
+            <h3 className="font-black text-emerald-400 text-base md:text-lg leading-tight flex items-center gap-1.5 uppercase tracking-wider">
               <Sparkles className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
               {activeHubs.length} Food Delivery Hubs Found
             </h3>
-            <p className="text-xs md:text-sm text-slate-300 mt-1 font-semibold leading-tight">
+            <p className="text-sm md:text-base text-slate-300 mt-1 font-semibold leading-tight">
               Active kitchen partners on your route! Order at active stops for direct berth delivery.
             </p>
           </div>
@@ -401,7 +401,7 @@ function TrainRouteContent() {
                     <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
                       Date of Journey
                     </p>
-                    <p className="text-sm font-black text-rose-655 mt-1">{displayDoj}</p>
+                    <p className="text-base font-black text-rose-655 mt-1">{displayDoj}</p>
                   </div>
                 </div>
 
@@ -435,12 +435,12 @@ function TrainRouteContent() {
                   {/* Station Names & Timings Row */}
                   <div className="flex justify-between items-start gap-4 mt-2.5 text-xs">
                     <div className="text-left max-w-[45%]">
-                      <p className="text-[11px] md:text-sm text-slate-555 font-bold leading-tight">
+                      <p className="text-xs md:text-base text-slate-555 font-bold leading-tight">
                         {rawStops[0]?.name}
                       </p>
                     </div>
                     <div className="text-right max-w-[45%]">
-                      <p className="text-[11px] md:text-sm text-slate-555 font-bold leading-tight">
+                      <p className="text-xs md:text-base text-slate-555 font-bold leading-tight">
                         {rawStops[rawStops.length - 1]?.name}
                       </p>
                     </div>
@@ -454,8 +454,8 @@ function TrainRouteContent() {
               </div>
 
               <div className="p-6 pt-4">
-                <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl flex justify-between items-center text-xs md:text-sm">
-                  <span className="text-slate-600 font-bold flex items-center gap-1.5 md:text-[13px]">
+                <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl flex justify-between items-center text-sm md:text-base">
+                  <span className="text-slate-600 font-bold flex items-center gap-1.5 md:text-sm">
                     <ShieldCheck className="w-4 h-4 text-emerald-600" /> Direct Station Match
                   </span>
                   <span className="font-black text-rose-655 bg-rose-50 border border-rose-100 px-4 py-1.5 rounded-xl text-[10px] md:text-xs">
@@ -470,20 +470,20 @@ function TrainRouteContent() {
           <div className="lg:col-span-8 bg-white border-y sm:border border-slate-200/80 rounded-none sm:rounded-[32px] p-5 sm:p-8 shadow-none sm:shadow-xl">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-5 border-b border-slate-100 mb-6 gap-4">
               <div>
-                <h3 className="text-base sm:text-2xl font-black text-slate-900 leading-tight">Choose a Delivery Station</h3>
-                <p className="text-xs sm:text-sm text-slate-555 mt-1 font-semibold">
+                <h3 className="text-lg sm:text-2xl font-black text-slate-900 leading-tight">Choose a Delivery Station</h3>
+                <p className="text-sm sm:text-base text-slate-555 mt-1 font-semibold">
                   {activeHubs.length > 0
                     ? `Select a station to place your food order (Active Hubs: ${activeHubs.length})`
                     : 'No active delivery hubs found on this route.'}
                 </p>
                 {lastUpdated && (
-                  <p className="text-[10px] sm:text-xs md:text-sm text-slate-400 font-extrabold mt-1.5 uppercase tracking-wider flex items-center gap-1.5">
+                  <p className="text-xs sm:text-sm md:text-base text-slate-400 font-extrabold mt-1.5 uppercase tracking-wider flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-rose-500 animate-pulse shrink-0" />
                     Last Updated: {lastUpdated}
                   </p>
                 )}
                 {statusNote && (
-                  <p className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-150 px-3 py-1.5 rounded-xl font-bold mt-2 w-fit flex items-center gap-1.5 shadow-xs">
+                  <p className="text-sm text-indigo-700 bg-indigo-50 border border-indigo-150 px-3 py-1.5 rounded-xl font-bold mt-2 w-fit flex items-center gap-1.5 shadow-xs">
                     <span className="relative flex h-2 w-2 shrink-0">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-650"></span>
@@ -495,7 +495,7 @@ function TrainRouteContent() {
               
               {/* Toggle hubs only filter */}
               <div className="flex items-center justify-between gap-2.5 shrink-0 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl self-start sm:self-auto w-full sm:w-auto">
-                <span className="text-xs font-black text-slate-600 uppercase tracking-wide">Show Hubs Only</span>
+                <span className="text-sm font-black text-slate-600 uppercase tracking-wide">Show Hubs Only</span>
                 <button
                   onClick={() => setShowHubsOnly(!showHubsOnly)}
                   className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${showHubsOnly ? 'bg-emerald-600' : 'bg-slate-300'}`}
@@ -539,7 +539,7 @@ function TrainRouteContent() {
                     <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 w-full ${stop.isHub ? activeCardClass : normalCardClass}`}>
                       <div className="flex-grow min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className={`font-black text-[15px] sm:text-[19px] transition-colors ${
+                          <h4 className={`font-black text-lg sm:text-2xl transition-colors ${
                             stop.isPassed
                               ? 'text-slate-405 font-medium'
                               : stop.isHub
@@ -563,7 +563,7 @@ function TrainRouteContent() {
                           )}
                         </div>
                         
-                        <div className="flex flex-wrap items-center gap-3 mt-3 text-xs md:text-sm">
+                        <div className="flex flex-wrap items-center gap-3 mt-3 text-sm md:text-base">
                            <span className="font-bold text-slate-655 flex items-center gap-1.5">
                             <Clock className="w-4 h-4 text-slate-400 shrink-0" /> Arrival: <span className="font-extrabold text-slate-900">{stop.time}</span>
                           </span>
@@ -592,7 +592,7 @@ function TrainRouteContent() {
                           const matchedStation = stations?.find(s => s.code.toUpperCase() === stop.code.toUpperCase());
                           const bufferMins = matchedStation?.buffer_minutes || 60;
                           return (
-                            <div className="mt-3 flex items-center gap-1.5 text-xs text-indigo-700 bg-indigo-50/70 border border-indigo-100 rounded-xl px-3 py-1.5 w-fit font-bold">
+                            <div className="mt-3 flex items-center gap-1.5 text-sm text-indigo-700 bg-indigo-50/70 border border-indigo-100 rounded-xl px-3 py-1.5 w-fit font-bold">
                               <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                               <span>Order up to <strong className="text-indigo-900 font-black">{bufferMins} mins</strong> before arrival</span>
                             </div>
@@ -613,7 +613,7 @@ function TrainRouteContent() {
                         ) : (
                           <button
                             onClick={() => handleStationSelect(stop)}
-                            className="bg-emerald-600 hover:bg-emerald-500 border border-emerald-650 text-white px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-wider transition-all duration-300 w-fit shrink-0 flex items-center justify-center gap-1 shadow-sm active:scale-[0.98]"
+                            className="bg-emerald-600 hover:bg-emerald-500 border border-emerald-650 text-white px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 w-fit shrink-0 flex items-center justify-center gap-1 shadow-sm active:scale-[0.98]"
                           >
                             <ShoppingBag className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> Order Food
                           </button>
@@ -625,7 +625,7 @@ function TrainRouteContent() {
               })}
 
               {displayStops.length === 0 && (
-                <div className="py-8 text-center text-slate-400 text-xs font-bold uppercase tracking-wider">
+                <div className="py-8 text-center text-slate-400 text-sm font-bold uppercase tracking-wider">
                   No stops found matching your selection.
                 </div>
               )}
@@ -643,7 +643,7 @@ export default function TrainRoutePage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider animate-pulse">Loading Route View...</p>
+        <p className="text-sm font-bold text-slate-400 uppercase tracking-wider animate-pulse">Loading Route View...</p>
       </div>
     }>
       <TrainRouteContent />

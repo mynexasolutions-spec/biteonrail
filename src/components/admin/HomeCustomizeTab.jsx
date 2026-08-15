@@ -115,36 +115,70 @@ export default function HomeCustomizeTab() {
           Upload your custom corporate logo to display dynamically across the entire website (Navbar header, Footer, and mobile overlays).
         </p>
 
-        {/* Main Primary Logo */}
-        <div className="bg-slate-50/50 border border-slate-200 p-5 rounded-2xl flex flex-col justify-between max-w-md mx-auto">
-          <div>
-            <span className="text-[10px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
-              🎨 Brand Logo
-            </span>
-            <h4 className="font-extrabold text-slate-800 text-sm mt-3">Primary Transparent Logo</h4>
-            <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-1">
-              Upload a PNG logo with a transparent background. Best recommended resolution is landscape format.
-            </p>
-            <div className="mt-4 border border-slate-200 rounded-xl p-4 bg-slate-100 flex items-center justify-center min-h-[100px] relative">
-              <img
-                src={homepageLogo || "/logo.png"}
-                alt="Primary Logo Preview"
-                className="h-12 w-auto object-contain"
-              />
+        {/* Main Primary Logo + White Logo */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
+          <div className="bg-slate-50/50 border border-slate-200 p-5 rounded-2xl flex flex-col justify-between">
+            <div>
+              <span className="text-[10px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
+                🎨 Brand Logo
+              </span>
+              <h4 className="font-extrabold text-slate-800 text-sm mt-3">Primary Transparent Logo</h4>
+              <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-1">
+                Upload a PNG logo with a transparent background. Best recommended resolution is landscape format.
+              </p>
+              <div className="mt-4 border border-slate-200 rounded-xl p-4 bg-slate-100 flex items-center justify-center min-h-[100px] relative">
+                <img
+                  src={homepageLogo || "/logo-white.png"}
+                  alt="Primary Logo Preview"
+                  className="h-12 w-auto object-contain"
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className="flex items-center justify-center bg-white hover:bg-rose-50 border border-slate-250 hover:border-rose-300 text-slate-700 hover:text-rose-600 p-2.5 rounded-xl cursor-pointer transition-all shadow-xs w-full max-w-[120px] mx-auto gap-2">
+                <Upload className="w-4 h-4 shrink-0" />
+                {uploadingField === 'logo' && <span className="text-[10px] font-black uppercase">...</span>}
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingField !== null}
+                  onChange={(e) => handleFileUpload(e, 'logo', updateHomepageLogo)}
+                  className="hidden"
+                />
+              </label>
             </div>
           </div>
-          <div className="mt-4">
-            <label className="flex items-center justify-center bg-white hover:bg-rose-50 border border-slate-250 hover:border-rose-300 text-slate-700 hover:text-rose-600 p-2.5 rounded-xl cursor-pointer transition-all shadow-xs w-full max-w-[120px] mx-auto gap-2">
-              <Upload className="w-4 h-4 shrink-0" />
-              {uploadingField === 'logo' && <span className="text-[10px] font-black uppercase">...</span>}
-              <input
-                type="file"
-                accept="image/*"
-                disabled={uploadingField !== null}
-                onChange={(e) => handleFileUpload(e, 'logo', updateHomepageLogo)}
-                className="hidden"
-              />
-            </label>
+
+          <div className="bg-slate-50/50 border border-slate-200 p-5 rounded-2xl flex flex-col justify-between">
+            <div>
+              <span className="text-[10px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
+                🎨 Brand Logo
+              </span>
+              <h4 className="font-extrabold text-slate-800 text-sm mt-3">White Logo (Dark Backgrounds)</h4>
+              <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-1">
+                Upload a white/light PNG logo for use over dark or photo backgrounds (e.g. mobile hero).
+              </p>
+              <div className="mt-4 border border-slate-200 rounded-xl p-4 bg-slate-800 flex items-center justify-center min-h-[100px] relative">
+                <img
+                  src={homepageLogoWhite || "/logo-white.png"}
+                  alt="White Logo Preview"
+                  className="h-12 w-auto object-contain"
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className="flex items-center justify-center bg-white hover:bg-rose-50 border border-slate-250 hover:border-rose-300 text-slate-700 hover:text-rose-600 p-2.5 rounded-xl cursor-pointer transition-all shadow-xs w-full max-w-[120px] mx-auto gap-2">
+                <Upload className="w-4 h-4 shrink-0" />
+                {uploadingField === 'logo_white' && <span className="text-[10px] font-black uppercase">...</span>}
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingField !== null}
+                  onChange={(e) => handleFileUpload(e, 'logo_white', updateHomepageLogoWhite)}
+                  className="hidden"
+                />
+              </label>
+            </div>
           </div>
         </div>
       </div>
