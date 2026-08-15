@@ -37,15 +37,15 @@ export function setupRecaptcha(containerId = 'global-recaptcha-container') {
         if (typeof window.grecaptcha !== 'undefined' && typeof window.grecaptcha.reset === 'function') {
           try {
             window.grecaptcha.reset();
-          } catch (e) { }
+          } catch (e) {}
         }
-      } catch (e) { }
+      } catch (e) {}
       return window.recaptchaVerifier;
     }
 
     window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
       'size': 'invisible',
-      'callback': () => { },
+      'callback': () => {},
       'expired-callback': () => {
         window.recaptchaVerifier = null;
       }
@@ -77,15 +77,12 @@ export async function sendFirebaseOtp(phone, containerId = 'global-recaptcha-con
     return { success: true, confirmationResult, formattedPhone };
   } catch (error) {
     console.error('[Firebase Phone Auth Error Detail]:', error.code, error.message, error);
-    console.error('[Firebase Phone Auth Error - customData]:', error.customData);
-    console.error('[Firebase Phone Auth Error - raw serverResponse]:', error.customData?._tokenResponse || error.customData?.serverResponse || 'none');
-    try { console.error('[Firebase Phone Auth Error - JSON]:', JSON.stringify(error, Object.getOwnPropertyNames(error))); } catch (e) { }
 
     // Automatic retry with fresh reset for Resend OTP edge cases
     if (error.code === 'auth/captcha-check-failed' || error.code === 'auth/argument-error' || error.code === 'auth/internal-error') {
       try {
         if (typeof window.grecaptcha !== 'undefined' && typeof window.grecaptcha.reset === 'function') {
-          try { window.grecaptcha.reset(); } catch (e) { }
+          try { window.grecaptcha.reset(); } catch (e) {}
         }
         const freshVerifier = setupRecaptcha(containerId);
         if (freshVerifier) {
@@ -128,7 +125,7 @@ export async function verifyFirebaseOtp(confirmationResult, otpCode) {
 
     const result = await confirmationResult.confirm(cleanOtp);
     const user = result.user;
-
+    
     // Retrieve cryptographically signed Firebase JWT ID token
     let idToken = null;
     try {

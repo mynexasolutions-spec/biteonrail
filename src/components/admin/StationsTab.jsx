@@ -25,6 +25,10 @@ export default function StationsTab({
   setNewStationState,
   newStationBuffer,
   setNewStationBuffer,
+  newStationOpenTime,
+  setNewStationOpenTime,
+  newStationCloseTime,
+  setNewStationCloseTime,
   newStationManagerName,
   setNewStationManagerName,
   newStationManagerPhone,
@@ -608,6 +612,39 @@ export default function StationsTab({
                       <option key={st} value={st}>{st}</option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Order Buffer (minutes)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newStationBuffer}
+                    onChange={(e) => setNewStationBuffer(e.target.value)}
+                    placeholder="60"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 placeholder-slate-400 text-xs focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Opens At</label>
+                    <input
+                      type="time"
+                      value={newStationOpenTime}
+                      onChange={(e) => setNewStationOpenTime(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 text-xs focus:outline-none focus:border-rose-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Closes At</label>
+                    <input
+                      type="time"
+                      value={newStationCloseTime}
+                      onChange={(e) => setNewStationCloseTime(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 text-xs focus:outline-none focus:border-rose-500"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex gap-2">

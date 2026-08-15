@@ -2,7 +2,6 @@
 import React, { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useApp } from '../../context/AppContext';
-import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { uploadToCloudinary, isCloudinaryConfigured } from '../../lib/cloudinary';
 import { X, Printer, Clock, Compass, User, Calendar, Train, Phone, Locate, Truck, Gift, IndianRupee, ChefHat, Send, Check, CheckCircle2, AlertTriangle, ClipboardList } from 'lucide-react';
 
@@ -15,6 +14,7 @@ import StationsTab from '../../components/admin/StationsTab';
 import CredentialsTab from '../../components/admin/CredentialsTab';
 import PlatformSettingsTab from '../../components/admin/PlatformSettingsTab';
 import SupportDirectoryTab from '../../components/admin/SupportDirectoryTab';
+import FaqsTab from '../../components/admin/FaqsTab';
 import HomeCustomizeTab from '../../components/admin/HomeCustomizeTab';
 import StatesTab from '../../components/admin/StatesTab';
 
@@ -28,6 +28,7 @@ function AdminPageContent() {
     updateOrderStatus,
     updateOrderRider,
     updateOnDemandStatus,
+    fetchAdminOrders,
     freeProduct,
     updateFreeProduct,
     codPolicy,
@@ -48,6 +49,8 @@ function AdminPageContent() {
     updateSupportEmail,
     supportContacts,
     updateSupportContacts,
+    siteFaqs,
+    updateSiteFaqs,
     categories,
     addCategory,
     removeCategory,
@@ -92,6 +95,15 @@ function AdminPageContent() {
     };
     checkServerSession();
   }, []);
+
+  // Orders are authenticated-only now (no more anon-key full-table load).
+  // Fetch on login and poll for near-live updates while the admin panel is open.
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchAdminOrders();
+    const interval = setInterval(fetchAdminOrders, 10000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   // Set default station code once stations load
   React.useEffect(() => {
@@ -341,54 +353,37 @@ function AdminPageContent() {
 
   const handleUpdatePriceInline = async (itemId, newPrice) => {
     const updatedPrice = Number(newPrice) || 0;
-    const updated = menuItems.map(item =>
-      item.id === itemId ? { ...item, price: updatedPrice, mrp: updatedPrice } : item
-    );
-    setMenuItems(updated);
     setEditingPriceId(null);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('menu_items').update({ price: updatedPrice, mrp: updatedPrice }).eq('id', itemId);
-      } catch (err) {
-        console.error("Error updating price inline:", err);
-      }
-    }
+    const { error } = await setMenuItems(menuItems.map(item =>
+      item.id === itemId ? { ...item, price: updatedPrice, mrp: updatedPrice } : item
+    ));
+    if (error) alert("Error updating price: " + error);
   };
 
   const handleBulkAvailability = async (statusVal) => {
     if (menuSelectedIds.length === 0) return;
-    const updated = menuItems.map(item =>
-      menuSelectedIds.includes(item.id) ? { ...item, available: statusVal } : item
-    );
-    setMenuItems(updated);
     const count = menuSelectedIds.length;
-    const targetIds = [...menuSelectedIds];
+    const { error } = await setMenuItems(menuItems.map(item =>
+      menuSelectedIds.includes(item.id) ? { ...item, available: statusVal } : item
+    ));
     setMenuSelectedIds([]);
-    alert(`Bulk updated ${count} items to ${statusVal ? 'In Stock' : 'Sold Out'}!`);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('menu_items').update({ available: statusVal }).in('id', targetIds);
-      } catch (err) {
-        console.error("Error bulk updating status:", err);
-      }
+    if (error) {
+      alert("Error updating items: " + error);
+    } else {
+      alert(`Bulk updated ${count} items to ${statusVal ? 'In Stock' : 'Sold Out'}!`);
     }
   };
 
   const handleBulkDelete = async () => {
     if (menuSelectedIds.length === 0) return;
     if (!confirm(`Are you sure you want to delete ${menuSelectedIds.length} items from the catalog?`)) return;
-    const updated = menuItems.filter(item => !menuSelectedIds.includes(item.id));
-    setMenuItems(updated);
     const count = menuSelectedIds.length;
-    const targetIds = [...menuSelectedIds];
+    const { error } = await setMenuItems(menuItems.filter(item => !menuSelectedIds.includes(item.id)));
     setMenuSelectedIds([]);
-    alert(`Successfully deleted ${count} selected items.`);
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('menu_items').delete().in('id', targetIds);
-      } catch (err) {
-        console.error("Error bulk deleting items:", err);
-      }
+    if (error) {
+      alert("Error deleting items: " + error);
+    } else {
+      alert(`Successfully deleted ${count} selected items.`);
     }
   };
 
@@ -399,6 +394,8 @@ function AdminPageContent() {
   const [newStationBuffer, setNewStationBuffer] = useState(60);
   const [newStationManagerName, setNewStationManagerName] = useState('');
   const [newStationManagerPhone, setNewStationManagerPhone] = useState('');
+  const [newStationOpenTime, setNewStationOpenTime] = useState('00:00');
+  const [newStationCloseTime, setNewStationCloseTime] = useState('23:59');
   const [editingStation, setEditingStation] = useState(null);
 
   // Menu variants states
@@ -619,15 +616,12 @@ function AdminPageContent() {
   };
 
   const fetchAdmins = async () => {
-    if (!isSupabaseConfigured()) return;
     try {
       setAdminsLoading(true);
-      const { data, error } = await supabase
-        .from('admins')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (!error && data) {
-        setAdminsList(data);
+      const res = await fetch('/api/admin/credentials');
+      if (res.ok) {
+        const data = await res.json();
+        setAdminsList(data.admins || []);
       }
     } catch (err) {
       console.error(err);
@@ -638,81 +632,69 @@ function AdminPageContent() {
 
   const handleCreateStationAdmin = async (e) => {
     e.preventDefault();
-    if (!newAdminEmail.trim() || !newAdminPassword.trim() || !newAdminStationCode) {
+    if (!newAdminEmail.trim() || !newAdminStationCode || (!editingAdmin && !newAdminPassword.trim())) {
       alert("Please fill all fields.");
       return;
     }
 
-    if (!isSupabaseConfigured()) {
-      alert("Supabase not configured!");
-      return;
+    try {
+      const isEdit = !!editingAdmin;
+      const body = {
+        email: newAdminEmail.trim().toLowerCase(),
+        station_code: newAdminStationCode.toUpperCase(),
+        manager_name: newAdminName.trim(),
+        manager_phone: newAdminPhone.trim()
+      };
+      if (newAdminPassword.trim()) body.password = newAdminPassword.trim();
+
+      const res = await fetch(isEdit ? `/api/admin/credentials/${editingAdmin.id}` : '/api/admin/credentials', {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(`Error ${isEdit ? 'updating' : 'creating'} station manager: ` + (data.error || 'Unknown error'));
+        return;
+      }
+
+      // Keep the station's own manager_name/phone in sync too.
+      await setStations(stations.map(s => s.code.toUpperCase() === body.station_code
+        ? { ...s, manager_name: body.manager_name, manager_phone: body.manager_phone }
+        : s));
+
+      alert(`Station Manager credentials ${isEdit ? 'updated' : 'created'} successfully!`);
+      setNewAdminEmail('');
+      setNewAdminPassword('');
+      setNewAdminName('');
+      setNewAdminPhone('');
+      setEditingAdmin(null);
+      fetchAdmins();
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong.");
     }
+  };
+
+  const handleResetAdminPassword = async (admin) => {
+    if (!confirm(`Generate a new password for ${admin.email}?`)) return;
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let pwd = "";
+    for (let i = 0; i < 8; i++) pwd += chars.charAt(Math.floor(Math.random() * chars.length));
 
     try {
-      if (editingAdmin) {
-        const { error } = await supabase
-          .from('admins')
-          .update({
-            email: newAdminEmail.trim().toLowerCase(),
-            password: newAdminPassword.trim(),
-            station_code: newAdminStationCode.toUpperCase(),
-            manager_name: newAdminName.trim(),
-            manager_phone: newAdminPhone.trim()
-          })
-          .eq('id', editingAdmin.id);
-
-        if (error) {
-          alert("Error updating station manager: " + error.message);
-        } else {
-          // Also update stations table to keep in sync
-          await supabase
-            .from('stations')
-            .update({
-              manager_name: newAdminName.trim(),
-              manager_phone: newAdminPhone.trim()
-            })
-            .eq('code', newAdminStationCode.toUpperCase());
-
-          alert("Station Manager credentials updated successfully!");
-          setNewAdminEmail('');
-          setNewAdminPassword('');
-          setNewAdminName('');
-          setNewAdminPhone('');
-          setEditingAdmin(null);
-          fetchAdmins();
-        }
-      } else {
-        const { error } = await supabase
-          .from('admins')
-          .insert([{
-            email: newAdminEmail.trim().toLowerCase(),
-            password: newAdminPassword.trim(),
-            type: 'station',
-            station_code: newAdminStationCode.toUpperCase(),
-            manager_name: newAdminName.trim(),
-            manager_phone: newAdminPhone.trim()
-          }]);
-
-        if (error) {
-          alert("Error creating station manager: " + error.message);
-        } else {
-          // Also update stations table to keep in sync
-          await supabase
-            .from('stations')
-            .update({
-              manager_name: newAdminName.trim(),
-              manager_phone: newAdminPhone.trim()
-            })
-            .eq('code', newAdminStationCode.toUpperCase());
-
-          alert("Station Manager credentials created successfully!");
-          setNewAdminEmail('');
-          setNewAdminPassword('');
-          setNewAdminName('');
-          setNewAdminPhone('');
-          fetchAdmins();
-        }
+      const res = await fetch(`/api/admin/credentials/${admin.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert("Error resetting password: " + (data.error || 'Unknown error'));
+        return;
       }
+      alert(`New password for ${admin.email}:\n\n${pwd}\n\nSave this now — it won't be shown again.`);
     } catch (err) {
       console.error(err);
       alert("Something went wrong.");
@@ -721,11 +703,11 @@ function AdminPageContent() {
 
   const handleDeleteAdmin = async (id) => {
     if (!confirm("Are you sure you want to delete these credentials?")) return;
-    if (!isSupabaseConfigured()) return;
     try {
-      const { error } = await supabase.from('admins').delete().eq('id', id);
-      if (error) {
-        alert("Error deleting admin: " + error.message);
+      const res = await fetch(`/api/admin/credentials/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert("Error deleting admin: " + (data.error || 'Unknown error'));
       } else {
         fetchAdmins();
       }
@@ -735,15 +717,12 @@ function AdminPageContent() {
   };
 
   const fetchUsers = async () => {
-    if (!isSupabaseConfigured()) return;
     try {
       setUsersLoading(true);
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (!error && data) {
-        setUsersList(data);
+      const res = await fetch('/api/admin/users');
+      if (res.ok) {
+        const data = await res.json();
+        setUsersList(data.users || []);
       }
     } catch (err) {
       console.error(err);
@@ -754,11 +733,11 @@ function AdminPageContent() {
 
   const handleDeleteUser = async (phone) => {
     if (!confirm(`Are you sure you want to delete customer account ${phone}?`)) return;
-    if (!isSupabaseConfigured()) return;
     try {
-      const { error } = await supabase.from('users').delete().eq('phone', phone);
-      if (error) {
-        alert("Error deleting user: " + error.message);
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(phone)}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert("Error deleting user: " + (data.error || 'Unknown error'));
       } else {
         fetchUsers();
       }
@@ -812,6 +791,10 @@ function AdminPageContent() {
   const handleAddStation = async (e) => {
     e.preventDefault();
     if (!newStationName || !newStationCode || !newStationState) return;
+    if (stations.some(s => s.code.toUpperCase() === newStationCode.toUpperCase())) {
+      alert(`Station code ${newStationCode.toUpperCase()} is already in use.`);
+      return;
+    }
     const newHub = {
       id: Date.now(),
       name: newStationName,
@@ -819,47 +802,29 @@ function AdminPageContent() {
       state: newStationState,
       buffer_minutes: Number(newStationBuffer) || 60,
       manager_name: newStationManagerName || '',
-      manager_phone: newStationManagerPhone || ''
+      manager_phone: newStationManagerPhone || '',
+      is_active: true,
+      open_time: newStationOpenTime || '00:00',
+      close_time: newStationCloseTime || '23:59'
     };
-    const updated = [...stations, newHub];
-    setStations(updated);
+    const { error } = await setStations([...stations, newHub]);
+    if (error) {
+      alert("Error adding station: " + error);
+      return;
+    }
     setNewStationName('');
     setNewStationCode('');
     setNewStationState('');
     setNewStationBuffer(60);
     setNewStationManagerName('');
     setNewStationManagerPhone('');
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('stations').insert({
-          id: newHub.id,
-          name: newHub.name,
-          code: newHub.code,
-          state: newHub.state,
-          buffer_minutes: newHub.buffer_minutes,
-          manager_name: newHub.manager_name,
-          manager_phone: newHub.manager_phone
-        });
-        if (error) console.error("Error inserting station to Supabase:", error);
-      } catch (err) {
-        console.error("Error adding station:", err);
-      }
-    }
+    setNewStationOpenTime('00:00');
+    setNewStationCloseTime('23:59');
   };
 
   const handleRemoveStation = async (id) => {
-    const updated = stations.filter(s => s.id !== id);
-    setStations(updated);
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('stations').delete().eq('id', id);
-        if (error) console.error("Error deleting station from Supabase:", error);
-      } catch (err) {
-        console.error("Error removing station:", err);
-      }
-    }
+    const { error } = await setStations(stations.filter(s => s.id !== id));
+    if (error) alert("Error removing station: " + error);
   };
 
   const startEditStation = (station) => {
@@ -870,6 +835,8 @@ function AdminPageContent() {
     setNewStationBuffer(station.buffer_minutes || 60);
     setNewStationManagerName(station.manager_name || '');
     setNewStationManagerPhone(station.manager_phone || '');
+    setNewStationOpenTime(station.open_time || '00:00');
+    setNewStationCloseTime(station.close_time || '23:59');
   };
 
   const cancelEditStation = () => {
@@ -880,11 +847,17 @@ function AdminPageContent() {
     setNewStationBuffer(60);
     setNewStationManagerName('');
     setNewStationManagerPhone('');
+    setNewStationOpenTime('00:00');
+    setNewStationCloseTime('23:59');
   };
 
   const handleEditStationSubmit = async (e) => {
     e.preventDefault();
     if (!newStationName || !newStationCode || !newStationState || !editingStation) return;
+    if (stations.some(s => s.id !== editingStation.id && s.code.toUpperCase() === newStationCode.toUpperCase())) {
+      alert(`Station code ${newStationCode.toUpperCase()} is already in use.`);
+      return;
+    }
 
     const updatedHub = {
       ...editingStation,
@@ -893,48 +866,25 @@ function AdminPageContent() {
       state: newStationState,
       buffer_minutes: Number(newStationBuffer) || 60,
       manager_name: newStationManagerName || '',
-      manager_phone: newStationManagerPhone || ''
+      manager_phone: newStationManagerPhone || '',
+      open_time: newStationOpenTime || '00:00',
+      close_time: newStationCloseTime || '23:59'
     };
 
-    const updated = stations.map(s => s.id === editingStation.id ? updatedHub : s);
-    setStations(updated);
-    cancelEditStation();
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('stations').update({
-          name: updatedHub.name,
-          code: updatedHub.code,
-          state: updatedHub.state,
-          buffer_minutes: updatedHub.buffer_minutes,
-          manager_name: updatedHub.manager_name,
-          manager_phone: updatedHub.manager_phone
-        }).eq('id', editingStation.id);
-        if (error) console.error("Error updating station in Supabase:", error);
-      } catch (err) {
-        console.error("Error editing station:", err);
-      }
+    const { error } = await setStations(stations.map(s => s.id === editingStation.id ? updatedHub : s));
+    if (error) {
+      alert("Error updating station: " + error);
+      return;
     }
+    cancelEditStation();
   };
 
   const handleUpdateStationSettings = async (stationId, settingsObj) => {
-    const updated = stations.map(s => s.id === stationId ? { ...s, ...settingsObj } : s);
-    setStations(updated);
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('stations').update(settingsObj).eq('id', stationId);
-        if (error) {
-          console.error("Error updating station settings in Supabase:", error);
-          alert("Database error: " + error.message);
-        } else {
-          alert("Station settings updated successfully!");
-        }
-      } catch (err) {
-        console.error("Error updating settings:", err);
-      }
+    const { error } = await setStations(stations.map(s => s.id === stationId ? { ...s, ...settingsObj } : s));
+    if (error) {
+      alert("Database error: " + error);
     } else {
-      alert("Local state updated successfully!");
+      alert("Station settings updated successfully!");
     }
   };
 
@@ -962,14 +912,17 @@ function AdminPageContent() {
       category: newItemCategory,
       available: true,
       description: newItemDescription || 'No description provided.',
-      image_url: uploadedUrl || '',
+      image: uploadedUrl || '',
       station_code: assignedCode,
       variants: finalVariants,
       food_type: newItemFoodType
     };
 
-    const updated = [...menuItems, newItem];
-    setMenuItems(updated);
+    const { error } = await setMenuItems([...menuItems, newItem]);
+    if (error) {
+      alert("Error adding menu item: " + error);
+      return;
+    }
     setNewItemName('');
     setNewItemPrice('');
     setNewItemDescription('');
@@ -977,27 +930,6 @@ function AdminPageContent() {
     setNewItemFoodType('veg');
     setHasVariants(false);
     setItemVariants([{ name: 'Half Plate', price: '' }, { name: 'Full Plate', price: '' }]);
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('menu_items').insert({
-          id: newItem.id,
-          name: newItem.name,
-          price: newItem.price,
-          category: newItem.category,
-          mrp: newItem.mrp,
-          available: newItem.available,
-          description: newItem.description,
-          image: newItem.image_url,
-          station_code: newItem.station_code,
-          variants: newItem.variants,
-          food_type: newItem.food_type
-        });
-        if (error) console.error("Error inserting menu item to Supabase:", error);
-      } catch (err) {
-        console.error("Error adding menu item:", err);
-      }
-    }
   };
 
   const startEditMenuItem = (item) => {
@@ -1066,67 +998,33 @@ function AdminPageContent() {
       mrp: finalPrice,
       category: newItemCategory,
       description: newItemDescription || 'No description provided.',
-      image_url: uploadedUrl || '',
+      image: uploadedUrl || '',
       station_code: adminType === 'station' ? selectedStationCode : newItemStationCode,
       variants: finalVariants,
       food_type: newItemFoodType
     };
 
-    const updatedList = menuItems.map(item => item.id === editingMenuItem.id ? updatedItem : item);
-    setMenuItems(updatedList);
-    cancelEditMenuItem();
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('menu_items').update({
-          name: updatedItem.name,
-          price: updatedItem.price,
-          category: updatedItem.category,
-          mrp: updatedItem.mrp,
-          description: updatedItem.description,
-          image: updatedItem.image_url,
-          station_code: updatedItem.station_code,
-          variants: updatedItem.variants,
-          food_type: updatedItem.food_type
-        }).eq('id', editingMenuItem.id);
-        if (error) console.error("Error updating menu item in Supabase:", error);
-      } catch (err) {
-        console.error("Error editing menu item:", err);
-      }
+    const { error } = await setMenuItems(menuItems.map(item => item.id === editingMenuItem.id ? updatedItem : item));
+    if (error) {
+      alert("Error updating menu item: " + error);
+      return;
     }
+    cancelEditMenuItem();
   };
 
   const handleToggleItemAvailability = async (id) => {
     const item = menuItems.find(i => i.id === id);
     if (!item) return;
     const newStatus = !item.available;
-    const updated = menuItems.map(item =>
+    const { error } = await setMenuItems(menuItems.map(item =>
       item.id === id ? { ...item, available: newStatus } : item
-    );
-    setMenuItems(updated);
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('menu_items').update({ available: newStatus }).eq('id', id);
-        if (error) console.error("Error updating item availability in Supabase:", error);
-      } catch (err) {
-        console.error("Error toggling status:", err);
-      }
-    }
+    ));
+    if (error) alert("Error toggling availability: " + error);
   };
 
   const handleRemoveMenuItem = async (id) => {
-    const updated = menuItems.filter(item => item.id !== id);
-    setMenuItems(updated);
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('menu_items').delete().eq('id', id);
-        if (error) console.error("Error deleting item from Supabase:", error);
-      } catch (err) {
-        console.error("Error removing item:", err);
-      }
-    }
+    const { error } = await setMenuItems(menuItems.filter(item => item.id !== id));
+    if (error) alert("Error removing item: " + error);
   };
 
   const handleLogout = async () => {
@@ -1392,6 +1290,10 @@ function AdminPageContent() {
             setNewStationState={setNewStationState}
             newStationBuffer={newStationBuffer}
             setNewStationBuffer={setNewStationBuffer}
+            newStationOpenTime={newStationOpenTime}
+            setNewStationOpenTime={setNewStationOpenTime}
+            newStationCloseTime={newStationCloseTime}
+            setNewStationCloseTime={setNewStationCloseTime}
             newStationManagerName={newStationManagerName}
             setNewStationManagerName={setNewStationManagerName}
             newStationManagerPhone={newStationManagerPhone}
@@ -1449,8 +1351,7 @@ function AdminPageContent() {
             setIsAdminModalOpen={setIsAdminModalOpen}
             handleCreateStationAdmin={handleCreateStationAdmin}
             adminsLoading={adminsLoading}
-            visiblePasswords={visiblePasswords}
-            setVisiblePasswords={setVisiblePasswords}
+            handleResetAdminPassword={handleResetAdminPassword}
             handleDeleteAdmin={handleDeleteAdmin}
           />
         )}
@@ -1522,6 +1423,13 @@ function AdminPageContent() {
             adminType={adminType}
             supportContacts={supportContacts}
             updateSupportContacts={updateSupportContacts}
+          />
+        )}
+
+        {activeSubTab === 'faqs' && adminType === 'global' && (
+          <FaqsTab
+            siteFaqs={siteFaqs}
+            updateSiteFaqs={updateSiteFaqs}
           />
         )}
 

@@ -8,8 +8,12 @@ import { User, Phone, ShoppingBag, HelpCircle, LogOut, ShieldCheck, ChevronRight
 
 export default function AccountPage() {
   const router = useRouter();
-  const { currentUser, loginUser, logoutUser, orders, supportContacts } = useApp();
+  const { currentUser, loginUser, logoutUser, orders, supportContacts, siteFaqs, fetchMyOrders } = useApp();
   const [phoneInput, setPhoneInput] = useState('');
+
+  useEffect(() => {
+    if (currentUser) fetchMyOrders(currentUser);
+  }, [currentUser]);
   const [faqOpen, setFaqOpen] = useState(0); // Open first FAQ by default
 
   const [otpSent, setOtpSent] = useState(false);
@@ -98,7 +102,7 @@ export default function AccountPage() {
     setFaqOpen(faqOpen === index ? null : index);
   };
 
-  const faqs = [
+  const defaultFaqs = [
     {
       q: "How does seat delivery work?",
       a: "Our delivery partner receives your live coach/berth details via your PNR or checkout inputs and brings the hot food directly to your train berth when the train reaches the platform."
@@ -117,12 +121,10 @@ export default function AccountPage() {
     }
   ];
 
-  const userOrders = currentUser
-    ? (orders || []).filter(o => {
-      const cleanedPhone = p => String(p).replace(/\D/g, '').slice(-10);
-      return cleanedPhone(o.phone) === cleanedPhone(currentUser);
-    })
-    : [];
+  const faqs = siteFaqs && siteFaqs.length > 0 ? siteFaqs : defaultFaqs;
+
+  // orders is already scoped to the logged-in phone via fetchMyOrders(currentUser).
+  const userOrders = currentUser ? (orders || []) : [];
 
   const customerContacts = (supportContacts || []).filter(c => c.type === 'website_customer');
   const activeContacts = customerContacts.length > 0 ? customerContacts : [
@@ -137,7 +139,7 @@ export default function AccountPage() {
         <div className="mb-4 flex items-center justify-between md:justify-end gap-4">
           <button 
             onClick={() => router.push('/')}
-            className="md:hidden flex items-center gap-2 text-xs font-black text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-100 px-4 py-2.5 rounded-2xl transition-all shadow-xs shrink-0 active:scale-95"
+            className="md:hidden flex items-center gap-2 text-sm font-black text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-100 px-4 py-2.5 rounded-2xl transition-all shadow-xs shrink-0 active:scale-95"
           >
             <ArrowLeft className="w-4 h-4 text-rose-650" /> Back to Home
           </button>
@@ -148,7 +150,7 @@ export default function AccountPage() {
                 logoutUser();
                 router.push('/');
               }}
-              className="text-[10px] text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-100 hover:bg-rose-100/60 font-black uppercase px-4 py-2.5 rounded-2xl tracking-wider transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+              className="text-xs text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-100 hover:bg-rose-100/60 font-black uppercase px-4 py-2.5 rounded-2xl tracking-wider transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
             >
               <LogOut className="w-3.5 h-3.5 shrink-0" /> Log Out
             </button>
@@ -169,17 +171,17 @@ export default function AccountPage() {
                   <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto border border-rose-100/50 shadow-inner">
                     <Lock className="w-6 h-6" />
                   </div>
-                  <h2 className="text-xl font-black text-slate-900 tracking-tight">Login to your Profile</h2>
-                  <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Login to your Profile</h2>
+                  <p className="text-sm text-slate-500 leading-relaxed font-semibold">
                     Enter mobile to track active pantry items and fetch live seat-delivery details.
                   </p>
                 </div>
 
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5 sm:mb-2">Mobile Number</label>
+                    <label className="block text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-500 mb-1.5 sm:mb-2">Mobile Number</label>
                     <div className="flex items-center border-2 border-slate-200 rounded-xl sm:rounded-2xl focus-within:border-rose-500 focus-within:ring-4 focus-within:ring-rose-500/10 bg-white transition-all shadow-xs overflow-hidden">
-                      <div className="bg-slate-100/90 border-r border-slate-200 text-slate-700 text-xs sm:text-sm font-black px-3 py-2.5 sm:px-3.5 sm:py-3 flex items-center gap-1 shrink-0 select-none">
+                      <div className="bg-slate-100/90 border-r border-slate-200 text-slate-700 text-sm sm:text-base font-black px-3 py-2.5 sm:px-3.5 sm:py-3 flex items-center gap-1 shrink-0 select-none">
                         <span>🇮🇳</span>
                         <span>+91</span>
                       </div>
@@ -191,7 +193,7 @@ export default function AccountPage() {
                         value={phoneInput}
                         onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, ''))}
                         placeholder="Enter 10-digit number"
-                        className="w-full px-3 py-2.5 sm:py-3 text-sm font-mono font-black text-slate-900 focus:outline-none bg-transparent disabled:bg-slate-50 disabled:text-slate-400 placeholder:font-sans placeholder:font-normal placeholder:text-slate-400"
+                        className="w-full px-3 py-2.5 sm:py-3 text-base font-mono font-black text-slate-900 focus:outline-none bg-transparent disabled:bg-slate-50 disabled:text-slate-400 placeholder:font-sans placeholder:font-normal placeholder:text-slate-400"
                       />
                     </div>
                   </div>
@@ -199,13 +201,13 @@ export default function AccountPage() {
                   {otpSent && (
                     <div className="animate-in fade-in slide-in-from-top-2 duration-200 space-y-3 sm:space-y-4">
                       <div>
-                        <label className="block text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5 sm:mb-2">Enter Verification Code</label>
+                        <label className="block text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-500 mb-1.5 sm:mb-2">Enter Verification Code</label>
                         <OtpBoxInput value={otpInput} onChange={setOtpInput} />
                       </div>
                       {showNotice && (
                         <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200/90 text-emerald-900 rounded-xl sm:rounded-2xl p-3 sm:p-3.5 shadow-xs animate-in fade-in duration-200">
                           <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-                          <p className="text-xs sm:text-sm text-emerald-850 font-extrabold leading-snug">
+                          <p className="text-sm sm:text-base text-emerald-850 font-extrabold leading-snug">
                             Verification code sent to <span className="font-mono text-emerald-950 font-black">+91-{phoneInput}</span>
                           </p>
                         </div>
@@ -214,7 +216,7 @@ export default function AccountPage() {
                   )}
 
                   {loginError && (
-                    <div className="p-3 sm:p-3.5 bg-rose-50 border border-rose-200 rounded-xl sm:rounded-2xl text-xs text-rose-600 font-bold leading-relaxed shadow-xs">
+                    <div className="p-3 sm:p-3.5 bg-rose-50 border border-rose-200 rounded-xl sm:rounded-2xl text-sm text-rose-600 font-bold leading-relaxed shadow-xs">
                       {loginError}
                     </div>
                   )}
@@ -224,7 +226,7 @@ export default function AccountPage() {
                   <button
                     type="submit"
                     disabled={isLoggingIn}
-                    className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-rose-600 via-rose-500 to-rose-600 hover:from-rose-500 hover:to-rose-400 text-white font-black text-xs uppercase tracking-widest rounded-xl sm:rounded-2xl shadow-lg shadow-rose-600/25 hover:shadow-rose-600/35 hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
+                    className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-rose-600 via-rose-500 to-rose-600 hover:from-rose-500 hover:to-rose-400 text-white font-black text-sm uppercase tracking-widest rounded-xl sm:rounded-2xl shadow-lg shadow-rose-600/25 hover:shadow-rose-600/35 hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
                   >
                     {isLoggingIn ? (
                       <>
@@ -237,7 +239,7 @@ export default function AccountPage() {
                   </button>
 
                   {otpSent && (
-                    <div className="flex items-center justify-between text-[10px] sm:text-[11px] pt-1.5 border-t border-slate-100 gap-2">
+                    <div className="flex items-center justify-between text-xs sm:text-sm pt-1.5 border-t border-slate-100 gap-2">
                       <button
                         type="button"
                         onClick={() => { setOtpSent(false); setOtpInput(''); setLoginError(''); setResendTimer(60); }}
@@ -262,7 +264,7 @@ export default function AccountPage() {
                   )}
                 </form>
 
-                <div className="flex items-center justify-center gap-1.5 text-[9px] text-slate-400 font-black uppercase tracking-wider pt-2.5 border-t border-dashed border-slate-100">
+                <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 font-black uppercase tracking-wider pt-2.5 border-t border-dashed border-slate-100">
                   <ShieldCheck className="w-4 h-4 text-emerald-500 animate-pulse" />
                   <span>OTP verified · Secured by SSL</span>
                 </div>
@@ -283,7 +285,7 @@ export default function AccountPage() {
                       </div>
                     </div>
                     <div>
-                      <span className="text-[9px] sm:text-xs font-black text-slate-400 uppercase tracking-widest block">PASSENGER PROFILE</span>
+                      <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-widest block">PASSENGER PROFILE</span>
                       <h3 className="font-mono text-base sm:text-lg font-black text-slate-800 leading-tight tracking-tight mt-0.5">
                         +91 {currentUser}
                       </h3>
@@ -314,42 +316,8 @@ export default function AccountPage() {
                         <ShoppingBag className="w-5 h-5" />
                       </div>
                       <div>
-                        <h4 className="text-xs sm:text-lg font-black text-slate-800 group-hover:text-rose-600 transition-colors">My Food Orders</h4>
-                        <p className="text-xs sm:text-sm text-slate-455 font-semibold mt-0.5">Track live train deliveries ({userOrders.length} orders)</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-                  </div>
-
-                  {/* Help & Support (Mobile Only) */}
-                  <div
-                    onClick={() => router.push('/help')}
-                    className="md:hidden p-4 sm:p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 transition-colors group"
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 bg-emerald-50 text-emerald-650 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100/50">
-                        <Phone className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-black text-slate-800 group-hover:text-rose-600 transition-colors">Help & Support</h4>
-                        <p className="text-[11px] text-slate-450 font-semibold mt-0.5">Contact passenger support helpline</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-                  </div>
-
-                  {/* FAQs & Info (Mobile Only) */}
-                  <div
-                    onClick={() => router.push('/faqs')}
-                    className="md:hidden p-4 sm:p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 transition-colors group"
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 bg-blue-50 text-blue-650 rounded-xl flex items-center justify-center shrink-0 border border-blue-100/50">
-                        <HelpCircle className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-black text-slate-800 group-hover:text-rose-600 transition-colors">FAQs & Info</h4>
-                        <p className="text-[11px] text-slate-450 font-semibold mt-0.5">Quick answers to seat delivery queries</p>
+                        <h4 className="text-sm sm:text-xl font-black text-slate-800 group-hover:text-rose-600 transition-colors">My Food Orders</h4>
+                        <p className="text-sm sm:text-base text-slate-455 font-semibold mt-0.5">Track live train deliveries ({userOrders.length} orders)</p>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
@@ -358,14 +326,49 @@ export default function AccountPage() {
               </div>
             )}
 
+            {/* Help & Support / FAQs links (Mobile Only — shown whether logged in or not) */}
+            <div className="lg:hidden bg-white border border-slate-200 rounded-[20px] sm:rounded-[28px] overflow-hidden shadow-sm divide-y divide-slate-100">
+              <div
+                onClick={() => router.push('/help')}
+                className="p-4 sm:p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 transition-colors group"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 bg-emerald-50 text-emerald-650 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100/50">
+                    <Phone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-800 group-hover:text-rose-600 transition-colors">Help & Support</h4>
+                    <p className="text-xs text-slate-450 font-semibold mt-0.5">Contact passenger support helpline</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+              </div>
+
+              <div
+                onClick={() => router.push('/faqs')}
+                className="p-4 sm:p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 transition-colors group"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 bg-blue-50 text-blue-650 rounded-xl flex items-center justify-center shrink-0 border border-blue-100/50">
+                    <HelpCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-800 group-hover:text-rose-600 transition-colors">FAQs & Info</h4>
+                    <p className="text-xs text-slate-450 font-semibold mt-0.5">Quick answers to seat delivery queries</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+
             {/* Quick Helper Badge */}
             <div className="bg-gradient-to-r from-rose-50 to-orange-50 border border-rose-100/55 rounded-[20px] sm:rounded-3xl p-4 sm:p-5 shadow-xs flex gap-3 sm:gap-3.5 items-start">
               <div className="bg-rose-500 text-white p-2.5 rounded-xl shrink-0">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div className="space-y-1">
-                <h4 className="font-extrabold text-slate-800 text-xs sm:text-base">Seat Delivery Protection</h4>
-                <p className="text-[11px] sm:text-xs text-slate-500 font-semibold leading-relaxed">
+                <h4 className="font-extrabold text-slate-800 text-sm sm:text-lg">Seat Delivery Protection</h4>
+                <p className="text-xs sm:text-sm text-slate-500 font-semibold leading-relaxed">
                   Every order is tracked live. If your train is delayed, preparing times are auto-adjusted by kitchen dispatch partners.
                 </p>
               </div>
@@ -379,24 +382,24 @@ export default function AccountPage() {
             {/* Direct Support Details */}
             <div className="bg-white border border-slate-200 rounded-[32px] p-6 sm:p-8 shadow-sm space-y-6">
               <div>
-                <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                <h3 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
                   <Phone className="w-5 h-5 text-rose-500" /> Passenger Help & Support Desk
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-500 font-semibold mt-1">Our support managers are available 24/7 during your train journey.</p>
+                <p className="text-sm sm:text-base text-slate-500 font-semibold mt-1">Our support managers are available 24/7 during your train journey.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {activeContacts.map((contact, idx) => (
                   <React.Fragment key={contact.id || idx}>
                     <a href={`tel:+91${contact.phone}`} className="p-4 bg-emerald-50/30 hover:bg-emerald-55 border border-emerald-100/80 hover:border-emerald-250 rounded-2xl flex flex-col gap-1.5 transition-all shadow-xs group">
-                      <span className="text-[10px] sm:text-xs font-black text-emerald-700 uppercase tracking-widest block">{contact.label || 'Helpline Number'}</span>
-                      <span className="text-base sm:text-lg md:text-xl font-black text-slate-805 group-hover:text-emerald-700 transition-colors">+91 {contact.phone}</span>
-                      <span className="text-[10px] sm:text-xs text-slate-455 font-semibold mt-1">Direct berth dispatch coordinator line</span>
+                      <span className="text-xs sm:text-sm font-black text-emerald-700 uppercase tracking-widest block">{contact.label || 'Helpline Number'}</span>
+                      <span className="text-lg sm:text-xl md:text-2xl font-black text-slate-805 group-hover:text-emerald-700 transition-colors">+91 {contact.phone}</span>
+                      <span className="text-xs sm:text-sm text-slate-455 font-semibold mt-1">Direct berth dispatch coordinator line</span>
                     </a>
                     {contact.email && (
                       <a href={`mailto:${contact.email}`} className="p-4 bg-indigo-50/30 hover:bg-indigo-50 border border-indigo-100/80 hover:border-indigo-250 rounded-2xl flex flex-col gap-1.5 transition-all shadow-xs group">
-                        <span className="text-[10px] sm:text-xs font-black text-indigo-700 uppercase tracking-widest block">Email Support</span>
-                        <span className="text-base sm:text-lg md:text-xl font-black text-slate-805 group-hover:text-indigo-650 transition-colors">{contact.email}</span>
-                        <span className="text-[10px] sm:text-xs text-slate-455 font-semibold mt-1">Submit cancellation or refund request</span>
+                        <span className="text-xs sm:text-sm font-black text-indigo-700 uppercase tracking-widest block">Email Support</span>
+                        <span className="text-lg sm:text-xl md:text-2xl font-black text-slate-805 group-hover:text-indigo-650 transition-colors">{contact.email}</span>
+                        <span className="text-xs sm:text-sm text-slate-455 font-semibold mt-1">Submit cancellation or refund request</span>
                       </a>
                     )}
                   </React.Fragment>
@@ -407,10 +410,10 @@ export default function AccountPage() {
             {/* FAQs Accordion */}
             <div className="bg-white border border-slate-200 rounded-[32px] p-6 sm:p-8 shadow-sm space-y-6">
               <div>
-                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                   <HelpCircle className="w-5 h-5 text-rose-500" /> Frequently Asked Questions
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-500 font-semibold mt-1">Instant answers to common train delivery queries.</p>
+                <p className="text-sm sm:text-base text-slate-500 font-semibold mt-1">Instant answers to common train delivery queries.</p>
               </div>
 
               <div className="space-y-3">
@@ -431,7 +434,7 @@ export default function AccountPage() {
                           isOpen ? 'border-l-4 border-rose-500 pl-3 sm:pl-4' : 'border-l-0'
                         }`}
                       >
-                        <span className={`text-xs sm:text-base font-black transition-colors ${
+                        <span className={`text-sm sm:text-lg font-black transition-colors ${
                           isOpen ? 'text-rose-650' : 'text-slate-800'
                         }`}>
                           {faq.q}
@@ -443,7 +446,7 @@ export default function AccountPage() {
                         </div>
                       </div>
                       {isOpen && (
-                        <div className={`px-4 sm:px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-500 leading-relaxed font-semibold animate-slideDown ${
+                        <div className={`px-4 sm:px-5 pb-5 pt-1 text-sm sm:text-base text-slate-500 leading-relaxed font-semibold animate-slideDown ${
                           isOpen ? 'border-l-4 border-rose-500 pl-3 sm:pl-4' : ''
                         }`}>
                           {faq.a}

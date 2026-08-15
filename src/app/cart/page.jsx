@@ -119,15 +119,15 @@ function CartPageContent() {
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1">
-          <h1 className="text-sm font-black tracking-tight text-slate-900">Your Basket</h1>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+          <h1 className="text-base font-black tracking-tight text-slate-900">Your Basket</h1>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5">
             {cart.length} Items Selected
           </p>
         </div>
         {cart.length > 0 && (
-          <button 
+          <button
             onClick={clearCart}
-            className="text-[10px] font-black text-rose-650 uppercase tracking-wider bg-rose-50 border border-rose-100 px-2.5 py-1.5 rounded-lg"
+            className="text-xs font-black text-rose-650 uppercase tracking-wider bg-rose-50 border border-rose-100 px-2.5 py-1.5 rounded-lg"
           >
             Clear
           </button>
@@ -141,11 +141,11 @@ function CartPageContent() {
             <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               <ShoppingBag className="w-9 h-9 text-rose-600" /> Shopping Basket
             </h1>
-            <p className="text-xs md:text-sm text-slate-500 font-bold">Review items selected from train pantry hubs before checking out.</p>
+            <p className="text-sm md:text-base text-slate-500 font-bold">Review items selected from train pantry hubs before checking out.</p>
           </div>
           <button
             onClick={() => router.push(stationCode ? `/menu?station=${stationCode}` : '/')}
-            className="inline-flex items-center gap-1.5 text-xs md:text-sm font-black text-rose-600 hover:text-rose-700 bg-white border border-slate-200 px-5 py-3 rounded-xl shadow-xs transition-all hover:shadow-md"
+            className="inline-flex items-center gap-1.5 text-sm md:text-base font-black text-rose-600 hover:text-rose-700 bg-white border border-slate-200 px-5 py-3 rounded-xl shadow-xs transition-all hover:shadow-md"
           >
             <ArrowLeft className="w-4 h-4" /> Add More Items
           </button>
@@ -157,14 +157,14 @@ function CartPageContent() {
               <ShoppingBag className="w-10 h-10" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg md:text-xl font-black text-slate-800 uppercase tracking-tight">Your Basket is Empty</h3>
-              <p className="text-xs md:text-sm text-slate-550 font-semibold leading-relaxed max-w-xs mx-auto">
+              <h3 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight">Your Basket is Empty</h3>
+              <p className="text-sm md:text-base text-slate-550 font-semibold leading-relaxed max-w-xs mx-auto">
                 No delicious meals added yet. Explore active stations along your train route to order fresh food.
               </p>
             </div>
             <button
               onClick={() => router.push('/')}
-              className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-550 active:scale-95 text-white font-black text-xs md:text-sm uppercase tracking-widest px-8 py-4 rounded-xl transition-all shadow-md shadow-rose-200"
+              className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-550 active:scale-95 text-white font-black text-sm md:text-base uppercase tracking-widest px-8 py-4 rounded-xl transition-all shadow-md shadow-rose-200"
             >
               Browse Stations <ArrowRight className="w-4 h-4" />
             </button>
@@ -182,8 +182,8 @@ function CartPageContent() {
                       <MapPin className="w-5 h-5 md:w-6 h-6" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-wider">Junction Selection</p>
-                      <h4 className="text-xs sm:text-sm md:text-base font-black text-slate-800 truncate leading-tight mt-0.5">{selectedStation.name} ({selectedStation.code})</h4>
+                      <p className="text-xs md:text-sm text-slate-400 font-bold uppercase tracking-wider">Junction Selection</p>
+                      <h4 className="text-sm sm:text-base md:text-lg font-black text-slate-800 truncate leading-tight mt-0.5">{selectedStation.name} ({selectedStation.code})</h4>
                     </div>
                   </div>
                 </div>
@@ -197,10 +197,10 @@ function CartPageContent() {
                   <Gift className="w-5 h-5 md:w-6 h-6 animate-pulse" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-xs sm:text-sm md:text-base font-black text-slate-800 tracking-tight">
+                  <h4 className="text-sm sm:text-base md:text-lg font-black text-slate-800 tracking-tight">
                     {isFreeGiftUnlocked ? 'Free Gift Unlocked! 🎁' : 'Free Gift Incentive'}
                   </h4>
-                  <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5 leading-relaxed">
+                  <p className="text-xs md:text-sm text-slate-400 font-bold uppercase tracking-wider mt-0.5 leading-relaxed">
                     {isFreeGiftUnlocked 
                       ? `Our delivery partner will bring your free ${freeProduct} with this order!` 
                       : `Add ₹${(giftThreshold || 300) - subtotal} more worth of items to unlock a free ${freeProduct}!`
@@ -229,9 +229,9 @@ function CartPageContent() {
 
                     {/* Item Details */}
                     <div className="flex-1 min-w-0">
-                      <span className="text-[9px] md:text-xs text-slate-450 font-bold uppercase tracking-wider block">{item.category}</span>
-                      <h4 className="font-extrabold text-slate-800 text-xs sm:text-sm md:text-base truncate mt-0.5 leading-snug">{item.name}</h4>
-                      <p className="font-black text-rose-600 text-xs sm:text-sm md:text-base mt-1">₹{item.price}</p>
+                      <span className="text-xs md:text-sm text-slate-450 font-bold uppercase tracking-wider block">{item.category}</span>
+                      <h4 className="font-extrabold text-slate-800 text-sm sm:text-base md:text-lg truncate mt-0.5 leading-snug">{item.name}</h4>
+                      <p className="font-black text-rose-600 text-sm sm:text-base md:text-lg mt-1">₹{item.price}</p>
                     </div>
 
                     {/* Quantity selectors */}
@@ -244,7 +244,7 @@ function CartPageContent() {
                         >
                           <Minus className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         </button>
-                        <span className="px-3 text-xs sm:text-sm md:text-base font-black text-slate-800 font-mono w-6 text-center">
+                        <span className="px-3 text-sm sm:text-base md:text-lg font-black text-slate-800 font-mono w-6 text-center">
                           {item.quantity}
                         </span>
                         <button
@@ -275,19 +275,19 @@ function CartPageContent() {
               
               {/* Billing Summary Box */}
               <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 md:p-7 shadow-sm space-y-5">
-                <h3 className="text-xs md:text-sm font-black text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-3">Bill Details</h3>
-                
+                <h3 className="text-sm md:text-base font-black text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-3">Bill Details</h3>
+
                 <div className="space-y-3.5">
-                  <div className="flex justify-between items-center text-xs md:text-sm font-bold text-slate-550">
+                  <div className="flex justify-between items-center text-sm md:text-base font-bold text-slate-550">
                     <span>Items Subtotal</span>
                     <span className="font-mono text-slate-700">₹{subtotal}</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs md:text-sm font-bold text-slate-550">
+                  <div className="flex justify-between items-center text-sm md:text-base font-bold text-slate-550">
                     <span>Berth Delivery Fee</span>
                     <span className="font-mono text-slate-700">₹{activeDeliveryFee}</span>
                   </div>
                   {isFreeGiftUnlocked && (
-                    <div className="flex justify-between items-center text-xs md:text-sm font-bold text-emerald-600">
+                    <div className="flex justify-between items-center text-sm md:text-base font-bold text-emerald-600">
                       <span>Free Gift ({freeProduct})</span>
                       <span className="uppercase text-[9px] md:text-xs bg-emerald-50 px-2 py-0.5 rounded font-black border border-emerald-100">Unlocked</span>
                     </div>
@@ -295,12 +295,12 @@ function CartPageContent() {
                 </div>
 
                 <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
-                  <span className="text-xs md:text-sm font-black text-slate-800 uppercase tracking-wider">Grand Total</span>
-                  <span className="text-lg md:text-2xl font-black text-rose-600 font-mono">₹{total}</span>
+                  <span className="text-sm md:text-base font-black text-slate-800 uppercase tracking-wider">Grand Total</span>
+                  <span className="text-xl md:text-3xl font-black text-rose-600 font-mono">₹{total}</span>
                 </div>
 
                 {/* Secure checkout info */}
-                <div className="bg-slate-50 border border-slate-150 rounded-2xl p-3 md:p-4 text-[10px] md:text-xs text-slate-500 font-bold flex gap-2 leading-relaxed">
+                <div className="bg-slate-50 border border-slate-150 rounded-2xl p-3 md:p-4 text-xs md:text-sm text-slate-500 font-bold flex gap-2 leading-relaxed">
                   <ShieldCheck className="w-5 h-5 md:w-6 md:h-6 text-rose-600 shrink-0 mt-0.5" />
                   <span>Your payment options are fully secure. Pay via Cash on Delivery (COD) or UPI at checkout.</span>
                 </div>
@@ -309,7 +309,7 @@ function CartPageContent() {
                 <button
                   type="button"
                   onClick={handleProceedToCheckout}
-                  className="w-full bg-rose-600 hover:bg-rose-550 active:scale-95 text-white font-black py-4 rounded-2xl text-xs sm:text-sm md:text-base uppercase tracking-wider transition-all shadow-md shadow-rose-200 flex items-center justify-center gap-1.5"
+                  className="w-full bg-rose-600 hover:bg-rose-550 active:scale-95 text-white font-black py-4 rounded-2xl text-sm sm:text-base md:text-lg uppercase tracking-wider transition-all shadow-md shadow-rose-200 flex items-center justify-center gap-1.5"
                 >
                   <span>Proceed to Seat Details</span>
                   <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
@@ -319,7 +319,7 @@ function CartPageContent() {
               {/* Back to Pantry Link */}
               <button
                 onClick={() => router.push(stationCode ? `/menu?station=${stationCode}` : '/')}
-                className="w-full bg-white border border-slate-200 hover:bg-slate-50/50 text-slate-700 font-extrabold py-3.5 rounded-2xl text-xs md:text-sm uppercase tracking-wider transition-all text-center block shadow-xs"
+                className="w-full bg-white border border-slate-200 hover:bg-slate-50/50 text-slate-700 font-extrabold py-3.5 rounded-2xl text-sm md:text-base uppercase tracking-wider transition-all text-center block shadow-xs"
               >
                 Back to Pantry Menu
               </button>

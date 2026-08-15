@@ -46,7 +46,7 @@ export default function Home() {
   const {
     stations, availableStates, freeProduct, giftThreshold, currentUser, orders, menuItems,
     homepageHeroDesktop, homepageHeroMobile, homepageShowcase1, homepageShowcase2, homepagePopularDishes,
-    statsPassengers, statsEateries, statsRating, statsJunctions, homepageLogo
+    statsPassengers, statsEateries, statsRating, statsJunctions, homepageLogo, homepageLogoWhite
   } = useApp();
 
   const popularDishes = menuItems && menuItems.length > 0
@@ -149,7 +149,7 @@ export default function Home() {
           <div className="absolute bottom-8 left-0 right-0 z-10 px-4 pb-2 text-center">
             {/* Logo */}
             <div className="flex items-center justify-center mb-4">
-              <img src={homepageLogo || "/logo.png"} alt="BiteOnRail Logo" className="h-10 w-auto filter drop-shadow-[1px_2px_4px_rgba(0,0,0,0.6)]" />
+              <img src={homepageLogoWhite || "/logo-white.png"} alt="BiteOnRail Logo" className="h-10 w-auto filter drop-shadow-[1px_2px_4px_rgba(0,0,0,0.6)]" />
             </div>
             {/* Heading */}
             <div className="pb-16">
@@ -163,7 +163,7 @@ export default function Home() {
                 </span>
               </h1>
               <p
-                className="text-slate-200 text-base mt-2 font-bold leading-relaxed"
+                className="text-slate-200 text-lg mt-2 font-bold leading-relaxed"
                 style={{ textShadow: '1px 1px 4px rgba(0, 0, 0, 0.95)' }}
               >
                 Fresh meals delivered to your seat at the next station halt.
@@ -184,10 +184,10 @@ export default function Home() {
                     type="text" required maxLength={10} value={pnr}
                     onChange={e => { setPnr(e.target.value.replace(/\D/g, '')); setPnrResult(null); }}
                     placeholder="Enter PNR to order"
-                    className="pl-11 pr-28 py-4 w-full bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:border-rose-500 font-sans font-bold text-slate-800 placeholder-slate-400"
+                    className="pl-11 pr-28 py-4 w-full bg-slate-50 border border-slate-200 rounded-2xl text-base focus:outline-none focus:border-rose-500 font-sans font-bold text-slate-800 placeholder-slate-400"
                   />
                   <button type="submit" disabled={pnrResult === 'checking'}
-                    className="absolute right-2.5 top-2.5 bg-slate-900 hover:bg-slate-700 text-white text-xs font-black px-5 py-2.5 rounded-xl transition-all shadow disabled:opacity-50"
+                    className="absolute right-2.5 top-2.5 bg-slate-900 hover:bg-slate-700 text-white text-sm font-black px-5 py-2.5 rounded-xl transition-all shadow disabled:opacity-50"
                   >
                     {pnrResult === 'checking' ? '…' : 'Submit'}
                   </button>
@@ -456,10 +456,10 @@ export default function Home() {
                       1
                     </div>
                   </div>
-                  <h3 className="font-black text-slate-800 text-sm sm:text-base md:text-lg mt-5 group-hover:text-slate-950 transition-colors">
+                  <h3 className="font-black text-slate-800 text-base sm:text-lg md:text-xl mt-5 group-hover:text-slate-950 transition-colors">
                     Choose Your Food
                   </h3>
-                  <p className="text-[11px] sm:text-xs md:text-sm text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
+                  <p className="text-xs sm:text-sm md:text-base text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
                     Browse menus from top restaurants available at your station.
                   </p>
                 </div>
@@ -475,10 +475,10 @@ export default function Home() {
                       2
                     </div>
                   </div>
-                  <h3 className="font-black text-slate-800 text-sm sm:text-base md:text-lg mt-5 group-hover:text-slate-950 transition-colors">
+                  <h3 className="font-black text-slate-800 text-base sm:text-lg md:text-xl mt-5 group-hover:text-slate-950 transition-colors">
                     Enter PNR
                   </h3>
-                  <p className="text-[11px] sm:text-xs md:text-sm text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
+                  <p className="text-xs sm:text-sm md:text-base text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
                     Enter your 10 digit PNR number to find your journey details.
                   </p>
                 </div>
@@ -507,10 +507,10 @@ export default function Home() {
                       3
                     </div>
                   </div>
-                  <h3 className="font-black text-slate-800 text-sm sm:text-base md:text-lg mt-5 group-hover:text-slate-950 transition-colors">
+                  <h3 className="font-black text-slate-800 text-base sm:text-lg md:text-xl mt-5 group-hover:text-slate-950 transition-colors">
                     We Prepare & Deliver
                   </h3>
-                  <p className="text-[11px] sm:text-xs md:text-sm text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
+                  <p className="text-xs sm:text-sm md:text-base text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
                     We'll prepare your order and deliver it fresh on your berth.
                   </p>
                 </div>
@@ -526,10 +526,10 @@ export default function Home() {
                       4
                     </div>
                   </div>
-                  <h3 className="font-black text-slate-800 text-sm sm:text-base md:text-lg mt-5 group-hover:text-slate-950 transition-colors">
+                  <h3 className="font-black text-slate-800 text-base sm:text-lg md:text-xl mt-5 group-hover:text-slate-950 transition-colors">
                     Enjoy Your Meal
                   </h3>
-                  <p className="text-[11px] sm:text-xs md:text-sm text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
+                  <p className="text-xs sm:text-sm md:text-base text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
                     Sit back, relax and enjoy delicious food during your journey.
                   </p>
                 </div>
@@ -573,7 +573,7 @@ export default function Home() {
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
               Delicious Food, <span className="bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 bg-clip-text text-transparent">Served at Your Berth</span>
             </h2>
-            <p className="text-slate-500 text-sm sm:text-base md:text-lg mt-3.5 leading-relaxed font-semibold">
+            <p className="text-slate-500 text-base sm:text-lg md:text-xl mt-3.5 leading-relaxed font-semibold">
               We bring high-quality, hygiene-certified restaurant meals right to your train seat. Enjoy a delightful and completely hassle-free dining experience during your journey.
             </p>
           </div>
@@ -630,7 +630,7 @@ export default function Home() {
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
                   Popular Dishes on the Track
                 </h2>
-                <p className="text-slate-550 text-sm sm:text-base md:text-lg mt-3.5 leading-relaxed font-semibold">
+                <p className="text-slate-550 text-base sm:text-lg md:text-xl mt-3.5 leading-relaxed font-semibold">
                   Loved by thousands of passengers. Order these hot and delicious items delivered right at your seat.
                 </p>
               </div>
@@ -646,7 +646,7 @@ export default function Home() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-2.5 left-2.5 z-10">
-                        <span className={`${item.tagColor} text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md shadow-sm`}>
+                        <span className={`${item.tagColor} text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md shadow-sm`}>
                           {item.tag}
                         </span>
                       </div>
@@ -654,18 +654,18 @@ export default function Home() {
                     <div className="p-3.5 sm:p-5 flex-1 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs sm:text-sm md:text-base font-black text-slate-800 font-mono">{item.price}</span>
+                          <span className="text-sm sm:text-base md:text-lg font-black text-slate-800 font-mono">{item.price}</span>
                         </div>
-                        <h3 className="font-black text-slate-800 text-xs sm:text-sm md:text-base leading-tight group-hover:text-rose-600 transition-colors">
+                        <h3 className="font-black text-slate-800 text-sm sm:text-base md:text-lg leading-tight group-hover:text-rose-600 transition-colors">
                           {item.name}
                         </h3>
-                        <p className="text-[10px] sm:text-[11px] md:text-xs text-slate-450 font-semibold leading-relaxed mt-1 line-clamp-2">
+                        <p className="text-xs sm:text-sm md:text-sm text-slate-450 font-semibold leading-relaxed mt-1 line-clamp-2">
                           {item.desc}
                         </p>
                       </div>
                       <button
                         onClick={() => router.push(`/menu?add_item=${encodeURIComponent(item.name)}`)}
-                        className="w-full mt-3 bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-700 hover:text-rose-600 font-black text-[10px] md:text-xs uppercase tracking-wider py-2 md:py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5"
+                        className="w-full mt-3 bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-700 hover:text-rose-600 font-black text-xs md:text-sm uppercase tracking-wider py-2 md:py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5"
                       >
                         <ShoppingBag className="w-3 h-3 md:w-3.5 md:h-3.5" />
                         Order
@@ -699,7 +699,7 @@ export default function Home() {
                 Our Triple-Check <br />
                 <span className="bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 bg-clip-text text-transparent">Hygiene & Trust Promise</span>
               </h2>
-              <p className="text-slate-500 text-sm sm:text-base md:text-lg mt-3.5 leading-relaxed font-semibold">
+              <p className="text-slate-500 text-base sm:text-lg md:text-xl mt-3.5 leading-relaxed font-semibold">
                 Your health is our ultimate priority. We partner exclusively with premium restaurants that follow strict government sanitization guidelines to cook, pack, and deliver fresh food.
               </p>
 
@@ -733,8 +733,8 @@ export default function Home() {
                       <item.icon className="w-5.5 h-5.5" />
                     </div>
                     <div>
-                      <h4 className="font-black text-slate-800 text-sm sm:text-base md:text-lg transition-colors group-hover/item:text-rose-600">{item.title}</h4>
-                      <p className="text-xs sm:text-sm md:text-[14px] text-slate-500 font-semibold leading-relaxed mt-1.5">{item.desc}</p>
+                      <h4 className="font-black text-slate-800 text-base sm:text-lg md:text-xl transition-colors group-hover/item:text-rose-600">{item.title}</h4>
+                      <p className="text-sm sm:text-base md:text-lg text-slate-500 font-semibold leading-relaxed mt-1.5">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -757,10 +757,10 @@ export default function Home() {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                     </span>
-                    <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Live Sanitized</span>
+                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Live Sanitized</span>
                   </div>
                   <div className="bg-white border border-slate-200 px-3.5 py-1.5 rounded-2xl shadow-xs flex items-center gap-1 text-amber-500">
-                    ★ <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider font-mono">100% Safe</span>
+                    ★ <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider font-mono">100% Safe</span>
                   </div>
                 </div>
 
@@ -770,13 +770,13 @@ export default function Home() {
                     <ShieldCheck className="w-12 h-12 text-white" />
                   </div>
                   <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-800 tracking-tight">BiteOnRail Certified</h3>
-                  <p className="text-xs sm:text-sm md:text-[14px] text-slate-500 font-semibold max-w-sm mx-auto mt-2 leading-relaxed">
+                  <p className="text-sm sm:text-base md:text-lg text-slate-500 font-semibold max-w-sm mx-auto mt-2 leading-relaxed">
                     Look for our safety audit sticker on packaging to guarantee hygiene, warmth, and FSSAI-inspected quality.
                   </p>
                 </div>
 
                 {/* Footer Tag */}
-                <div className="border-t border-dashed border-slate-200 pt-4 flex justify-center items-center relative z-10 text-[9px] sm:text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest">
+                <div className="border-t border-dashed border-slate-200 pt-4 flex justify-center items-center relative z-10 text-[11px] sm:text-[11px] md:text-xs font-black text-slate-400 uppercase tracking-widest">
                   <span>Safety audited daily</span>
                 </div>
               </div>
@@ -801,7 +801,7 @@ export default function Home() {
                 <span className="text-[10px] lg:text-xs font-black uppercase tracking-widest text-rose-600">Platform Delivery Hubs</span>
               </div>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">Active Rail Stations</h2>
-              <p className="text-slate-500 text-sm sm:text-base md:text-lg mt-3 leading-relaxed font-semibold">
+              <p className="text-slate-500 text-base sm:text-lg md:text-xl mt-3 leading-relaxed font-semibold">
                 Warm meals at <strong className="text-slate-700">{stations.length || 17}</strong> major junctions across India.
               </p>
             </div>
@@ -858,20 +858,20 @@ export default function Home() {
                 <div className="p-3 sm:p-5">
                   <div className="flex justify-between items-start pb-2 sm:pb-3 border-b border-dashed border-slate-100 mb-2 sm:mb-3">
                     <div className="min-w-0 pr-1">
-                      <h3 className="font-black text-slate-800 text-[13px] sm:text-sm md:text-base group-hover:text-rose-600 transition-colors leading-tight whitespace-normal">{station.name}</h3>
-                      <span className="text-[9px] sm:text-[9px] md:text-xs text-slate-400 font-bold uppercase tracking-widest block mt-0.5 truncate">{station.state}</span>
+                      <h3 className="font-black text-slate-800 text-sm sm:text-base md:text-lg group-hover:text-rose-600 transition-colors leading-tight whitespace-normal">{station.name}</h3>
+                      <span className="text-xs sm:text-xs md:text-sm text-slate-400 font-bold uppercase tracking-widest block mt-0.5 truncate">{station.state}</span>
                     </div>
                     <span className="text-sm sm:text-2xl md:text-3xl font-black text-slate-900 group-hover:text-rose-600 transition-colors font-mono shrink-0">{station.code}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-[10px] md:text-xs font-bold text-emerald-600">
+                    <div className="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-[11px] md:text-xs font-bold text-emerald-600">
                       <span className="relative flex h-1 sm:h-1.5 w-1 sm:w-1.5">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                         <span className="relative inline-flex rounded-full h-1 sm:h-1.5 w-1 sm:w-1.5 bg-emerald-500" />
                       </span>
                       Active
                     </div>
-                    <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-[10px] md:text-xs font-black text-slate-400 group-hover:text-rose-600 transition-colors uppercase tracking-wider">
+                    <div className="flex items-center gap-0.5 sm:gap-1 text-[11px] sm:text-[11px] md:text-xs font-black text-slate-400 group-hover:text-rose-600 transition-colors uppercase tracking-wider">
                       Order <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </div>
@@ -920,7 +920,7 @@ export default function Home() {
                 Who We Are & <br />
                 <span className="bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 bg-clip-text text-transparent">What We Do</span>
               </h2>
-              <p className="text-slate-500 text-sm sm:text-base md:text-lg mt-3.5 leading-relaxed font-semibold">
+              <p className="text-slate-500 text-base sm:text-lg md:text-xl mt-3.5 leading-relaxed font-semibold">
                 BiteOnRail is a next-generation train travel dining platform. We are dedicated to transforming your rail journeys by delivering hot, fresh, and hygienic food right to your train berth.
               </p>
  
@@ -930,8 +930,8 @@ export default function Home() {
                   <div className="bg-rose-50 w-10 h-10 rounded-xl flex items-center justify-center text-rose-600 mb-3.5 shadow-sm shadow-rose-500/5 transition-transform duration-300 group-hover:scale-110">
                     <Smile className="w-5.5 h-5.5" />
                   </div>
-                  <h4 className="font-black text-slate-800 text-sm sm:text-base md:text-lg group-hover:text-rose-600 transition-colors">Who We Are?</h4>
-                  <p className="text-[11px] md:text-sm text-slate-500 font-semibold leading-relaxed mt-1.5">
+                  <h4 className="font-black text-slate-800 text-base sm:text-lg md:text-xl group-hover:text-rose-600 transition-colors">Who We Are?</h4>
+                  <p className="text-sm md:text-base text-slate-500 font-semibold leading-relaxed mt-1.5">
                     A team of passionate foodies and railway innovators who believe train travel should always come with delightful meals.
                   </p>
                 </div>
@@ -940,8 +940,8 @@ export default function Home() {
                   <div className="bg-amber-50 w-10 h-10 rounded-xl flex items-center justify-center text-amber-600 mb-3.5 shadow-sm shadow-amber-500/5 transition-transform duration-300 group-hover:scale-110">
                     <Train className="w-5.5 h-5.5" />
                   </div>
-                  <h4 className="font-black text-slate-800 text-sm sm:text-base md:text-lg group-hover:text-amber-600 transition-colors">What We Do?</h4>
-                  <p className="text-[11px] md:text-sm text-slate-500 font-semibold leading-relaxed mt-1.5">
+                  <h4 className="font-black text-slate-800 text-base sm:text-lg md:text-xl group-hover:text-amber-600 transition-colors">What We Do?</h4>
+                  <p className="text-sm md:text-base text-slate-500 font-semibold leading-relaxed mt-1.5">
                     We track your train live, coordinate with hygiene-approved local restaurants, and deliver warm food directly to your seat.
                   </p>
                 </div>
@@ -956,7 +956,7 @@ export default function Home() {
               <div className="relative bg-white border border-slate-200 rounded-[28px] sm:rounded-[44px] p-3 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.03)] flex flex-col justify-between">
                 <div className="pb-1 mb-1.5 sm:pb-4 sm:mb-4 border-b border-slate-100 flex justify-between items-center gap-2">
                   <h3 className="font-black text-slate-800 text-xs sm:text-base uppercase tracking-wider">Our Trust & Scale</h3>
-                  <span className="text-[9px] sm:text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg flex items-center gap-1 shrink-0">
+                  <span className="text-[11px] sm:text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg flex items-center gap-1 shrink-0">
                     <span className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2 bg-emerald-500" />
@@ -1016,10 +1016,10 @@ export default function Home() {
                         <span className={`text-xl sm:text-3xl md:text-4xl font-extrabold font-mono block tracking-tight leading-none ${metric.color}`}>
                           {metric.val}
                         </span>
-                        <span className="text-[9px] sm:text-xs font-black text-slate-800 uppercase tracking-wider block mt-1.5 leading-tight">
+                        <span className="text-[11px] sm:text-xs font-black text-slate-800 uppercase tracking-wider block mt-1.5 leading-tight">
                           {metric.label}
                         </span>
-                        <span className="text-[8px] sm:text-[11px] text-slate-450 font-bold block mt-0.5 leading-tight">
+                        <span className="text-[11px] sm:text-[11px] text-slate-450 font-bold block mt-0.5 leading-tight">
                           {metric.desc}
                         </span>
                       </div>
@@ -1047,14 +1047,14 @@ export default function Home() {
             <div className="absolute top-[-40px] right-[-40px] w-[300px] h-[300px] bg-rose-500/10 rounded-full blur-[80px]" />
             <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
               <div>
-                <div className="flex items-center gap-2 text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-full w-fit text-[10px] font-black uppercase tracking-widest mb-4">
+                <div className="flex items-center gap-2 text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-full w-fit text-[11px] font-black uppercase tracking-widest mb-4">
                   <Train className="w-3.5 h-3.5" /> Now Boarding — All Classes
                 </div>
-                <h3 className="text-3xl sm:text-3xl font-black text-slate-800 leading-tight">
+                <h3 className="text-3xl sm:text-4xl font-black text-slate-800 leading-tight">
                   Hungry on the Train?<br />
                   <span className="text-rose-600">Order in 60 Seconds.</span>
                 </h3>
-                <p className="text-slate-500 text-base sm:text-sm mt-3 max-w-md font-semibold">
+                <p className="text-slate-500 text-base sm:text-lg mt-3 max-w-md font-semibold">
                   Fresh, hot, hygienic meals delivered to your seat at the next station halt. No fuss, no wait.
                 </p>
               </div>
@@ -1064,7 +1064,7 @@ export default function Home() {
                 >
                   Order Now
                 </button>
-                <p className="text-center text-slate-400 text-[10px] font-bold">No login needed · MRP prices</p>
+                <p className="text-center text-slate-400 text-[11px] font-bold">No login needed · MRP prices</p>
               </div>
             </div>
           </div>
@@ -1093,8 +1093,8 @@ export default function Home() {
                   <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${iconColor}`} />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="font-black text-slate-800 text-base sm:text-base">{title}</h3>
-                  <p className="text-xs sm:text-xs text-slate-550 leading-relaxed font-bold">{desc}</p>
+                  <h3 className="font-black text-slate-800 text-base sm:text-lg">{title}</h3>
+                  <p className="text-sm sm:text-sm text-slate-550 leading-relaxed font-bold">{desc}</p>
                 </div>
               </div>
             ))}

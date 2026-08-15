@@ -25,7 +25,7 @@ export default function HelpPage() {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg md:text-xl font-black text-slate-900 leading-tight flex items-center gap-1.5">
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 leading-tight flex items-center gap-1.5">
               <Headphones className="w-4 h-4 md:w-5 md:h-5 text-rose-500 shrink-0" />
               <span>Help & Support</span>
             </h1>
@@ -41,11 +41,11 @@ export default function HelpPage() {
           
           {/* Quick Contact Banner (Left side on laptop) */}
           <div className="md:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
-            <h2 className="text-base md:text-lg font-black text-slate-955">How can we help you today?</h2>
-            <p className="text-sm md:text-base text-slate-500 leading-relaxed font-semibold">
+            <h2 className="text-lg md:text-xl font-black text-slate-955">How can we help you today?</h2>
+            <p className="text-base md:text-lg text-slate-500 leading-relaxed font-semibold">
               If you have any issues with food quality, delivery delays, payment status, or cancellation, feel free to contact us. Our team is active 24/7 during train run hours.
             </p>
-            <div className="flex items-center gap-1.5 text-xs md:text-xs text-emerald-600 font-bold bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5 w-fit">
+            <div className="flex items-center gap-1.5 text-sm md:text-sm text-emerald-600 font-bold bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5 w-fit">
               <ShieldCheck className="w-4 h-4 text-emerald-500 animate-pulse" />
               <span>We monitor live train timetables</span>
             </div>
@@ -65,9 +65,9 @@ export default function HelpPage() {
                     <Phone className="w-5 h-5 md:w-5.5 md:h-5.5" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-sm md:text-base font-black text-slate-800 uppercase tracking-wider">{contact.label || 'Call Helpline'}</h3>
-                    <p className="text-base md:text-lg font-black text-rose-600 font-mono">+{contact.phone}</p>
-                    <p className="text-xs md:text-sm text-slate-400 font-medium">Tap to call our active delivery helpline</p>
+                    <h3 className="text-base md:text-lg font-black text-slate-800 uppercase tracking-wider">{contact.label || 'Call Helpline'}</h3>
+                    <p className="text-lg md:text-xl font-black text-rose-600 font-mono">+{contact.phone}</p>
+                    <p className="text-sm md:text-base text-slate-400 font-medium">Tap to call our active delivery helpline</p>
                   </div>
                 </a>
 
@@ -81,9 +81,9 @@ export default function HelpPage() {
                       <Mail className="w-5 h-5 md:w-5.5 md:h-5.5" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-sm md:text-base font-black text-slate-800 uppercase tracking-wider">Write to Email</h3>
-                      <p className="text-base md:text-lg font-black text-slate-800 font-mono">{contact.email}</p>
-                      <p className="text-xs md:text-xs text-slate-400 font-medium">Send queries for refund, bulk orders or feedback</p>
+                      <h3 className="text-base md:text-lg font-black text-slate-800 uppercase tracking-wider">Write to Email</h3>
+                      <p className="text-lg md:text-xl font-black text-slate-800 font-mono">{contact.email}</p>
+                      <p className="text-sm md:text-sm text-slate-400 font-medium">Send queries for refund, bulk orders or feedback</p>
                     </div>
                   </a>
                 )}
@@ -96,9 +96,9 @@ export default function HelpPage() {
                 <Clock className="w-5 h-5 md:w-5.5 md:h-5.5" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-sm md:text-base font-black text-slate-800 uppercase tracking-wider">Support Timings</h3>
-                <p className="text-sm md:text-base text-slate-700 font-extrabold">06:00 AM — 11:30 PM (Daily)</p>
-                <p className="text-xs md:text-xs text-slate-400 font-medium">Our customer support works round-the-clock synced with train halt slots.</p>
+                <h3 className="text-base md:text-lg font-black text-slate-800 uppercase tracking-wider">Support Timings</h3>
+                <p className="text-base md:text-lg text-slate-700 font-extrabold">06:00 AM — 11:30 PM (Daily)</p>
+                <p className="text-sm md:text-sm text-slate-400 font-medium">Our customer support works round-the-clock synced with train halt slots.</p>
               </div>
             </div>
 

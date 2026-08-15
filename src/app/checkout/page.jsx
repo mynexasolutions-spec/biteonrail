@@ -1025,8 +1025,8 @@ function CheckoutContent() {
               <CheckCircle className="w-6 h-6 md:w-8 md:h-8 text-white" strokeWidth={2.5} />
             </div>
             <div>
-              <h1 className="text-xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">Order Confirmed! 🎉</h1>
-              <p className="text-slate-500 text-[10px] md:text-base mt-1.5 font-semibold">
+              <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">Order Confirmed! 🎉</h1>
+              <p className="text-slate-500 text-xs md:text-lg mt-1.5 font-semibold">
                 Your food is being prepared · Delivery to <span className="text-rose-600 font-black">Coach {placedOrderDetails.coach}, Seat {placedOrderDetails.seat}</span>
               </p>
             </div>
@@ -1042,7 +1042,7 @@ function CheckoutContent() {
                 <div className="bg-gradient-to-r from-rose-600 to-rose-500 rounded-t-[14px] px-4 py-3 md:py-4 flex justify-between items-center">
                   <div>
                     <p className="text-rose-200 text-[10px] md:text-xs font-bold uppercase tracking-widest">Order Reference</p>
-                    <p className="text-white font-mono font-black text-base md:text-lg tracking-wider mt-0.5">{placedOrderDetails.id}</p>
+                    <p className="text-white font-mono font-black text-lg md:text-xl tracking-wider mt-0.5">{placedOrderDetails.id}</p>
                   </div>
                   <span className="bg-white/20 border border-white/30 text-white text-[10px] md:text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
                     ✓ {placedOrderDetails.status}
@@ -1061,28 +1061,28 @@ function CheckoutContent() {
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 md:gap-y-3.5">
                     <div>
                       <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5">PNR Number</p>
-                      <p className="text-slate-800 font-bold font-mono tracking-wider text-sm md:text-[15px]">{placedOrderDetails.pnr || '—'}</p>
+                      <p className="text-slate-800 font-bold font-mono tracking-wider text-base md:text-lg">{placedOrderDetails.pnr || '—'}</p>
                     </div>
                     <div>
                       <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5">Mobile Number</p>
-                      <p className="text-slate-800 font-bold font-mono tracking-wider text-sm md:text-[15px]">{placedOrderDetails.phone || '—'}</p>
+                      <p className="text-slate-800 font-bold font-mono tracking-wider text-base md:text-lg">{placedOrderDetails.phone || '—'}</p>
                     </div>
                     <div>
                       <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5">Berth Details</p>
-                      <p className="text-slate-800 font-bold text-sm md:text-[15px]">
+                      <p className="text-slate-800 font-bold text-base md:text-lg">
                         Coach <span className="text-rose-600">{placedOrderDetails.coach}</span> · Seat <span className="text-rose-600">{placedOrderDetails.seat}</span>
                       </p>
                     </div>
                     <div>
                       <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5">Delivery Station</p>
-                      <p className="text-slate-800 font-bold text-sm md:text-[15px] flex items-center gap-1">
+                      <p className="text-slate-800 font-bold text-base md:text-lg flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                         <span className="truncate">{stationName}</span>
                       </p>
                     </div>
                     <div>
                       <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5">Expected Delivery Time</p>
-                      <p className="text-slate-800 font-bold text-sm md:text-[15px] flex items-center gap-1">
+                      <p className="text-slate-800 font-bold text-base md:text-lg flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                         <span className="font-mono">
                           {(() => {
@@ -1118,7 +1118,7 @@ function CheckoutContent() {
                     </div>
                     <div className="col-span-2">
                       <p className="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5">Payment</p>
-                      <p className={`font-black text-sm md:text-[15px] flex items-center gap-1 ${isOnline ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      <p className={`font-black text-base md:text-lg flex items-center gap-1 ${isOnline ? 'text-emerald-600' : 'text-amber-600'}`}>
                         <CreditCard className="w-3.5 h-3.5 shrink-0" />
                         {isOnline ? 'Paid Online ✓' : 'Cash on Delivery'}
                       </p>
@@ -1137,9 +1137,9 @@ function CheckoutContent() {
                             <span className="bg-rose-50 text-rose-600 text-[10px] md:text-xs font-black w-4.5 h-4.5 rounded flex items-center justify-center border border-rose-100 shrink-0 font-mono">
                               {item.quantity}
                             </span>
-                            <span className="text-slate-700 text-sm md:text-[15px] font-semibold truncate">{item.name}</span>
+                            <span className="text-slate-700 text-base md:text-lg font-semibold truncate">{item.name}</span>
                           </div>
-                          <span className="text-slate-800 font-black text-sm md:text-[15px] shrink-0">₹{item.price * item.quantity}</span>
+                          <span className="text-slate-800 font-black text-base md:text-lg shrink-0">₹{item.price * item.quantity}</span>
                         </div>
                       ))}
                     </div>
@@ -1151,7 +1151,7 @@ function CheckoutContent() {
                       <div className="space-y-1">
                         <p className="text-slate-400 text-[10px] md:text-[10px] font-black uppercase tracking-widest">On-Demand Requests</p>
                         {placedOrderDetails.onDemandRequests.map((req, idx) => (
-                          <div key={idx} className="flex justify-between items-center bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs md:text-xs">
+                          <div key={idx} className="flex justify-between items-center bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-sm md:text-sm">
                             <span className="text-slate-700 font-medium truncate mr-1">{req.name}</span>
                             <span className="text-amber-700 text-[9px] md:text-[9px] font-black bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 shrink-0">{req.status}</span>
                           </div>
@@ -1166,7 +1166,7 @@ function CheckoutContent() {
                       <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
                         <Gift className="w-4 h-4 text-amber-500 shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-amber-900 text-xs md:text-sm font-bold truncate">{placedOrderDetails.freeGiftProduct} (Free Gift!)</p>
+                          <p className="text-amber-900 text-sm md:text-base font-bold truncate">{placedOrderDetails.freeGiftProduct} (Free Gift!)</p>
                         </div>
                       </div>
                     </>
@@ -1177,7 +1177,7 @@ function CheckoutContent() {
               {/* Total Paid Row */}
               <div className="bg-gradient-to-r from-rose-600 to-rose-500 rounded-b-[14px] px-4 py-3 md:py-4 flex justify-between items-center shadow-inner mt-auto">
                 <span className="text-rose-200 text-[10px] md:text-xs font-black uppercase tracking-widest">Total Amount</span>
-                <p className="text-xl md:text-3xl font-black text-white">₹{placedOrderDetails.total}</p>
+                <p className="text-2xl md:text-3xl font-black text-white">₹{placedOrderDetails.total}</p>
               </div>
             </div>
 
@@ -1197,7 +1197,7 @@ function CheckoutContent() {
                           }`}>
                           {idx === 0 ? '✓' : idx + 1}
                         </div>
-                        <span className={`text-[8px] md:text-sm font-black uppercase tracking-wider leading-tight ${idx === 0 ? 'text-rose-655' : 'text-slate-400'}`}>{step}</span>
+                        <span className={`text-xs md:text-base font-black uppercase tracking-wider leading-tight ${idx === 0 ? 'text-rose-655' : 'text-slate-400'}`}>{step}</span>
                       </div>
                       {idx < 3 && (
                         <div className={`hidden md:block w-0.5 h-6 bg-slate-100 ml-3.5`} />
@@ -1212,13 +1212,13 @@ function CheckoutContent() {
                 <div className="flex justify-center w-full">
                   <button
                     onClick={() => router.push('/orders')}
-                    className="w-fit bg-slate-900 hover:bg-slate-800 text-white font-black text-xs md:text-sm py-3.5 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                    className="w-fit bg-slate-900 hover:bg-slate-800 text-white font-black text-sm md:text-base py-3.5 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                   >
                     <ClipboardList className="w-4 h-4 shrink-0 text-rose-500" />
                     <span>View My Orders</span>
                   </button>
                 </div>
-                <p className="text-center text-slate-400 text-[10px] md:text-xs font-semibold leading-none">
+                <p className="text-center text-slate-400 text-xs md:text-sm font-semibold leading-none">
                   Placed at {placedOrderDetails.timestamp}
                 </p>
               </div>
@@ -1251,11 +1251,11 @@ function CheckoutContent() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <Ticket className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-            <h1 className="text-sm font-black tracking-tight text-slate-900 truncate">
+            <h1 className="text-base font-black tracking-tight text-slate-900 truncate">
               {mobileStep === 1 ? 'Personal & SEAT DETAILS' : mobileStep === 2 ? 'Order Summary' : 'Payment'}
             </h1>
           </div>
-          <p className="text-xs text-slate-400 font-bold tracking-wider mt-0.5 truncate">
+          <p className="text-sm text-slate-400 font-bold tracking-wider mt-0.5 truncate">
             {mobileStep === 1 ? (stationCode ? `${stationCode} · Berth Delivery` : 'Step 1 of 3') : mobileStep === 2 ? `Step 2 of 3 · ₹${total} total` : `Step 3 of 3 · Choose payment`}
           </p>
         </div>
@@ -1276,7 +1276,7 @@ function CheckoutContent() {
             <Train className="w-3.5 h-3.5 text-indigo-650" /> BiteOnRail Berth Delivery
           </span>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Complete Booking</h1>
-          <p className="text-slate-500 text-xs md:text-sm mt-2.5 font-bold">Verify your train ticket information for hot food delivery straight to your seat.</p>
+          <p className="text-slate-500 text-sm md:text-base mt-2.5 font-bold">Verify your train ticket information for hot food delivery straight to your seat.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -1297,10 +1297,10 @@ function CheckoutContent() {
                     const isSuspended = reasonText.startsWith("Kitchen Suspended");
                     const isHours = reasonText.startsWith("Closed Hours");
                     return (
-                      <div className="bg-rose-50 border border-rose-250 text-rose-950 p-4 rounded-2xl text-xs font-semibold leading-relaxed flex gap-2.5 items-start">
+                      <div className="bg-rose-50 border border-rose-250 text-rose-950 p-4 rounded-2xl text-sm font-semibold leading-relaxed flex gap-2.5 items-start">
                         <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                         <div>
-                          <strong className="block uppercase text-[10px] tracking-wider text-rose-700">
+                          <strong className="block uppercase text-xs tracking-wider text-rose-700">
                             {isSuspended ? '🛑 Kitchen Suspended' : isHours ? '🕒 Operational Hours Closed' : '⏱ Delivery Cutoff Reached'}
                           </strong>
                           <span>{reasonText.substring(reasonText.indexOf(':') + 2)}</span>
@@ -1310,20 +1310,20 @@ function CheckoutContent() {
                   })()}
 
                   {pnrVerified && trackingError && pnr && pnr.length === 10 && (
-                    <div className="bg-indigo-50 border border-indigo-200 text-indigo-950 p-4 rounded-2xl text-xs sm:text-sm md:text-base font-semibold leading-relaxed flex gap-2.5 items-center">
+                    <div className="bg-indigo-50 border border-indigo-200 text-indigo-950 p-4 rounded-2xl text-sm sm:text-base md:text-lg font-semibold leading-relaxed flex gap-2.5 items-center">
                       <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-650 shrink-0" />
                       <span>Train journey has not started from the source station yet for this date. Your order is registered as an advance booking.</span>
                     </div>
                   )}
 
                   {pnrVerified && fullTrackingData && fullTrackingData.statusNote && pnr && pnr.length === 10 && (
-                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-950 p-4 rounded-2xl text-xs sm:text-sm md:text-base font-semibold leading-relaxed flex gap-2.5 items-start">
+                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-950 p-4 rounded-2xl text-sm sm:text-base md:text-lg font-semibold leading-relaxed flex gap-2.5 items-start">
                       <Train className="w-5 h-5 text-emerald-650 shrink-0 mt-0.5 animate-pulse" />
                       <div>
-                        <strong className="block uppercase text-[10px] tracking-wider text-emerald-700">Live Running Status</strong>
+                        <strong className="block uppercase text-xs tracking-wider text-emerald-700">Live Running Status</strong>
                         <span>{fullTrackingData.statusNote}</span>
                         {fullTrackingData.lastUpdate && (
-                          <span className="block text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">
+                          <span className="block text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">
                             Last Updated: {fullTrackingData.lastUpdate}
                           </span>
                         )}
@@ -1333,15 +1333,15 @@ function CheckoutContent() {
 
                   <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
                     <User className="w-4.5 h-4.5 text-rose-500" />
-                    <h2 className="text-sm sm:text-base font-black text-slate-800 uppercase tracking-wider">Passenger Information</h2>
+                    <h2 className="text-base sm:text-lg font-black text-slate-800 uppercase tracking-wider">Passenger Information</h2>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <label className="block text-xs sm:text-xs md:text-[12px] font-black uppercase tracking-wider text-slate-400">PNR Number</label>
+                        <label className="block text-sm sm:text-sm md:text-sm font-black uppercase tracking-wider text-slate-400">PNR Number</label>
                         {pnrVerified && (
-                          <span className="text-[10px] text-emerald-600 font-extrabold flex items-center gap-0.5">
+                          <span className="text-xs text-emerald-600 font-extrabold flex items-center gap-0.5">
                             ✓ PNR Verified
                           </span>
                         )}
@@ -1362,34 +1362,34 @@ function CheckoutContent() {
                             setIsPnrNotAllotted(false);
                           }}
                           placeholder="10-Digit PNR"
-                          className="w-full pl-12 pr-24 py-3.5 border border-slate-200 rounded-xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-mono tracking-widest font-black text-slate-800"
+                          className="w-full pl-12 pr-24 py-3.5 border border-slate-200 rounded-xl text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-mono tracking-widest font-black text-slate-800"
                         />
                         <button
                           type="button"
                           onClick={() => handlePnrVerification()}
                           disabled={isCheckingPnr || pnr.length !== 10}
-                          className="absolute right-1.5 top-1.5 bottom-1.5 bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black px-4 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-wider"
+                          className="absolute right-1.5 top-1.5 bottom-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black px-4 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-wider"
                         >
                           {isCheckingPnr ? '...' : 'Verify'}
                         </button>
                       </div>
                       {pnrError && (
-                        <p className="text-xs text-rose-600 font-extrabold mt-1.5 flex items-center gap-1.5 animate-fadeIn">
+                        <p className="text-sm text-rose-600 font-extrabold mt-1.5 flex items-center gap-1.5 animate-fadeIn">
                           <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
                           <span>{pnrError}</span>
                         </p>
                       )}
                       {isPnrNotAllotted && (
-                        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200/65 p-3 rounded-xl font-semibold leading-relaxed mt-2.5 animate-fadeIn">
+                        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200/65 p-3 rounded-xl font-semibold leading-relaxed mt-2.5 animate-fadeIn">
                           ⚠️ <strong>Chart Not Prepared / Waitlist:</strong> Coach/Seat number has not been allocated by Indian Railways yet. Please order only after your seat is allocated!
                         </p>
                       )}
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs sm:text-xs md:text-[12px] font-black uppercase tracking-wider text-slate-400">Mobile Number</label>
+                      <label className="block text-sm sm:text-sm md:text-sm font-black uppercase tracking-wider text-slate-400">Mobile Number</label>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs md:text-sm font-bold font-mono flex items-center justify-center">+91</span>
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm md:text-base font-bold font-mono flex items-center justify-center">+91</span>
                         <input
                           type="tel"
                           required
@@ -1397,13 +1397,13 @@ function CheckoutContent() {
                           value={phone}
                           onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                           placeholder="10-digit number"
-                          className="w-full pl-14 pr-4 py-3.5 border border-slate-200 rounded-xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-mono font-bold text-slate-800"
+                          className="w-full pl-14 pr-4 py-3.5 border border-slate-200 rounded-xl text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-mono font-bold text-slate-800"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs sm:text-xs md:text-[12px] font-black uppercase tracking-wider text-slate-400">Coach Number</label>
+                      <label className="block text-sm sm:text-sm md:text-sm font-black uppercase tracking-wider text-slate-400">Coach Number</label>
                       <div className="relative">
                         <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 flex items-center justify-center">
                           <Train className="w-4 h-4" />
@@ -1415,13 +1415,13 @@ function CheckoutContent() {
                           onChange={(e) => setCoach(e.target.value.toUpperCase())}
                           placeholder="e.g. S4, B1"
                           disabled={isPnrNotAllotted}
-                          className={`w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 uppercase font-black text-slate-800 transition-all ${isPnrNotAllotted ? 'bg-slate-50 text-slate-400 cursor-not-allowed border-slate-200' : ''}`}
+                          className={`w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-xl text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 uppercase font-black text-slate-800 transition-all ${isPnrNotAllotted ? 'bg-slate-50 text-slate-400 cursor-not-allowed border-slate-200' : ''}`}
                         />
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs sm:text-xs md:text-[12px] font-black uppercase tracking-wider text-slate-400">Seat / Berth Number</label>
+                      <label className="block text-sm sm:text-sm md:text-sm font-black uppercase tracking-wider text-slate-400">Seat / Berth Number</label>
                       <div className="relative">
                         <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 flex items-center justify-center">
                           <MapPin className="w-4 h-4" />
@@ -1433,7 +1433,7 @@ function CheckoutContent() {
                           onChange={(e) => setSeat(e.target.value)}
                           placeholder="e.g. 42, 17"
                           disabled={isPnrNotAllotted}
-                          className={`w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 uppercase font-black text-slate-800 transition-all ${isPnrNotAllotted ? 'bg-slate-50 text-slate-400 cursor-not-allowed border-slate-200' : ''}`}
+                          className={`w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-xl text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 uppercase font-black text-slate-800 transition-all ${isPnrNotAllotted ? 'bg-slate-50 text-slate-400 cursor-not-allowed border-slate-200' : ''}`}
                         />
                       </div>
                     </div>
@@ -1441,13 +1441,13 @@ function CheckoutContent() {
 
 
                     <div className="md:col-span-2 space-y-1.5 pt-2">
-                      <label className="block text-xs font-black uppercase tracking-wider text-slate-400">Need anything else? (Delivered on MRP rate)</label>
+                      <label className="block text-sm font-black uppercase tracking-wider text-slate-400">Need anything else? (Delivered on MRP rate)</label>
                       <textarea
                         rows={2}
                         value={customMgetRequest}
                         onChange={(e) => setCustomMgetRequest(e.target.value)}
                         placeholder="e.g. Please bring 1 packet of Amul Gold Milk or specific brand tablet..."
-                        className="w-full p-4 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-semibold text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-rose-500/20"
+                        className="w-full p-4 border border-slate-200 rounded-2xl text-base focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 font-semibold text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-rose-500/20"
                       />
                     </div>
                   </div>
@@ -1455,7 +1455,7 @@ function CheckoutContent() {
                   {/* Payment selector - DESKTOP ONLY inline (mobile shows in step 2) */}
                   <div className="hidden md:block pt-6 border-t border-slate-100 space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Payment Method</h3>
+                      <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Payment Method</h3>
                       {isPrepaidOnly && (
                         <span className="text-[8px] bg-rose-50 text-rose-600 border border-rose-100 font-black px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1">
                           <AlertCircle className="w-3 h-3 text-rose-500" /> Prepaid Only Active
@@ -1464,7 +1464,7 @@ function CheckoutContent() {
                     </div>
 
                     {isPrepaidOnly && (
-                      <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl text-rose-800 text-[10px] flex items-start gap-2 leading-relaxed">
+                      <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl text-rose-800 text-xs flex items-start gap-2 leading-relaxed">
                         <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                         <span>
                           <strong>COD Temporary Policy Warning:</strong> {
@@ -1490,8 +1490,8 @@ function CheckoutContent() {
                           <CreditCard className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <span className="text-xs md:text-base font-black block text-slate-800 leading-tight">Online UPI / Card</span>
-                          <span className="text-[10px] md:text-sm text-slate-450 font-medium block mt-1 leading-tight">Pay via QR, Cards, Netbanking</span>
+                          <span className="text-sm md:text-lg font-black block text-slate-800 leading-tight">Online UPI / Card</span>
+                          <span className="text-xs md:text-base text-slate-450 font-medium block mt-1 leading-tight">Pay via QR, Cards, Netbanking</span>
                         </div>
                         <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ml-auto transition-all ${paymentMode === 'online' ? 'border-rose-500 bg-rose-500' : 'border-slate-300'}`}>
                           {paymentMode === 'online' && <span className="w-1.5 h-1.5 rounded-full bg-white block" />}
@@ -1511,8 +1511,8 @@ function CheckoutContent() {
                           <Coins className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <span className="text-xs md:text-base font-black block text-slate-800 leading-tight">Cash on Delivery (COD)</span>
-                          <span className="text-[10px] md:text-sm text-slate-400 font-medium block mt-1 leading-tight">Pay directly to delivery agent</span>
+                          <span className="text-sm md:text-lg font-black block text-slate-800 leading-tight">Cash on Delivery (COD)</span>
+                          <span className="text-xs md:text-base text-slate-400 font-medium block mt-1 leading-tight">Pay directly to delivery agent</span>
                         </div>
                         <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ml-auto transition-all ${paymentMode === 'cod' && !isPrepaidOnly ? 'border-slate-700 bg-slate-700' : 'border-slate-300'}`}>
                           {paymentMode === 'cod' && !isPrepaidOnly && <span className="w-1.5 h-1.5 rounded-full bg-white block" />}
@@ -1527,7 +1527,7 @@ function CheckoutContent() {
                   <button
                     type="submit"
                     disabled={isVerifying || isClosed || isPnrNotAllotted}
-                    className="hidden md:flex w-fit mx-auto px-8 bg-rose-600 hover:bg-rose-700 text-white font-black py-3.5 rounded-xl transition-all shadow-md shadow-rose-600/10 text-xs mt-4 items-center justify-center gap-1.5 disabled:bg-slate-350 disabled:cursor-not-allowed uppercase tracking-widest"
+                    className="hidden md:flex w-fit mx-auto px-8 bg-rose-600 hover:bg-rose-700 text-white font-black py-3.5 rounded-xl transition-all shadow-md shadow-rose-600/10 text-sm mt-4 items-center justify-center gap-1.5 disabled:bg-slate-350 disabled:cursor-not-allowed uppercase tracking-widest"
                   >
                     {isClosed ? 'Ordering Closed for Station' : (isPnrNotAllotted ? 'Seat Not Allotted' : (isVerifying ? 'Processing...' : (currentUser === phone ? 'Confirm & Place Order' : 'Verify Mobile & Place Order')))}
                   </button>
@@ -1539,12 +1539,12 @@ function CheckoutContent() {
                     <Phone className="w-7 h-7 animate-pulse" />
                   </div>
                   <div className="space-y-1.5">
-                    <h2 className="text-lg font-black text-slate-800">Verify Phone Number</h2>
-                    <p className="text-[11px] text-slate-500 leading-relaxed max-w-xs mx-auto">We have sent a 6-digit OTP verification code to <strong className="text-slate-850">{phone}</strong>.</p>
+                    <h2 className="text-xl font-black text-slate-800">Verify Phone Number</h2>
+                    <p className="text-sm text-slate-500 leading-relaxed max-w-xs mx-auto">We have sent a 6-digit OTP verification code to <strong className="text-slate-850">{phone}</strong>.</p>
                   </div>
 
                   <div className="py-2">
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2.5">Enter Verification Code</label>
+                    <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2.5">Enter Verification Code</label>
                     <OtpBoxInput value={otp} onChange={setOtp} />
                   </div>
 
@@ -1552,14 +1552,14 @@ function CheckoutContent() {
                     <button
                       type="button"
                       onClick={() => setOtpSent(false)}
-                      className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl text-xs transition-colors"
+                      className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl text-sm transition-colors"
                     >
                       Edit Details
                     </button>
                     <button
                       type="submit"
                       disabled={isVerifying}
-                      className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-rose-600/10"
+                      className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl text-sm transition-all flex items-center justify-center gap-1.5 shadow-md shadow-rose-600/10"
                     >
                       {isVerifying ? 'Verifying...' : (mobileStep === 1 ? 'Verify & Proceed' : 'Verify & Order')}
                     </button>
@@ -1572,7 +1572,7 @@ function CheckoutContent() {
           {/* Invoice Summary - Desktop always visible, Mobile only in step 2 */}
           <div className={`lg:col-span-5 ${mobileStep === 2 ? 'block' : 'hidden md:block'}`}>
             <div className="bg-white rounded-[32px] border border-slate-200 shadow-md p-6 space-y-5 relative overflow-hidden">
-              <h3 className="font-black text-slate-800 text-xs md:text-sm uppercase tracking-wider border-b border-slate-50 pb-3 flex items-center gap-1.5">
+              <h3 className="font-black text-slate-800 text-sm md:text-base uppercase tracking-wider border-b border-slate-50 pb-3 flex items-center gap-1.5">
                 <Lock className="w-4 h-4 text-slate-400" /> Secure Order Bill
               </h3>
 
@@ -1600,8 +1600,8 @@ function CheckoutContent() {
                       <div className="flex-grow min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         {/* Name & price each */}
                         <div className="min-w-0">
-                          <h4 className="text-xs md:text-sm font-black text-slate-800 truncate leading-snug">{item.name}</h4>
-                          <p className="text-[10px] md:text-xs text-slate-400 font-bold mt-0.5 font-mono">₹{item.price} each</p>
+                          <h4 className="text-sm md:text-base font-black text-slate-800 truncate leading-snug">{item.name}</h4>
+                          <p className="text-xs md:text-sm text-slate-400 font-bold mt-0.5 font-mono">₹{item.price} each</p>
                         </div>
                         {/* Controls and calculated price */}
                         <div className="flex items-center justify-between sm:justify-end gap-2.5 mt-1 sm:mt-0">
@@ -1622,7 +1622,7 @@ function CheckoutContent() {
                               +
                             </button>
                           </div>
-                          <span className="font-extrabold text-slate-700 text-xs md:text-[15px] min-w-[50px] text-right font-mono">₹{item.price * item.quantity}</span>
+                          <span className="font-extrabold text-slate-700 text-sm md:text-lg min-w-[50px] text-right font-mono">₹{item.price * item.quantity}</span>
                         </div>
                       </div>
                     </div>
@@ -1635,8 +1635,8 @@ function CheckoutContent() {
                 <div className="border-t border-slate-100 pt-4 space-y-2.5">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">On-Demand Requests</span>
                   {onDemand.map((req, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-xs md:text-sm bg-slate-50 p-2 rounded-xl border border-slate-200">
-                      <span className="text-slate-600 font-medium text-[11px] md:text-xs">{req.name}</span>
+                    <div key={idx} className="flex justify-between items-center text-sm md:text-base bg-slate-50 p-2 rounded-xl border border-slate-200">
+                      <span className="text-slate-600 font-medium text-xs md:text-sm">{req.name}</span>
                       <span className="font-black text-emerald-700 text-[10px]">Free</span>
                     </div>
                   ))}
@@ -1645,14 +1645,14 @@ function CheckoutContent() {
 
               {/* Free Gift Indicator */}
               {subtotal >= (giftThreshold || 300) && (
-                <div className="border-t border-slate-100 pt-4 flex items-center justify-between text-xs md:text-sm bg-amber-50 p-3 rounded-2xl border border-amber-100 text-amber-800 font-bold">
+                <div className="border-t border-slate-100 pt-4 flex items-center justify-between text-sm md:text-base bg-amber-50 p-3 rounded-2xl border border-amber-100 text-amber-800 font-bold">
                   <span className="flex items-center gap-1.5"><Gift className="w-4 h-4 text-amber-500" /> Free Gift Added:</span>
-                  <span className="text-[10px] text-amber-700 font-black">{freeProduct}</span>
+                  <span className="text-xs text-amber-700 font-black">{freeProduct}</span>
                 </div>
               )}
 
               {/* Calculations */}
-              <div className="border-t border-slate-200 pt-4 space-y-2.5 text-xs sm:text-sm md:text-base font-semibold text-slate-500">
+              <div className="border-t border-slate-200 pt-4 space-y-2.5 text-sm sm:text-base md:text-lg font-semibold text-slate-500">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Subtotal</span>
                   <span className="font-bold text-slate-700">₹{subtotal}</span>
@@ -1664,9 +1664,9 @@ function CheckoutContent() {
                   </span>
                 </div>
 
-                <div className="flex justify-between text-sm sm:text-base md:text-lg font-black text-slate-800 border-t border-slate-100 pt-3">
+                <div className="flex justify-between text-base sm:text-lg md:text-xl font-black text-slate-800 border-t border-slate-100 pt-3">
                   <span className="text-slate-900 uppercase text-[10px] sm:text-xs md:text-sm tracking-wider">Grand Total</span>
-                  <span className="text-lg sm:text-xl md:text-2xl text-rose-600 font-black">₹{total}</span>
+                  <span className="text-xl sm:text-2xl md:text-3xl text-rose-600 font-black">₹{total}</span>
                 </div>
               </div>
             </div>
@@ -1675,15 +1675,15 @@ function CheckoutContent() {
             <div className="md:hidden mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Delivery Details</p>
               <div className="space-y-2.5">
-                <div className="flex justify-between items-center text-xs">
+                <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-rose-400" /> Station</span>
                   <span className="font-black text-slate-800">{stationCode || '—'}</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
+                <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500 flex items-center gap-1.5"><Train className="w-3.5 h-3.5 text-indigo-400" /> Coach / Seat</span>
                   <span className="font-black text-slate-800">{coach ? `${coach.toUpperCase()} / ${seat.toUpperCase()}` : '—'}</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
+                <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500 flex items-center gap-1.5"><Ticket className="w-3.5 h-3.5 text-amber-500" /> PNR</span>
                   <span className="font-mono font-black text-slate-800">{pnr || '—'}</span>
                 </div>
@@ -1700,7 +1700,7 @@ function CheckoutContent() {
               </div>
 
               {isPrepaidOnly && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-[10px] flex items-start gap-2 leading-relaxed">
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs flex items-start gap-2 leading-relaxed">
                   <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                   <span>
                     <strong>COD disabled:</strong> {codPolicy === 'always_disable' ? 'Cash on Delivery has been deactivated.' : `COD not available after ${Number(codCutoffHour) > 12 ? `${Number(codCutoffHour) - 12}:00 PM` : `${Number(codCutoffHour)}:00 AM`}.`}
@@ -1726,10 +1726,10 @@ function CheckoutContent() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-black text-slate-900">Online UPI / Card</span>
+                      <span className="text-base font-black text-slate-900">Online UPI / Card</span>
                       <span className="text-[8px] bg-emerald-100 text-emerald-700 font-black px-1.5 py-0.5 rounded uppercase tracking-wide">Recommended</span>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-medium">Pay via UPI, Debit/Credit Cards, Netbanking</span>
+                    <span className="text-xs text-slate-400 font-medium">Pay via UPI, Debit/Credit Cards, Netbanking</span>
                     <div className="flex items-center gap-2 mt-2">
                       {['UPI', 'Visa', 'MC', 'RuPay'].map(m => (
                         <span key={m} className="text-[8px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{m}</span>
@@ -1757,8 +1757,8 @@ function CheckoutContent() {
                     <Coins className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-black text-slate-900 block mb-0.5">Cash on Delivery</span>
-                    <span className="text-[11px] text-slate-400 font-medium">Pay in cash directly to delivery agent at your seat</span>
+                    <span className="text-base font-black text-slate-900 block mb-0.5">Cash on Delivery</span>
+                    <span className="text-xs text-slate-400 font-medium">Pay in cash directly to delivery agent at your seat</span>
                     <div className="flex items-center gap-1.5 mt-2">
                       <span className="text-[8px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">CASH</span>
                       <span className="text-[8px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">AT SEAT</span>
@@ -1773,7 +1773,7 @@ function CheckoutContent() {
               {/* Trust badge */}
               <div className="flex items-center justify-center gap-1.5 pt-1">
                 <Lock className="w-3 h-3 text-slate-300" />
-                <span className="text-[9px] text-slate-400 font-medium">Secured & Encrypted · RailFood Safe Pay</span>
+                <span className="text-xs text-slate-400 font-medium">Secured & Encrypted · RailFood Safe Pay</span>
               </div>
 
               <div id="recaptcha-container"></div>
@@ -1791,7 +1791,7 @@ function CheckoutContent() {
               <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 group-hover/money:text-rose-500 transition-colors">
                 Your Total <span className="text-[8px] text-rose-500 font-black font-sans shrink-0 uppercase tracking-widest bg-rose-50 border border-rose-100/50 px-1 rounded-sm">View Details ▲</span>
               </p>
-              <p className="text-base font-black text-slate-900 leading-tight">₹{total} <span className="text-[9px] font-normal text-slate-400">incl. all</span></p>
+              <p className="text-xl font-black text-slate-900 leading-tight">₹{total} <span className="text-xs font-normal text-slate-400">incl. all</span></p>
             </div>
             <button
               type="button"
@@ -1804,7 +1804,7 @@ function CheckoutContent() {
                 if (!seat) { alert('Please enter your Seat / Berth Number.'); return; }
                 handlePlaceOrderSubmit(e);
               }}
-              className="flex-shrink-0 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black py-3 px-5 rounded-2xl text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shadow-rose-600/25"
+              className="flex-shrink-0 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black py-3 px-5 rounded-2xl text-sm uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shadow-rose-600/25"
             >
               Proceed
               <ArrowRight className="w-3.5 h-3.5" />
@@ -1821,7 +1821,7 @@ function CheckoutContent() {
               <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 group-hover/money:text-rose-500 transition-colors">
                 Grand Total <span className="text-[8px] text-rose-500 font-black font-sans shrink-0 uppercase tracking-widest bg-rose-50 border border-rose-100/50 px-1 rounded-sm">View Details ▲</span>
               </p>
-              <p className="text-lg font-black text-slate-900 leading-tight">₹{total}</p>
+              <p className="text-xl font-black text-slate-900 leading-tight">₹{total}</p>
             </div>
             <button
               type="button"
@@ -1829,7 +1829,7 @@ function CheckoutContent() {
                 setMobileStep(3);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex-shrink-0 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black py-3 px-5 rounded-2xl text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shadow-rose-600/25"
+              className="flex-shrink-0 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black py-3 px-5 rounded-2xl text-sm uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shadow-rose-600/25"
             >
               Select Payment
               <ArrowRight className="w-3.5 h-3.5" />
@@ -1847,12 +1847,12 @@ function CheckoutContent() {
                 <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 group-hover/money:text-rose-500 transition-colors">
                   Grand Total <span className="text-[8px] text-rose-500 font-black font-sans shrink-0 uppercase tracking-widest bg-rose-50 border border-rose-100/50 px-1 rounded-sm">View Details ▲</span>
                 </p>
-                <p className="text-lg font-black text-slate-900 leading-tight">₹{total}</p>
+                <p className="text-xl font-black text-slate-900 leading-tight">₹{total}</p>
               </div>
               <button
                 type="submit"
                 disabled={isVerifying || isClosed || isPnrNotAllotted}
-                className="flex-shrink-0 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black py-3 px-5 rounded-2xl text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shadow-rose-600/25 disabled:bg-slate-300 disabled:cursor-not-allowed"
+                className="flex-shrink-0 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black py-3 px-5 rounded-2xl text-sm uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shadow-rose-600/25 disabled:bg-slate-300 disabled:cursor-not-allowed"
               >
                 {isClosed ? 'Closed' : isPnrNotAllotted ? 'Seat Not Allotted' : isVerifying ? 'Processing...' : currentUser === phone ? 'Confirm Order' : 'Place Order'}
                 {!isVerifying && !isClosed && !isPnrNotAllotted && <ArrowRight className="w-3.5 h-3.5" />}
@@ -1878,8 +1878,8 @@ function CheckoutContent() {
                   <ShoppingBag className="w-4.5 h-4.5" />
                 </span>
                 <div>
-                  <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">Your Basket Items</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{cart.length} food items selected</p>
+                  <h3 className="font-black text-slate-800 text-base uppercase tracking-wider">Your Basket Items</h3>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5">{cart.length} food items selected</p>
                 </div>
               </div>
               <button 
@@ -1907,8 +1907,8 @@ function CheckoutContent() {
                     </div>
                     <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <h4 className="text-xs font-black text-slate-800 truncate leading-snug">{item.name}</h4>
-                        <p className="text-[10px] text-slate-400 font-bold mt-0.5 font-mono">₹{item.price} each</p>
+                        <h4 className="text-sm font-black text-slate-800 truncate leading-snug">{item.name}</h4>
+                        <p className="text-xs text-slate-400 font-bold mt-0.5 font-mono">₹{item.price} each</p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         {/* Incrementor Decrementor controls */}
@@ -1934,7 +1934,7 @@ function CheckoutContent() {
                             +
                           </button>
                         </div>
-                        <span className="font-extrabold text-slate-700 text-xs min-w-[45px] text-right font-mono">₹{item.price * item.quantity}</span>
+                        <span className="font-extrabold text-slate-700 text-sm min-w-[45px] text-right font-mono">₹{item.price * item.quantity}</span>
                       </div>
                     </div>
                   </div>
@@ -1944,17 +1944,17 @@ function CheckoutContent() {
 
             {/* Bottom summary in drawer */}
             <div className="p-5 border-t border-slate-100 space-y-3.5 bg-slate-50/50">
-              <div className="flex justify-between text-xs font-bold text-slate-500">
+              <div className="flex justify-between text-sm font-bold text-slate-500">
                 <span>Items Subtotal</span>
                 <span>₹{subtotal}</span>
               </div>
-              <div className="flex justify-between text-xs font-bold text-slate-500">
+              <div className="flex justify-between text-sm font-bold text-slate-500">
                 <span>Seat Delivery Fee</span>
                 <span>{Number(delivery) === 0 ? 'Free' : `₹${delivery}`}</span>
               </div>
-              <div className="flex justify-between items-center text-sm font-black text-slate-800 border-t border-slate-200/80 pt-3">
-                <span className="text-[10px] uppercase tracking-wider">Estimated Total</span>
-                <span className="text-base text-rose-600 font-black font-mono">₹{total}</span>
+              <div className="flex justify-between items-center text-base font-black text-slate-800 border-t border-slate-200/80 pt-3">
+                <span className="text-xs uppercase tracking-wider">Estimated Total</span>
+                <span className="text-lg text-rose-600 font-black font-mono">₹{total}</span>
               </div>
             </div>
           </div>
@@ -1969,7 +1969,7 @@ export default function Checkout() {
     <Suspense fallback={
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-rose-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-slate-400 font-extrabold text-[10px] uppercase tracking-widest animate-pulse">Loading Checkout...</p>
+        <p className="text-slate-400 font-extrabold text-xs uppercase tracking-widest animate-pulse">Loading Checkout...</p>
       </div>
     }>
       <CheckoutContent />
