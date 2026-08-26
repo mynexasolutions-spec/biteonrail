@@ -1238,7 +1238,7 @@ function CheckoutContent() {
   }
 
   return (
-    <div className={`bg-slate-50 min-h-screen pb-28 md:pt-6 md:pb-24 relative overflow-hidden ${mobileStep === 1 ? 'pt-16' : 'pt-12'}`}>
+    <div className={`bg-slate-50 min-h-screen pb-28 md:pt-12 md:pb-24 relative overflow-hidden ${mobileStep === 1 ? 'pt-[90px]' : 'pt-[80px]'}`}>
       {/* 📱 Mobile Sticky Top Navbar */}
       <div className="md:hidden bg-white border-b border-slate-200 px-3 py-2.5 shadow-sm fixed top-0 left-0 right-0 z-50 flex flex-row items-center gap-3 w-full">
         {/* Back Button */}

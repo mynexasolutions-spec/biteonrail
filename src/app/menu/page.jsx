@@ -1600,7 +1600,7 @@ function MenuContent() {
           <div className="p-4 px-5 pb-5 flex items-center justify-between">
             <div className="flex flex-col cursor-pointer group" onClick={() => setShowCartDrawer(true)}>
               <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider flex items-center gap-1">
-                Total Payable <span className="text-[8px] text-rose-600 font-black shrink-0 bg-rose-50 border border-rose-100 px-1 rounded-sm">View Details ▲</span>
+                Total Payable <span className="text-[11px] text-rose-600 font-black shrink-0 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-md">View Details ▲</span>
               </span>
               <span className="text-rose-600 font-black text-lg font-mono">₹{total}</span>
             </div>
@@ -1649,21 +1649,21 @@ function MenuContent() {
                 const matchedItem = (menuItems || []).find(mi => mi.id.toString() === baseId);
                 const displayImage = item.image_url || item.image || matchedItem?.image_url || matchedItem?.image;
                 return (
-                  <div key={item.id} className="flex items-center gap-3 bg-slate-50 border border-slate-150 p-3 rounded-2xl">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-white shrink-0 border border-slate-200 flex items-center justify-center">
+                  <div key={item.id} className="flex items-center gap-3.5 bg-slate-50 border border-slate-150 p-4 rounded-2xl">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 border border-slate-200 flex items-center justify-center">
                       {displayImage ? (
                         <img src={displayImage} alt={item.name} className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-slate-355 text-sm">🍴</span>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0 flex items-center justify-between gap-2.5">
                       <div className="min-w-0">
-                        <h4 className="text-sm font-black text-slate-800 truncate leading-snug">{item.name}</h4>
-                        <p className="text-xs text-slate-400 font-bold mt-0.5 font-mono">₹{item.price} each</p>
+                        <h4 className="text-sm sm:text-base font-black text-slate-800 leading-snug">{item.name}</h4>
+                        <p className="text-xs sm:text-sm text-slate-400 font-bold mt-0.5 font-mono">₹{item.price} each</p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
-                        <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden h-7 shrink-0">
+                        <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden h-9 shrink-0">
                           <button
                             type="button"
                             onClick={() => {
@@ -1672,15 +1672,15 @@ function MenuContent() {
                                 setShowCartDrawer(false);
                               }
                             }}
-                            className="px-2.5 h-full text-slate-550 hover:bg-slate-50 text-xs font-black transition-colors"
+                            className="px-3.5 h-full text-slate-550 hover:bg-slate-50 text-sm font-black transition-colors"
                           >
                             -
                           </button>
-                          <span className="px-1 text-[11px] font-black text-slate-700 w-4 text-center">{item.quantity}</span>
+                          <span className="px-1 text-xs sm:text-sm font-black text-slate-700 w-6 text-center">{item.quantity}</span>
                           <button
                             type="button"
                             onClick={() => updateCartItemQuantity(item.id, item.quantity + 1)}
-                            className="px-2.5 h-full text-slate-550 hover:bg-slate-50 text-xs font-black transition-colors"
+                            className="px-3.5 h-full text-slate-550 hover:bg-slate-50 text-sm font-black transition-colors"
                           >
                             +
                           </button>

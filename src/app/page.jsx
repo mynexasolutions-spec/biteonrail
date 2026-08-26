@@ -163,7 +163,7 @@ export default function Home() {
               <img src={homepageLogoWhite || "/logo-white.png"} alt="BiteOnRail Logo" className="h-10 w-auto filter drop-shadow-[1px_2px_4px_rgba(0,0,0,0.6)]" />
             </div>
             {/* Heading */}
-            <div className="pb-16">
+            <div className="pb-32">
               <h1
                 className="text-4xl font-black tracking-tight leading-tight text-white"
                 style={{ filter: 'drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.95)) drop-shadow(0px 0px 8px rgba(0, 0, 0, 0.8))' }}
@@ -226,14 +226,11 @@ export default function Home() {
                 </form>
               ) : currentUser ? (
                 <div className="text-center py-2 flex flex-col items-center">
-                  <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mb-2">
-                    <Check className="w-6 h-6 text-emerald-600 font-bold" />
-                  </div>
                   <p className="text-sm font-black text-slate-800">Logged in as +91 {currentUser}</p>
                   <p className="text-[10px] text-slate-400 font-bold mt-1">Ready to get hot food delivered at your berth?</p>
                   <button 
                     onClick={() => router.push(`/search?phone=${currentUser}`)}
-                    className="mt-4 w-full bg-rose-600 hover:bg-rose-700 text-white text-base font-black py-4.5 rounded-2xl transition-all shadow-md active:scale-95"
+                    className="mt-4 w-fit px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-black rounded-xl transition-all shadow-md active:scale-95"
                   >
                     Proceed to Search
                   </button>
