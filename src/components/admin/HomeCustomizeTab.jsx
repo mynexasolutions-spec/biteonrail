@@ -97,21 +97,21 @@ export default function HomeCustomizeTab() {
     <div className="space-y-8 max-w-5xl animate-fadeIn">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
+        <h1 className="text-2xl lg:text-3xl font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-rose-600" />
           Home Page Customization
         </h1>
-        <p className="text-slate-500 text-xs mt-1">
+        <p className="text-slate-500 text-sm lg:text-base mt-1">
           Upload custom hero wallpapers, manage Berth showcase assets, and select exactly 4 popular items to display on the main page.
         </p>
       </div>
 
       {/* Brand Logo Customization Panel */}
       <div className="bg-white border border-slate-200 rounded-[28px] shadow-sm overflow-hidden p-6 space-y-6">
-        <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-1.5">
+        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-1.5">
           <Sparkles className="w-4 h-4 text-rose-500" /> Brand Logo Customization
         </h3>
-        <p className="text-xs text-slate-500 font-semibold leading-normal">
+        <p className="text-sm text-slate-500 font-semibold leading-normal">
           Upload your custom corporate logo to display dynamically across the entire website (Navbar header, Footer, and mobile overlays).
         </p>
 
@@ -119,11 +119,11 @@ export default function HomeCustomizeTab() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
           <div className="bg-slate-50/50 border border-slate-200 p-5 rounded-2xl flex flex-col justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
+              <span className="text-xs font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
                 🎨 Brand Logo
               </span>
-              <h4 className="font-extrabold text-slate-800 text-sm mt-3">Primary Transparent Logo</h4>
-              <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-1">
+              <h4 className="font-extrabold text-slate-808 text-base mt-3">Primary Transparent Logo</h4>
+              <p className="text-xs text-slate-400 font-medium leading-relaxed mt-1">
                 Upload a PNG logo with a transparent background. Best recommended resolution is landscape format.
               </p>
               <div className="mt-4 border border-slate-200 rounded-xl p-4 bg-slate-100 flex items-center justify-center min-h-[100px] relative">
@@ -135,9 +135,9 @@ export default function HomeCustomizeTab() {
               </div>
             </div>
             <div className="mt-4">
-              <label className="flex items-center justify-center bg-white hover:bg-rose-50 border border-slate-250 hover:border-rose-300 text-slate-700 hover:text-rose-600 p-2.5 rounded-xl cursor-pointer transition-all shadow-xs w-full max-w-[120px] mx-auto gap-2">
+              <label className="flex items-center justify-center bg-white hover:bg-rose-55 border border-slate-250 hover:border-rose-300 text-slate-700 hover:text-rose-600 p-2.5 rounded-xl cursor-pointer transition-all shadow-xs w-full max-w-[120px] mx-auto gap-2">
                 <Upload className="w-4 h-4 shrink-0" />
-                {uploadingField === 'logo' && <span className="text-[10px] font-black uppercase">...</span>}
+                {uploadingField === 'logo' && <span className="text-xs font-black uppercase">...</span>}
                 <input
                   type="file"
                   accept="image/*"
@@ -151,14 +151,14 @@ export default function HomeCustomizeTab() {
 
           <div className="bg-slate-50/50 border border-slate-200 p-5 rounded-2xl flex flex-col justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
+              <span className="text-xs font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
                 🎨 Brand Logo
               </span>
-              <h4 className="font-extrabold text-slate-800 text-sm mt-3">White Logo (Dark Backgrounds)</h4>
-              <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-1">
+              <h4 className="font-extrabold text-slate-808 text-base mt-3">White Logo (Dark Backgrounds)</h4>
+              <p className="text-xs text-slate-400 font-medium leading-relaxed mt-1">
                 Upload a white/light PNG logo for use over dark or photo backgrounds (e.g. mobile hero).
               </p>
-              <div className="mt-4 border border-slate-200 rounded-xl p-4 bg-slate-800 flex items-center justify-center min-h-[100px] relative">
+              <div className="mt-4 border border-slate-200 rounded-xl p-4 bg-slate-808 flex items-center justify-center min-h-[100px] relative">
                 <img
                   src={homepageLogoWhite || "/logo-white.png"}
                   alt="White Logo Preview"
@@ -167,9 +167,9 @@ export default function HomeCustomizeTab() {
               </div>
             </div>
             <div className="mt-4">
-              <label className="flex items-center justify-center bg-white hover:bg-rose-50 border border-slate-250 hover:border-rose-300 text-slate-700 hover:text-rose-600 p-2.5 rounded-xl cursor-pointer transition-all shadow-xs w-full max-w-[120px] mx-auto gap-2">
+              <label className="flex items-center justify-center bg-white hover:bg-rose-55 border border-slate-250 hover:border-rose-300 text-slate-700 hover:text-rose-600 p-2.5 rounded-xl cursor-pointer transition-all shadow-xs w-full max-w-[120px] mx-auto gap-2">
                 <Upload className="w-4 h-4 shrink-0" />
-                {uploadingField === 'logo_white' && <span className="text-[10px] font-black uppercase">...</span>}
+                {uploadingField === 'logo_white' && <span className="text-xs font-black uppercase">...</span>}
                 <input
                   type="file"
                   accept="image/*"
@@ -181,11 +181,11 @@ export default function HomeCustomizeTab() {
             </div>
           </div>
         </div>
-      </div>
+      </div></div>
 
       {/* Image Upload Panel */}
       <div className="bg-white border border-slate-200 rounded-[28px] shadow-sm overflow-hidden p-6 space-y-6">
-        <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-1.5">
+        <h3 className="text-sm font-black text-slate-808 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-1.5">
           <Image className="w-4 h-4 text-slate-500" /> Banner & Section Artwork Customization
         </h3>
 
@@ -193,11 +193,11 @@ export default function HomeCustomizeTab() {
           {/* Card 1: Desktop Hero (Full width) */}
           <div className="bg-slate-50/50 border border-slate-200 p-5 rounded-2xl flex flex-col justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
+              <span className="text-xs font-black uppercase text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
                 <Monitor className="w-3 h-3" /> Laptop / Desktop Hero
               </span>
-              <h4 className="font-extrabold text-slate-800 text-sm mt-3">Hero Section Background Wallpaper</h4>
-              <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-1">
+              <h4 className="font-extrabold text-slate-808 text-base mt-3">Hero Section Background Wallpaper</h4>
+              <p className="text-xs text-slate-400 font-medium leading-relaxed mt-1">
                 Recommended aspect ratio: 16:9 or 21:9 (1920x1080px resolution). Matches background Vande Bharat train.
               </p>
               <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden aspect-[21/9] bg-slate-100 relative">
@@ -211,7 +211,7 @@ export default function HomeCustomizeTab() {
             <div className="mt-4">
               <label className="flex items-center justify-center bg-white hover:bg-rose-55 border border-slate-250 hover:border-rose-300 text-slate-700 hover:text-rose-600 p-2.5 rounded-xl cursor-pointer transition-all shadow-xs w-full max-w-[120px] mx-auto gap-2">
                 <Upload className="w-4 h-4 shrink-0" />
-                {uploadingField === 'hero_desktop' && <span className="text-[10px] font-black uppercase">...</span>}
+                {uploadingField === 'hero_desktop' && <span className="text-xs font-black uppercase">...</span>}
                 <input
                   type="file"
                   accept="image/*"
@@ -228,11 +228,11 @@ export default function HomeCustomizeTab() {
             {/* Card 2: Mobile Hero */}
             <div className="bg-slate-50/50 border border-slate-200 p-5 rounded-2xl flex flex-col justify-between">
               <div>
-                <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
+                <span className="text-xs font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
                   <Smartphone className="w-3 h-3" /> Mobile View Hero
                 </span>
-                <h4 className="font-extrabold text-slate-800 text-sm mt-3">Hero Section Mobile Background</h4>
-                <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-1">
+                <h4 className="font-extrabold text-slate-808 text-base mt-3">Hero Section Mobile Background</h4>
+                <p className="text-xs text-slate-400 font-medium leading-relaxed mt-1">
                   Recommended aspect ratio: Portrait layout (4:5 or 3:4 is optimal for mobile banner screens).
                 </p>
                 <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden aspect-[4/5] bg-slate-100 relative">
@@ -246,7 +246,7 @@ export default function HomeCustomizeTab() {
               <div className="mt-4">
               <label className="flex items-center justify-center bg-white hover:bg-rose-55 border border-slate-250 hover:border-rose-300 text-slate-700 hover:text-rose-600 p-2.5 rounded-xl cursor-pointer transition-all shadow-xs w-full max-w-[120px] mx-auto gap-2">
                 <Upload className="w-4 h-4 shrink-0" />
-                {uploadingField === 'hero_mobile' && <span className="text-[10px] font-black uppercase">...</span>}
+                {uploadingField === 'hero_mobile' && <span className="text-xs font-black uppercase">...</span>}
                 <input
                   type="file"
                   accept="image/*"
@@ -261,11 +261,11 @@ export default function HomeCustomizeTab() {
             {/* Card 3: Showcase Image 1 */}
             <div className="bg-slate-50/50 border border-slate-200 p-5 rounded-2xl flex flex-col justify-between">
               <div>
-                <span className="text-[10px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
+                <span className="text-xs font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3" /> Showcase Card 1
                 </span>
-                <h4 className="font-extrabold text-slate-800 text-sm mt-3">Express Speed Showcase Image</h4>
-                <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-1">
+                <h4 className="font-extrabold text-slate-808 text-base mt-3">Express Speed Showcase Image</h4>
+                <p className="text-xs text-slate-400 font-medium leading-relaxed mt-1">
                   Displays inside "Delicious Food, Served at Your Berth" section left column block (default Vande Bharat image).
                 </p>
                 <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden aspect-square bg-slate-100 relative">
@@ -279,7 +279,7 @@ export default function HomeCustomizeTab() {
               <div className="mt-4">
               <label className="flex items-center justify-center bg-white hover:bg-rose-55 border border-slate-250 hover:border-rose-300 text-slate-700 hover:text-rose-600 p-2.5 rounded-xl cursor-pointer transition-all shadow-xs w-full max-w-[120px] mx-auto gap-2">
                 <Upload className="w-4 h-4 shrink-0" />
-                {uploadingField === 'showcase_1' && <span className="text-[10px] font-black uppercase">...</span>}
+                {uploadingField === 'showcase_1' && <span className="text-xs font-black uppercase">...</span>}
                 <input
                   type="file"
                   accept="image/*"
@@ -294,11 +294,11 @@ export default function HomeCustomizeTab() {
             {/* Card 4: Showcase Image 2 */}
             <div className="bg-slate-50/50 border border-slate-200 p-5 rounded-2xl flex flex-col justify-between">
               <div>
-                <span className="text-[10px] font-black uppercase text-amber-600 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
+                <span className="text-xs font-black uppercase text-amber-600 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
                   <Heart className="w-3 h-3" /> Showcase Card 2
                 </span>
-                <h4 className="font-extrabold text-slate-800 text-sm mt-3">Hygienic Meal Showcase Image</h4>
-                <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-1">
+                <h4 className="font-extrabold text-slate-808 text-base mt-3">Hygienic Meal Showcase Image</h4>
+                <p className="text-xs text-slate-400 font-medium leading-relaxed mt-1">
                   Displays inside "Delicious Food, Served at Your Berth" section right column block (default train meal delivery box).
                 </p>
                 <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden aspect-square bg-slate-100 relative">
@@ -312,7 +312,7 @@ export default function HomeCustomizeTab() {
               <div className="mt-4">
               <label className="flex items-center justify-center bg-white hover:bg-rose-55 border border-slate-250 hover:border-rose-300 text-slate-700 hover:text-rose-600 p-2.5 rounded-xl cursor-pointer transition-all shadow-xs w-full max-w-[120px] mx-auto gap-2">
                 <Upload className="w-4 h-4 shrink-0" />
-                {uploadingField === 'showcase_2' && <span className="text-[10px] font-black uppercase">...</span>}
+                {uploadingField === 'showcase_2' && <span className="text-xs font-black uppercase">...</span>}
                 <input
                   type="file"
                   accept="image/*"
@@ -329,44 +329,44 @@ export default function HomeCustomizeTab() {
 
       {/* Trust & Scale Statistics Panel */}
       <div className="bg-white border border-slate-200 rounded-[28px] shadow-sm overflow-hidden p-6 space-y-6">
-        <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-1.5">
+        <h3 className="text-sm font-black text-slate-808 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-1.5">
           <BarChart3 className="w-4 h-4 text-indigo-500" /> Trust & Scale Statistics
         </h3>
-        <p className="text-xs text-slate-500 font-semibold leading-normal">
+        <p className="text-sm text-slate-500 font-semibold leading-normal">
           Customize the trust metrics shown in the "Who We Are & What We Do" section on the home page.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-550 mb-1.5 font-mono uppercase tracking-wider">Happy Passengers</label>
+            <label className="block text-sm font-bold text-slate-550 mb-1.5 font-mono uppercase tracking-wider">Happy Passengers</label>
             <input
               type="text"
               value={statsPassengers}
               onChange={(e) => updateStatsPassengers(e.target.value)}
               placeholder="e.g. 5k+"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-805 text-sm font-bold focus:outline-none focus:border-rose-500 font-mono"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-805 text-base font-bold focus:outline-none focus:border-rose-500 font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-550 mb-1.5 font-mono uppercase tracking-wider">Eateries Partners</label>
+            <label className="block text-sm font-bold text-slate-550 mb-1.5 font-mono uppercase tracking-wider">Eateries Partners</label>
             <input
               type="text"
               value={statsEateries}
               onChange={(e) => updateStatsEateries(e.target.value)}
               placeholder="e.g. 80+"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-805 text-sm font-bold focus:outline-none focus:border-rose-500 font-mono"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-805 text-base font-bold focus:outline-none focus:border-rose-500 font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-550 mb-1.5 font-mono uppercase tracking-wider">Average Rating</label>
+            <label className="block text-sm font-bold text-slate-550 mb-1.5 font-mono uppercase tracking-wider">Average Rating</label>
             <input
               type="text"
               value={statsRating}
               onChange={(e) => updateStatsRating(e.target.value)}
               placeholder="e.g. 4.8"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-805 text-sm font-bold focus:outline-none focus:border-rose-500 font-mono"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-805 text-base font-bold focus:outline-none focus:border-rose-500 font-mono"
             />
           </div>
         </div>
@@ -376,16 +376,16 @@ export default function HomeCustomizeTab() {
       <div className="bg-white border border-slate-200 rounded-[28px] shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex justify-between items-center flex-wrap gap-4">
           <div>
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
-              <Heart className="w-4 h-4 text-rose-500 fill-rose-100" /> Popular Dishes Selector
+            <h3 className="text-sm font-black text-slate-808 uppercase tracking-widest flex items-center gap-1.5">
+              <Heart className="w-4 h-4 text-rose-500 fill-rose-100" /> Popular Dishes Slider Selector
             </h3>
-            <p className="text-[11px] text-slate-500 mt-1 font-semibold">
+            <p className="text-xs text-slate-505 mt-1 font-semibold">
               Select exactly 4 items to display on the Passenger Favorites slider.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${
+            <span className={`text-xs font-black px-3 py-1 rounded-full border ${
               (homepagePopularDishes || []).length === 4
                 ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
                 : 'bg-amber-50 text-amber-600 border-amber-100'
@@ -400,7 +400,7 @@ export default function HomeCustomizeTab() {
                 value={dishSearchQuery}
                 onChange={(e) => setDishSearchQuery(e.target.value)}
                 placeholder="Search dish or category..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 pl-9 pr-4 text-slate-800 placeholder-slate-455 text-xs focus:outline-none focus:border-rose-500 transition-colors shadow-inner"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 pl-9 pr-4 text-slate-800 placeholder-slate-455 text-sm focus:outline-none focus:border-rose-500 transition-colors shadow-inner"
               />
             </div>
           </div>
@@ -434,12 +434,12 @@ export default function HomeCustomizeTab() {
                   )}
 
                   <div className="flex-1 min-w-0">
-                    <h4 className={`text-xs font-black leading-tight line-clamp-1 ${
+                    <h4 className={`text-sm font-black leading-tight line-clamp-1 ${
                       isSelected ? 'text-rose-655' : 'text-slate-800'
                     }`}>
                       {item.name}
                     </h4>
-                    <span className="text-[10px] text-slate-400 font-extrabold uppercase mt-1 block">
+                    <span className="text-xs text-slate-400 font-extrabold uppercase mt-1 block">
                       {item.category} • ₹{item.price}
                     </span>
                   </div>
@@ -455,7 +455,7 @@ export default function HomeCustomizeTab() {
             })}
 
             {filteredMenuItems.length === 0 && (
-              <div className="col-span-full py-8 text-center text-slate-400 font-bold text-xs">
+              <div className="col-span-full py-8 text-center text-slate-400 font-bold text-sm">
                 No matching menu items found in active station catalogs.
               </div>
             )}

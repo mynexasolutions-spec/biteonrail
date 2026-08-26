@@ -454,14 +454,14 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
 
           {/* Section Header */}
-          <div className="text-center max-w-xl mx-auto mb-16 md:mb-24">
-            <span className="text-xs font-black uppercase tracking-widest text-orange-600 mb-3 block">
+          <div className="text-center max-w-2xl mx-auto mb-16 md:mb-24">
+            <span className="text-[13px] sm:text-sm font-black uppercase tracking-widest text-orange-600 mb-3 block">
               How BiteOnRail Works
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+            <h2 className="text-[32px] sm:text-[40px] lg:text-[48px] font-black text-slate-900 tracking-tight leading-tight">
               Just 4 Simple Steps
             </h2>
-            <p className="text-slate-550 text-sm sm:text-base mt-3 leading-relaxed font-semibold">
+            <p className="text-[15px] sm:text-base mt-3 leading-relaxed font-semibold text-slate-550">
               Ordering food in train is now easier than ever
             </p>
           </div>
@@ -516,10 +516,10 @@ export default function Home() {
                       1
                     </div>
                   </div>
-                  <h3 className="font-black text-slate-800 text-base sm:text-lg md:text-xl mt-5 group-hover:text-slate-950 transition-colors">
+                  <h3 className="font-black text-slate-800 text-lg sm:text-xl md:text-2xl mt-5 group-hover:text-slate-950 transition-colors">
                     Choose Your Food
                   </h3>
-                  <p className="text-xs sm:text-sm md:text-base text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
+                  <p className="text-sm sm:text-base text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
                     Browse menus from top restaurants available at your station.
                   </p>
                 </div>
@@ -535,10 +535,10 @@ export default function Home() {
                       2
                     </div>
                   </div>
-                  <h3 className="font-black text-slate-800 text-base sm:text-lg md:text-xl mt-5 group-hover:text-slate-950 transition-colors">
+                  <h3 className="font-black text-slate-800 text-lg sm:text-xl md:text-2xl mt-5 group-hover:text-slate-950 transition-colors">
                     Enter PNR
                   </h3>
-                  <p className="text-xs sm:text-sm md:text-base text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
+                  <p className="text-sm sm:text-base text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
                     Enter your 10 digit PNR number to find your journey details.
                   </p>
                 </div>
@@ -567,10 +567,10 @@ export default function Home() {
                       3
                     </div>
                   </div>
-                  <h3 className="font-black text-slate-800 text-base sm:text-lg md:text-xl mt-5 group-hover:text-slate-950 transition-colors">
+                  <h3 className="font-black text-slate-800 text-lg sm:text-xl md:text-2xl mt-5 group-hover:text-slate-950 transition-colors">
                     We Prepare & Deliver
                   </h3>
-                  <p className="text-xs sm:text-sm md:text-base text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
+                  <p className="text-sm sm:text-base text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
                     We'll prepare your order and deliver it fresh on your berth.
                   </p>
                 </div>
@@ -586,10 +586,10 @@ export default function Home() {
                       4
                     </div>
                   </div>
-                  <h3 className="font-black text-slate-800 text-base sm:text-lg md:text-xl mt-5 group-hover:text-slate-950 transition-colors">
+                  <h3 className="font-black text-slate-800 text-lg sm:text-xl md:text-2xl mt-5 group-hover:text-slate-950 transition-colors">
                     Enjoy Your Meal
                   </h3>
-                  <p className="text-xs sm:text-sm md:text-base text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
+                  <p className="text-sm sm:text-base text-slate-500 font-semibold leading-relaxed mt-2 max-w-[145px] sm:max-w-[180px] md:max-w-[200px] mx-auto">
                     Sit back, relax and enjoy delicious food during your journey.
                   </p>
                 </div>
@@ -627,13 +627,13 @@ export default function Home() {
 
           {/* Header */}
           <div className="text-center max-w-2xl mx-auto mb-16 md:mb-20">
-            <span className="text-xs font-black uppercase tracking-widest text-rose-600 bg-rose-50 border border-rose-100 px-3.5 py-1.5 rounded-full w-fit mx-auto mb-4 flex items-center justify-center gap-1.5 shadow-sm">
+            <span className="text-[13px] sm:text-sm font-black uppercase tracking-widest text-rose-600 bg-rose-50 border border-rose-100 px-3.5 py-1.5 rounded-full w-fit mx-auto mb-4 flex items-center justify-center gap-1.5 shadow-sm">
               <Star className="w-3.5 h-3.5 text-rose-600 fill-rose-650" /> Premium Train Dining
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+            <h2 className="text-[32px] sm:text-[40px] lg:text-[48px] font-black text-slate-900 tracking-tight leading-tight">
               Delicious Food, <span className="bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 bg-clip-text text-transparent">Served at Your Berth</span>
             </h2>
-            <p className="text-slate-500 text-base sm:text-lg md:text-xl mt-3.5 leading-relaxed font-semibold">
+            <p className="text-slate-500 text-[15px] sm:text-base md:text-lg mt-3.5 leading-relaxed font-semibold">
               We bring high-quality, hygiene-certified restaurant meals right to your train seat. Enjoy a delightful and completely hassle-free dining experience during your journey.
             </p>
           </div>
@@ -684,13 +684,13 @@ export default function Home() {
 
               {/* Header */}
               <div className="text-center max-w-2xl mx-auto mb-16">
-                <span className="text-xs font-black uppercase tracking-widest text-orange-600 bg-orange-50 border border-orange-100 px-3.5 py-1.5 rounded-full w-fit mx-auto mb-4 flex items-center gap-1.5 shadow-sm">
+                <span className="text-[13px] sm:text-sm font-black uppercase tracking-widest text-orange-600 bg-orange-50 border border-orange-100 px-3.5 py-1.5 rounded-full w-fit mx-auto mb-4 flex items-center justify-center gap-1.5 shadow-sm">
                   <Smile className="w-4.5 h-4.5 text-orange-600 shrink-0" /> Passenger Favorites
                 </span>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                <h2 className="text-[32px] sm:text-[40px] lg:text-[48px] font-black text-slate-900 tracking-tight leading-tight">
                   Popular Dishes on the Track
                 </h2>
-                <p className="text-slate-550 text-base sm:text-lg md:text-xl mt-3.5 leading-relaxed font-semibold">
+                <p className="text-slate-550 text-[15px] sm:text-base md:text-lg mt-3.5 leading-relaxed font-semibold">
                   Loved by thousands of passengers. Order these hot and delicious items delivered right at your seat.
                 </p>
               </div>
@@ -752,10 +752,10 @@ export default function Home() {
 
             {/* Text details */}
             <div className="lg:col-span-6 space-y-6">
-              <span className="text-xs font-black uppercase tracking-widest text-rose-600 bg-rose-50 border border-rose-100 px-3.5 py-1.5 rounded-full w-fit flex items-center gap-1.5 shadow-sm">
+              <span className="text-[13px] sm:text-sm font-black uppercase tracking-widest text-rose-600 bg-rose-50 border border-rose-100 px-3.5 py-1.5 rounded-full w-fit flex items-center gap-1.5 shadow-sm">
                 <ShieldCheck className="w-4 h-4 text-rose-600" /> Zero-Compromise Safety
               </span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+              <h2 className="text-[32px] sm:text-[40px] lg:text-[48px] font-black text-slate-900 tracking-tight leading-tight">
                 Our Triple-Check <br />
                 <span className="bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 bg-clip-text text-transparent">Hygiene & Trust Promise</span>
               </h2>

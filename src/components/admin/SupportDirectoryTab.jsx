@@ -80,23 +80,23 @@ export default function SupportDirectoryTab({
       className="space-y-4"
     >
       <div>
-        <label className="block text-[10px] font-black text-slate-455 uppercase tracking-wider mb-1">Contact Label / Role</label>
+        <label className="block text-xs font-black text-slate-455 uppercase tracking-wider mb-1">Contact Label / Role</label>
         <input
           type="text"
           required
           value={newLabel}
           onChange={(e) => setNewLabel(e.target.value)}
           placeholder="e.g. HEAD Admin, Operations Team"
-          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-rose-500 font-bold"
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-rose-500 font-bold"
         />
       </div>
 
       <div>
-        <label className="block text-[10px] font-black text-slate-455 uppercase tracking-wider mb-1">Visibility / Target Audience</label>
+        <label className="block text-xs font-black text-slate-455 uppercase tracking-wider mb-1">Visibility / Target Audience</label>
         <select
           value={newType}
           onChange={(e) => setNewType(e.target.value)}
-          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-rose-500 font-bold"
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-rose-500 font-bold"
         >
           <option value="website_customer">Website Customer (Footer, Help Page, etc.)</option>
           <option value="station_manager">Station Manager (HQ Internal Support)</option>
@@ -104,31 +104,31 @@ export default function SupportDirectoryTab({
       </div>
 
       <div>
-        <label className="block text-[10px] font-black text-slate-455 uppercase tracking-wider mb-1">Phone Number (Required)</label>
+        <label className="block text-xs font-black text-slate-455 uppercase tracking-wider mb-1">Phone Number (Required)</label>
         <input
           type="tel"
           required
           value={newPhone}
           onChange={(e) => setNewPhone(e.target.value)}
           placeholder="e.g. 9536895748"
-          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-rose-500 font-bold font-mono"
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-rose-500 font-bold font-mono"
         />
       </div>
 
       <div>
-        <label className="block text-[10px] font-black text-slate-455 uppercase tracking-wider mb-1">Email Address (Optional)</label>
+        <label className="block text-xs font-black text-slate-455 uppercase tracking-wider mb-1">Email Address (Optional)</label>
         <input
           type="email"
           value={newEmail}
           onChange={(e) => setNewEmail(e.target.value)}
           placeholder="e.g. admin@biteonrail.com"
-          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-rose-500 font-bold font-mono"
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-rose-500 font-bold font-mono"
         />
       </div>
 
       <button
         type="submit"
-        className="w-full bg-rose-600 hover:bg-rose-550 text-white font-extrabold py-3.5 rounded-xl text-xs transition-all uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-rose-100"
+        className="w-full bg-rose-600 hover:bg-rose-550 text-white font-extrabold py-3.5 rounded-xl text-sm transition-all uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-rose-100"
       >
         <Plus className="w-4 h-4" /> Save Support Contact
       </button>
@@ -143,10 +143,10 @@ export default function SupportDirectoryTab({
         {/* Header Block with Add Button for Mobile/Tablet */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
-            <h1 className="text-xl lg:text-2xl font-black text-slate-805 tracking-tight uppercase flex items-center gap-2">
+            <h1 className="text-2xl lg:text-3xl font-black text-slate-805 tracking-tight uppercase flex items-center gap-2">
               <Phone className="w-5.5 h-5.5 text-rose-550" /> Support Contact Directory
             </h1>
-            <p className="text-slate-555 text-xs lg:text-sm mt-1">
+            <p className="text-slate-555 text-sm lg:text-base mt-1">
               Configure contact details for both public customers and station managers.
             </p>
           </div>
@@ -154,7 +154,7 @@ export default function SupportDirectoryTab({
           {/* Mobile/Tablet Trigger Button */}
           <button
             onClick={() => setIsModalOpen(true)}
-            className="lg:hidden w-full sm:w-auto bg-rose-600 hover:bg-rose-555 text-white font-extrabold px-5 py-3 rounded-xl text-xs transition-all uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-rose-100"
+            className="lg:hidden w-full sm:w-auto bg-rose-600 hover:bg-rose-555 text-white font-extrabold px-5 py-3 rounded-xl text-sm transition-all uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-rose-100"
           >
             <Plus className="w-4 h-4" /> Add Support Profile
           </button>
@@ -164,7 +164,7 @@ export default function SupportDirectoryTab({
           
           {/* Add New Profile Form (Visible inline ONLY on desktop screens) */}
           <div className="hidden lg:block lg:col-span-5 bg-white border border-slate-200 p-6 rounded-[32px] space-y-4 shadow-sm">
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-2.5">
+            <h3 className="text-sm font-black text-slate-808 uppercase tracking-widest border-b border-slate-100 pb-2.5">
               Add Support Profile
             </h3>
             {renderForm(false)}
@@ -172,7 +172,7 @@ export default function SupportDirectoryTab({
 
           {/* Directory Listings (Visible on all viewports) */}
           <div className="lg:col-span-7 bg-white border border-slate-200 p-6 rounded-[32px] space-y-4 shadow-sm">
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-2.5">
+            <h3 className="text-sm font-black text-slate-808 uppercase tracking-widest border-b border-slate-100 pb-2.5">
               Active Directory Profiles ({supportContacts?.length || 0})
             </h3>
             <div className="space-y-4 lg:max-h-[78vh] lg:overflow-y-auto pr-1">
@@ -247,8 +247,8 @@ export default function SupportDirectoryTab({
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                         <div className="space-y-2 min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="text-base font-black text-slate-800 break-words">{contact.label}</h4>
-                            <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md border shrink-0 ${
+                            <h4 className="text-lg font-black text-slate-808 break-words">{contact.label}</h4>
+                            <span className={`text-xs font-extrabold uppercase px-2 py-0.5 rounded-md border shrink-0 ${
                               contact.type === 'station_manager'
                                 ? 'bg-amber-50 text-amber-600 border-amber-100'
                                 : 'bg-emerald-50 text-emerald-600 border-emerald-100'
@@ -256,7 +256,7 @@ export default function SupportDirectoryTab({
                               {contact.type === 'station_manager' ? 'Station Manager' : 'Website Public'}
                             </span>
                           </div>
-                          <div className="space-y-1.5 text-sm font-bold text-slate-500">
+                          <div className="space-y-1.5 text-base font-bold text-slate-500">
                             <div className="flex items-center gap-1.5 font-mono">
                               <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                               <span className="break-all">{contact.phone}</span>
@@ -350,10 +350,10 @@ export default function SupportDirectoryTab({
   return (
     <div className="space-y-6 max-w-5xl animate-fadeIn">
       <div>
-        <h1 className="text-xl font-black text-slate-805 tracking-tight uppercase flex items-center gap-2">
+        <h1 className="text-2xl font-black text-slate-805 tracking-tight uppercase flex items-center gap-2">
           <Phone className="w-5.5 h-5.5 text-rose-550 animate-pulse" /> Contact HQ Admin Support
         </h1>
-        <p className="text-slate-500 text-xs mt-1">
+        <p className="text-slate-500 text-sm mt-1">
           Need assistance or have operational queries? Connect with the HQ admin support coordinators:
         </p>
       </div>
@@ -363,9 +363,9 @@ export default function SupportDirectoryTab({
           managerContacts.map(contact => (
             <div key={contact.id} className="bg-white border border-slate-200 p-5 rounded-[28px] shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
               <div>
-                <span className="text-[10px] bg-rose-55 text-rose-600 font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-md border border-rose-100/60 inline-block mb-2 font-sans">HQ Internal Support</span>
-                <h3 className="text-base font-black text-slate-800">{contact.label}</h3>
-                <p className="text-xs text-slate-400 mt-0.5 font-bold uppercase tracking-wider">Operations Desk Coordinator</p>
+                <span className="text-xs bg-rose-55 text-rose-600 font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-md border border-rose-100/60 inline-block mb-2 font-sans">HQ Internal Support</span>
+                <h3 className="text-lg font-black text-slate-800">{contact.label}</h3>
+                <p className="text-xs sm:text-sm text-slate-400 mt-0.5 font-bold uppercase tracking-wider">Operations Desk Coordinator</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1.5 border-t border-slate-100">
@@ -377,8 +377,8 @@ export default function SupportDirectoryTab({
                     <Phone className="w-4 h-4 text-rose-500" />
                   </div>
                   <div className="min-w-0">
-                    <span className="text-[10px] text-slate-400 block font-extrabold uppercase tracking-wide">Call Phone</span>
-                    <span className="text-sm font-black text-slate-805 font-mono truncate block">{contact.phone}</span>
+                    <span className="text-xs text-slate-400 block font-extrabold uppercase tracking-wide">Call Phone</span>
+                    <span className="text-base font-black text-slate-805 font-mono truncate block">{contact.phone}</span>
                   </div>
                 </a>
 
@@ -391,8 +391,8 @@ export default function SupportDirectoryTab({
                       <Mail className="w-4 h-4 text-indigo-600" />
                     </div>
                     <div className="min-w-0">
-                      <span className="text-[10px] text-slate-400 block font-extrabold uppercase tracking-wide">Mail Support</span>
-                      <span className="text-sm font-black text-slate-805 font-mono truncate block">{contact.email}</span>
+                      <span className="text-xs text-slate-400 block font-extrabold uppercase tracking-wide">Mail Support</span>
+                      <span className="text-base font-black text-slate-805 font-mono truncate block">{contact.email}</span>
                     </div>
                   </a>
                 ) : (
@@ -401,8 +401,8 @@ export default function SupportDirectoryTab({
                       <Mail className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
-                      <span className="text-[10px] text-slate-400 block font-extrabold uppercase tracking-wide">Mail Support</span>
-                      <span className="text-sm font-black text-slate-400 italic truncate block">No Email Added</span>
+                      <span className="text-xs text-slate-400 block font-extrabold uppercase tracking-wide">Mail Support</span>
+                      <span className="text-base font-black text-slate-400 italic truncate block">No Email Added</span>
                     </div>
                   </div>
                 )}
