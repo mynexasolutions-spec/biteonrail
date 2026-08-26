@@ -312,7 +312,7 @@ export default function PlatformSettingsTab({
             </div>
           </div>
         </div>
-      </div>    </div>
+      </div>
     );
   }
 

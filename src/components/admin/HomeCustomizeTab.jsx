@@ -71,6 +71,16 @@ export default function HomeCustomizeTab() {
     }
   };
 
+  // Auto-clean deleted dishes from popular dishes list
+  React.useEffect(() => {
+    if (menuItems && menuItems.length > 0 && homepagePopularDishes && homepagePopularDishes.length > 0) {
+      const validIds = homepagePopularDishes.filter(id => menuItems.some(item => item.id === id));
+      if (validIds.length !== homepagePopularDishes.length) {
+        updateHomepagePopularDishes(validIds);
+      }
+    }
+  }, [menuItems, homepagePopularDishes, updateHomepagePopularDishes]);
+
   // Toggle dish selection (must keep total selection to 4)
   const handleTogglePopularDish = async (dishId) => {
     let currentSelected = [...(homepagePopularDishes || [])];
@@ -181,7 +191,7 @@ export default function HomeCustomizeTab() {
             </div>
           </div>
         </div>
-      </div></div>
+      </div>
 
       {/* Image Upload Panel */}
       <div className="bg-white border border-slate-200 rounded-[28px] shadow-sm overflow-hidden p-6 space-y-6">
@@ -406,53 +416,63 @@ export default function HomeCustomizeTab() {
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 max-h-[450px] overflow-y-auto pr-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {filteredMenuItems.map((item) => {
-              const isSelected = (homepagePopularDishes || []).includes(item.id);
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => handleTogglePopularDish(item.id)}
-                  className={`border p-3.5 rounded-[22px] cursor-pointer transition-all duration-200 flex items-center gap-3 relative group ${
-                    isSelected
-                      ? 'border-rose-300 bg-rose-55/20 shadow-sm shadow-rose-100'
-                      : 'border-slate-200 hover:border-slate-355 hover:bg-slate-50/30'
-                  }`}
-                >
-                  {/* Dish image or placeholder */}
-                  {item.image_url || item.image ? (
-                    <img
-                      src={item.image_url || item.image}
-                      alt={item.name}
-                      className="w-12 h-12 rounded-xl object-cover border border-slate-150 shrink-0"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 bg-rose-50 border border-rose-100 rounded-xl flex items-center justify-center shrink-0 text-rose-600 text-sm font-bold">
-                      🍽
-                    </div>
-                  )}
+            {(() => {
+              const sortedItems = [...filteredMenuItems].sort((a, b) => {
+                const aSelected = (homepagePopularDishes || []).includes(a.id);
+                const bSelected = (homepagePopularDishes || []).includes(b.id);
+                if (aSelected && !bSelected) return -1;
+                if (!aSelected && bSelected) return 1;
+                return 0;
+              });
 
-                  <div className="flex-1 min-w-0">
-                    <h4 className={`text-sm font-black leading-tight line-clamp-1 ${
-                      isSelected ? 'text-rose-655' : 'text-slate-800'
-                    }`}>
-                      {item.name}
-                    </h4>
-                    <span className="text-xs text-slate-400 font-extrabold uppercase mt-1 block">
-                      {item.category} • ₹{item.price}
-                    </span>
+              return sortedItems.map((item) => {
+                const isSelected = (homepagePopularDishes || []).includes(item.id);
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleTogglePopularDish(item.id)}
+                    className={`border p-3.5 rounded-[22px] cursor-pointer transition-all duration-200 flex items-center gap-3 relative group ${
+                      isSelected
+                        ? 'border-emerald-300 bg-emerald-50/10 shadow-sm shadow-emerald-100'
+                        : 'border-slate-200 hover:border-slate-355 hover:bg-slate-50/30'
+                    }`}
+                  >
+                    {/* Dish image or placeholder */}
+                    {item.image_url || item.image ? (
+                      <img
+                        src={item.image_url || item.image}
+                        alt={item.name}
+                        className="w-12 h-12 rounded-xl object-cover border border-slate-150 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-rose-50 border border-rose-100 rounded-xl flex items-center justify-center shrink-0 text-rose-600 text-sm font-bold">
+                        🍽
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <h4 className={`text-sm font-black leading-tight line-clamp-1 ${
+                        isSelected ? 'text-emerald-700' : 'text-slate-800'
+                      }`}>
+                        {item.name}
+                      </h4>
+                      <span className="text-xs text-slate-400 font-extrabold uppercase mt-1 block">
+                        {item.category} • ₹{item.price}
+                      </span>
+                    </div>
+
+                    {/* Selection Indicator */}
+                    {isSelected && (
+                      <div className="absolute top-2.5 right-2.5 text-emerald-600">
+                        <CheckCircle className="w-4 h-4 fill-emerald-50 text-emerald-600" />
+                      </div>
+                    )}
                   </div>
-
-                  {/* Selection Indicator */}
-                  {isSelected && (
-                    <div className="absolute top-2.5 right-2.5 text-rose-600">
-                      <CheckCircle className="w-4 h-4 fill-rose-50 text-rose-600" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
 
             {filteredMenuItems.length === 0 && (
               <div className="col-span-full py-8 text-center text-slate-400 font-bold text-sm">
