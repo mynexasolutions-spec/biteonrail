@@ -32,7 +32,7 @@ function MenuContent() {
   const searchParams = useSearchParams();
   const stationCode = searchParams.get('station') || '';
   const categoryScrollRef = React.useRef(null);
- 
+
   const scrollCategories = (direction) => {
     if (categoryScrollRef.current) {
       const scrollAmount = 150;
@@ -92,7 +92,7 @@ function MenuContent() {
             if (matchedStop) {
               const rawActual = matchedStop.arrival?.actual || matchedStop.departure?.actual;
               const rawScheduled = matchedStop.arrival?.scheduled || matchedStop.departure?.scheduled;
-              
+
               const cleanTimeStr = (rawStr) => {
                 if (!rawStr) return null;
                 const timeMatch = String(rawStr).match(/([0-9]{2}:[0-9]{2})/);
@@ -221,13 +221,13 @@ function MenuContent() {
       if (activeArrTime) {
         const bufferMins = selectedStation.buffer_minutes || 60;
         setCutoffBufferUsed(bufferMins);
- 
+
         const isBookingClosed = (arrivalTimeStr, bufferLimit) => {
           if (!arrivalTimeStr || arrivalTimeStr === '--:--') return false;
           try {
             const [arrHrs, arrMins] = arrivalTimeStr.split(':').map(Number);
             let arrDate = new Date();
- 
+
             const savedDoj = typeof window !== 'undefined' ? localStorage.getItem("checkout_doj") : '';
             if (savedDoj) {
               let parsedDOJ = null;
@@ -249,7 +249,7 @@ function MenuContent() {
               }
             }
             arrDate.setHours(arrHrs, arrMins, 0, 0);
- 
+
             let diffMs = arrDate.getTime() - now.getTime();
             if (diffMs < 0 && Math.abs(diffMs) < 24 * 60 * 60 * 1000) {
               arrDate.setDate(arrDate.getDate() + 1);
@@ -269,7 +269,7 @@ function MenuContent() {
             return false;
           }
         };
- 
+
         if (isBookingClosed(activeArrTime, bufferMins)) {
           setIsClosed(true);
           return;
@@ -386,7 +386,7 @@ function MenuContent() {
         const url = new URL(window.location.href);
         url.searchParams.delete('add_item');
         window.history.replaceState({}, '', url.pathname + url.search);
-        
+
         // Add to cart
         addToCart(matched);
       }
@@ -516,7 +516,7 @@ function MenuContent() {
       }));
       return [...stationItems, ...globalWithEffective];
     }
-    
+
     // De-duplicate items by name
     const uniqueMap = new Map();
     menuItems.forEach(item => {
@@ -532,7 +532,7 @@ function MenuContent() {
     if (!menuItems) return [];
     const nameKey = itemName.toLowerCase().trim();
     const matchedItems = menuItems.filter(item => item.name.toLowerCase().trim() === nameKey && item.available);
-    
+
     let result = [];
     matchedItems.forEach(item => {
       const isGlobal = !item.station_code || item.station_code.toUpperCase() === 'ALL';
@@ -577,11 +577,11 @@ function MenuContent() {
     router.push(`${window.location.pathname}?${params.toString()}`);
 
     const actualItem = menuItems.find(
-      mi => mi.name.toLowerCase().trim() === targetItem.name.toLowerCase().trim() && 
-      mi.station_code?.toLowerCase() === targetStationCode.toLowerCase()
+      mi => mi.name.toLowerCase().trim() === targetItem.name.toLowerCase().trim() &&
+        mi.station_code?.toLowerCase() === targetStationCode.toLowerCase()
     ) || menuItems.find(
-      mi => mi.name.toLowerCase().trim() === targetItem.name.toLowerCase().trim() && 
-      (!mi.station_code || mi.station_code.toUpperCase() === 'ALL')
+      mi => mi.name.toLowerCase().trim() === targetItem.name.toLowerCase().trim() &&
+        (!mi.station_code || mi.station_code.toUpperCase() === 'ALL')
     );
 
     if (actualItem) {
@@ -594,7 +594,7 @@ function MenuContent() {
   // Filter Menu list
   const filteredMenu = React.useMemo(() => {
     if (!consolidatedMenuItems) return [];
-    
+
     return consolidatedMenuItems.filter(item => {
       const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -627,7 +627,7 @@ function MenuContent() {
   // Get active categories for this station dynamically
   const stationCategories = React.useMemo(() => {
     if (!categories) return [];
-    
+
     const stationSpecific = categories.filter(
       cat => cat.station_code && cat.station_code.toUpperCase() === stationCode.toUpperCase()
     );
@@ -702,7 +702,7 @@ function MenuContent() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-[115px] md:pt-8 pb-40 md:pb-8 min-h-screen bg-gradient-to-br from-slate-50 via-rose-50/10 to-slate-50 relative overflow-hidden">
+    <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${arrTime ? 'pt-[105px]' : 'pt-[65px]'} md:pt-8 pb-[117px] md:pb-8 min-h-screen bg-gradient-to-br from-slate-50 via-rose-50/10 to-slate-50 relative`}>
       <style dangerouslySetInnerHTML={{
         __html: `
         .scrollbar-none::-webkit-scrollbar {
@@ -711,6 +711,26 @@ function MenuContent() {
         .scrollbar-none {
           -ms-overflow-style: none !important;
           scrollbar-width: none !important;
+        }
+        .sticky-category-header {
+          position: -webkit-sticky;
+          position: sticky;
+          z-index: 30;
+          background: rgba(250, 250, 250, 0.9);
+          backdrop-filter: blur(8px);
+          padding-top: 0.75rem;
+          padding-bottom: 0.75rem;
+          margin-top: -0.5rem;
+          top: ${arrTime ? '88px' : '52px'};
+          border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+        }
+        @media (min-width: 768px) {
+          .sticky-category-header {
+            top: 64px;
+            background: rgba(250, 250, 250, 0.95);
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+          }
         }
       `}} />
 
@@ -724,7 +744,7 @@ function MenuContent() {
           >
             <ArrowLeft className="w-4 h-4 text-slate-707" />
           </Link>
-          
+
           <div className="flex-1 min-w-0 flex flex-col">
             <h1 className="text-base font-black text-slate-900 leading-tight flex items-center gap-1.5">
               <span className="truncate">{selectedStation ? selectedStation.name : 'Station Hub'}</span>
@@ -770,9 +790,8 @@ function MenuContent() {
               </span>
             )}
             {timeLeftStr && (
-              <span className={`px-1.5 py-0.5 rounded uppercase text-[9px] font-black tracking-wider flex items-center gap-0.5 border ml-auto ${
-                isClosed ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' : 'bg-amber-50 text-amber-800 border-amber-200/60'
-              }`}>
+              <span className={`px-1.5 py-0.5 rounded uppercase text-[9px] font-black tracking-wider flex items-center gap-0.5 border ml-auto ${isClosed ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' : 'bg-amber-50 text-amber-800 border-amber-200/60'
+                }`}>
                 ⏱ {isClosed ? 'Ordering Closed' : (timeLeftStr.startsWith('Place') ? timeLeftStr : `Closes: ${timeLeftStr}`)}
               </span>
             )}
@@ -823,9 +842,8 @@ function MenuContent() {
                 </div>
               )}
               {timeLeftStr && (
-                <span className={`px-2.5 py-0.5 rounded uppercase font-black text-[10px] tracking-wider flex items-center gap-1 border ${
-                  isClosed ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-550/10 text-amber-800 border-amber-500/20'
-                }`}>
+                <span className={`px-2.5 py-0.5 rounded uppercase font-black text-[10px] tracking-wider flex items-center gap-1 border ${isClosed ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-550/10 text-amber-800 border-amber-500/20'
+                  }`}>
                   ⏱ {isClosed ? 'Ordering Closed' : (timeLeftStr.startsWith('Place') ? timeLeftStr : `Order Closes in: ${timeLeftStr}`)}
                 </span>
               )}
@@ -867,7 +885,7 @@ function MenuContent() {
       {!stationCode && (
         <div className="bg-white rounded-[28px] border border-slate-200/80 p-5 sm:p-6 shadow-sm mb-8 flex flex-col md:flex-row md:items-center justify-between gap-5 relative">
           <div className="absolute top-0 left-0 bottom-0 w-2 bg-gradient-to-b from-rose-600 to-rose-500 rounded-l-[28px]" />
-          
+
           <div className="flex items-center gap-4">
             <div className="bg-rose-50 text-rose-600 p-3.5 rounded-2xl border border-rose-100 shrink-0 shadow-xs flex items-center justify-center">
               <MapPin className="w-6 h-6 text-rose-600 animate-bounce" style={{ animationDuration: '3s' }} />
@@ -882,7 +900,7 @@ function MenuContent() {
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-[480px] shrink-0">
             <span className="text-sm text-slate-500 font-bold hidden sm:inline shrink-0 uppercase tracking-wider text-[11px]">Junction:</span>
-            
+
             {/* Custom Searchable Dropdown Container */}
             <div className="relative w-full">
               <button
@@ -901,7 +919,7 @@ function MenuContent() {
                 <>
                   {/* Backdrop to close on clicking outside */}
                   <div className="fixed inset-0 z-40" onClick={() => { setShowHubDropdown(false); setHubSearchQuery(''); }} />
-                  
+
                   <div className="absolute right-0 top-full mt-3 w-full min-w-[320px] sm:min-w-[400px] bg-white border border-slate-200/90 rounded-[24px] shadow-2xl z-50 p-4 space-y-3 animate-fadeIn border-t-rose-500 border-t-2">
                     {/* Search Input inside Dropdown */}
                     <div className="relative">
@@ -947,7 +965,7 @@ function MenuContent() {
 
                       {/* Filtered stations list */}
                       {(() => {
-                        const filtered = (stations || []).filter(s => 
+                        const filtered = (stations || []).filter(s =>
                           (s.name || '').toLowerCase().includes(hubSearchQuery.toLowerCase()) ||
                           (s.code || '').toLowerCase().includes(hubSearchQuery.toLowerCase()) ||
                           (s.state || '').toLowerCase().includes(hubSearchQuery.toLowerCase())
@@ -1056,8 +1074,8 @@ function MenuContent() {
                       </div>
 
                       <div className="space-y-0.5">
-                        <span className="font-black text-slate-800 text-xs sm:text-sm md:text-base block group-hover:text-rose-600 transition-colors uppercase tracking-tight">{cat}</span>
-                        <span className="text-[10px] sm:text-xs text-slate-400 font-bold block">{itemCount} Dishes</span>
+                        <span className="font-black text-slate-800 text-[13px] sm:text-[15px] md:text-base block group-hover:text-rose-600 transition-colors uppercase tracking-tight">{cat}</span>
+                        <span className="text-xs sm:text-sm text-slate-400 font-bold block">{itemCount} Dishes</span>
                       </div>
                     </button>
                   );
@@ -1066,9 +1084,9 @@ function MenuContent() {
             </div>
           ) : (
             /* Show Selected Category Products */
-            <div className="space-y-6">
+            <div className="space-y-3 md:space-y-6">
               {/* Back Button and Header */}
-              <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="sticky-category-header flex flex-wrap items-center justify-between gap-4">
                 <button
                   onClick={() => setActiveCategory(null)}
                   className="flex items-center gap-2 text-sm font-black text-rose-600 bg-rose-50 border border-rose-100 px-4 py-2.5 rounded-2xl hover:bg-rose-100 transition-all shadow-xs shrink-0"
@@ -1097,10 +1115,10 @@ function MenuContent() {
                   </div>
 
                   {/* Veg / Non-veg Quick Toggles */}
-                  <div className="flex items-center gap-2 self-start sm:self-auto overflow-x-auto scrollbar-none pb-1 sm:pb-0">
+                  <div className="grid grid-cols-3 gap-1.5 w-full sm:flex sm:items-center sm:w-auto sm:gap-2 pb-1 sm:pb-0">
                     <button
                       onClick={() => setFoodTypeFilter(foodTypeFilter === 'veg' ? 'all' : 'veg')}
-                      className={`px-3 py-2 rounded-xl text-sm font-black uppercase tracking-wider transition-all border flex items-center gap-1.5 shrink-0 ${foodTypeFilter === 'veg'
+                      className={`px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl text-[11px] xs:text-xs sm:text-sm font-black uppercase tracking-wider transition-all border flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 ${foodTypeFilter === 'veg'
                         ? 'bg-emerald-600 border-emerald-655 text-white shadow-xs'
                         : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'
                         }`}
@@ -1113,7 +1131,7 @@ function MenuContent() {
 
                     <button
                       onClick={() => setFoodTypeFilter(foodTypeFilter === 'nonveg' ? 'all' : 'nonveg')}
-                      className={`px-3 py-2 rounded-xl text-sm font-black uppercase tracking-wider transition-all border flex items-center gap-1.5 shrink-0 ${foodTypeFilter === 'nonveg'
+                      className={`px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl text-[11px] xs:text-xs sm:text-sm font-black uppercase tracking-wider transition-all border flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 ${foodTypeFilter === 'nonveg'
                         ? 'bg-amber-900 border-amber-955 text-white shadow-xs'
                         : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'
                         }`}
@@ -1128,7 +1146,7 @@ function MenuContent() {
 
                     <button
                       onClick={() => setFoodTypeFilter(foodTypeFilter === 'standard' ? 'all' : 'standard')}
-                      className={`px-3 py-2 rounded-xl text-sm font-black uppercase tracking-wider transition-all border flex items-center gap-1.5 shrink-0 ${foodTypeFilter === 'standard'
+                      className={`px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl text-[11px] xs:text-xs sm:text-sm font-black uppercase tracking-wider transition-all border flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 ${foodTypeFilter === 'standard'
                         ? 'bg-slate-700 border-slate-750 text-white shadow-xs'
                         : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'
                         }`}
@@ -1159,7 +1177,7 @@ function MenuContent() {
                       !item.name.toLowerCase().includes('meat') &&
                       !item.name.toLowerCase().includes('egg') &&
                       !item.name.toLowerCase().includes('fish'));
-                  
+
                   const stationsServingThisItem = getStationsForItem(item.name);
 
                   return (
@@ -1194,9 +1212,9 @@ function MenuContent() {
 
                       <div className="p-3 pl-1.5 sm:p-5 flex-1 flex flex-col justify-between gap-2 sm:gap-3 min-w-0">
                         <div className="space-y-1">
-                          <h3 className="font-extrabold text-slate-800 text-base sm:text-lg lg:text-lg tracking-tight leading-snug group-hover:text-rose-600 transition-colors flex items-center gap-1.5">
+                          <h3 className="font-extrabold text-slate-800 text-base sm:text-lg lg:text-lg tracking-tight leading-snug group-hover:text-rose-600 transition-colors flex items-start gap-1.5">
                             {hasType && (
-                              <span className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center shrink-0 ${isVeg ? 'border-emerald-600' : 'border-amber-800'}`}>
+                              <span className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center shrink-0 mt-1 ${isVeg ? 'border-emerald-600' : 'border-amber-800'}`}>
                                 {isVeg ? (
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 block" />
                                 ) : (
@@ -1206,10 +1224,10 @@ function MenuContent() {
                                 )}
                               </span>
                             )}
-                            <span className="truncate">{item.name}</span>
+                            <span>{item.name}</span>
                           </h3>
                           {item.description && (
-                            <p className="text-xs sm:text-sm lg:text-base text-slate-450 line-clamp-2 sm:line-clamp-3 leading-relaxed">{item.description}</p>
+                            <p className="text-[13px] sm:text-[15px] lg:text-base text-slate-450 leading-relaxed">{item.description}</p>
                           )}
                           {!stationCode && (
                             <span className="inline-block text-[9px] bg-rose-50 text-rose-600 border border-rose-100 font-extrabold px-2 py-0.5 rounded-lg uppercase tracking-wider w-fit mt-1">
@@ -1416,7 +1434,7 @@ function MenuContent() {
       {stationPickerItem && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white border border-slate-250 p-6 sm:p-8 rounded-[32px] w-full max-w-md shadow-2xl space-y-4 animate-scaleIn relative overflow-hidden">
-            
+
             <div className="flex justify-between items-start">
               <div>
                 <span className="text-[10px] text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-0.5 rounded font-black uppercase tracking-wider flex items-center gap-1 w-fit">
@@ -1461,7 +1479,7 @@ function MenuContent() {
             <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
               {(() => {
                 const stationsList = getStationsForItem(stationPickerItem.name);
-                const filtered = stationsList.filter(opt => 
+                const filtered = stationsList.filter(opt =>
                   opt.stationName.toLowerCase().includes(stationSearchQuery.toLowerCase()) ||
                   opt.station_code.toLowerCase().includes(stationSearchQuery.toLowerCase()) ||
                   (opt.stationState || '').toLowerCase().includes(stationSearchQuery.toLowerCase())
@@ -1600,9 +1618,9 @@ function MenuContent() {
       {showCartDrawer && cart.length > 0 && (
         <>
           {/* Backdrop */}
-          <div 
+          <div
             onClick={() => setShowCartDrawer(false)}
-            className="fixed inset-0 bg-slate-950/60 z-50 backdrop-blur-xs transition-opacity duration-300 animate-fadeIn" 
+            className="fixed inset-0 bg-slate-950/60 z-50 backdrop-blur-xs transition-opacity duration-300 animate-fadeIn"
           />
           {/* Drawer content */}
           <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[32px] shadow-[0_-12px_40px_rgba(0,0,0,0.15)] max-h-[80vh] overflow-y-auto flex flex-col animate-slideUp border-t border-slate-200 lg:hidden">
@@ -1616,7 +1634,7 @@ function MenuContent() {
                   <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5">{cart.length} food items selected</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setShowCartDrawer(false)}
                 className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center font-black transition-all active:scale-90"
               >

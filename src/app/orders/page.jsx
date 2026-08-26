@@ -279,7 +279,7 @@ export default function UserOrdersPage() {
                                 {order.onDemandRequests.map((req, idx) => (
                                   <div key={idx} className="flex justify-between items-center bg-slate-50 border border-slate-100 p-3 rounded-xl text-sm md:text-base">
                                     <div className="min-w-0 mr-2">
-                                      <span className="font-extrabold text-slate-750 block truncate">{req.name}</span>
+                                      <span className="font-extrabold text-slate-750 block">{req.name}</span>
                                       <span className="text-xs text-slate-400 font-bold block mt-0.5">{req.price > 0 ? `₹${req.price}` : 'MRP / Free'}</span>
                                     </div>
                                     <span className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-black uppercase tracking-wider border shrink-0 ${req.status === 'Accepted'

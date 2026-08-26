@@ -183,7 +183,7 @@ export default function Home() {
           </div>
 
           {/* ── MOBILE PNR CARD OVERLAP (Exactly 50% split) ── */}
-          <div className="absolute bottom-0 left-0 right-0 translate-y-1/2 z-25 px-4">
+          <div className="absolute bottom-0 left-0 right-0 translate-y-1/2 z-30 px-4">
             <div className="bg-white border border-slate-200 rounded-[24px] shadow-xl p-4 relative">
               {['top-3 left-3', 'top-3 right-3', 'bottom-3 left-3', 'bottom-3 right-3'].map(pos => (
                 <div key={pos} className={`absolute ${pos} w-2 h-2 rounded-full bg-slate-200 border border-slate-350`} />
@@ -261,7 +261,7 @@ export default function Home() {
         </div>
 
         {/* Space compensator below mobile hero to account for overflow */}
-        <div className="md:hidden h-28 w-full"></div>
+        <div className={`md:hidden ${currentUser && searchMode === 'phone' ? 'h-44' : 'h-28'} w-full transition-all duration-300`}></div>
 
         {/* ── DESKTOP LAYOUT (Original Left-Aligned Sidebar Style) ── */}
         <div className="hidden md:block absolute inset-0 z-0">
