@@ -2,7 +2,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../../context/AppContext';
-import { Search as SearchIcon, MapPin, Train, ArrowRight, Utensils, Star, AlertCircle, Info } from 'lucide-react';
+import { Search as SearchIcon, MapPin, Train, ArrowRight, Utensils, Star, AlertCircle, Info, Phone } from 'lucide-react';
 
 const POPULAR_TRAINS = [
   { name: "Vande Bharat Express", number: "22436", route: "NDLS - BSB" },
@@ -17,6 +17,7 @@ function SearchContent() {
   const { stations, menuItems } = useApp();
   const searchParams = useSearchParams();
   const qParam = searchParams.get('q') || '';
+  const phoneParam = searchParams.get('phone') || '';
 
   const [query, setQuery] = useState('');
   const [selectedTrain, setSelectedTrain] = useState(null);
@@ -24,6 +25,19 @@ function SearchContent() {
   const [apiTrains, setApiTrains] = useState([]);
   const [loadingTrains, setLoadingTrains] = useState(false);
   const [boardingDate, setBoardingDate] = useState('');
+  const [savedPhone, setSavedPhone] = useState('');
+
+  useEffect(() => {
+    if (phoneParam) {
+      setSavedPhone(phoneParam);
+      localStorage.setItem("selected_phone", phoneParam);
+    } else {
+      const stored = localStorage.getItem("selected_phone");
+      if (stored) {
+        setSavedPhone(stored);
+      }
+    }
+  }, [phoneParam]);
 
   // Auto trigger search if query is in searchParams on mount
   useEffect(() => {
@@ -111,6 +125,19 @@ function SearchContent() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 pb-20 md:pb-12 selection:bg-rose-600 selection:text-white font-sans relative">
       <div className="max-w-3xl mx-auto px-4 pt-0 md:pt-6">
+
+        {/* Saved Phone Info Notification */}
+        {savedPhone && (
+          <div className="mb-4 bg-emerald-50 border border-emerald-200/80 p-3.5 rounded-2xl flex items-center gap-3 shadow-sm mt-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <Phone className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-emerald-800 font-extrabold">Ordering via Mobile: +91 {savedPhone}</p>
+              <p className="text-[10px] text-emerald-600 font-bold mt-0.5">We will use this phone number to notify you and auto-fill checkout details.</p>
+            </div>
+          </div>
+        )}
 
         {/* Search Header */}
         <div className="mb-6 text-center hidden md:block">

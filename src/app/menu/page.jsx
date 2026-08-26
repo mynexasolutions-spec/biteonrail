@@ -168,9 +168,12 @@ function MenuContent() {
     }
   }, [stationCode, stations]);
 
-  // Keep active category null by default to show categories browse grid first
+  // Keep active category null by default to show categories browse grid first,
+  // but only when stationCode is explicitly cleared (switching back to browse mode)
   useEffect(() => {
-    setActiveCategory(null);
+    if (!stationCode) {
+      setActiveCategory(null);
+    }
   }, [stationCode]);
 
   // Check station cutoff buffer time and status
@@ -395,8 +398,9 @@ function MenuContent() {
     localStorage.setItem("s_cart", JSON.stringify(updatedCart));
   };
 
-  const addToCart = (item, selectedVariant = null) => {
-    if (!stationCode) {
+  const addToCart = (item, selectedVariant = null, overrideStationCode = null) => {
+    const effectiveStationCode = overrideStationCode || stationCode;
+    if (!effectiveStationCode) {
       setStationPickerItem(item);
       return;
     }
@@ -574,11 +578,15 @@ function MenuContent() {
 
     const actualItem = menuItems.find(
       mi => mi.name.toLowerCase().trim() === targetItem.name.toLowerCase().trim() && 
-      mi.station_code.toLowerCase() === targetStationCode.toLowerCase()
+      mi.station_code?.toLowerCase() === targetStationCode.toLowerCase()
+    ) || menuItems.find(
+      mi => mi.name.toLowerCase().trim() === targetItem.name.toLowerCase().trim() && 
+      (!mi.station_code || mi.station_code.toUpperCase() === 'ALL')
     );
+
     if (actualItem) {
       setTimeout(() => {
-        addToCart(actualItem);
+        addToCart(actualItem, null, targetStationCode);
       }, 50);
     }
   };

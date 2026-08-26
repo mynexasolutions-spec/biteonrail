@@ -6,7 +6,7 @@ import { getPnrStatus, parsePnrData } from '../lib/pnr';
 import {
   Search, MapPin, Train, ShieldCheck, Clock, Award, Coffee,
   ChevronRight, Check, Star, ArrowRight, Zap, Utensils, ShoppingBag,
-  Ticket, Bike, Smile
+  Ticket, Bike, Smile, Phone
 } from 'lucide-react';
 
 const POPULAR_STATIONS = [
@@ -82,12 +82,23 @@ export default function Home() {
   const [showAllStations, setShowAllStations] = useState(false);
   const [showPnrModal, setShowPnrModal] = useState(false);
   const [modalPnr, setModalPnr] = useState('');
+  const [searchMode, setSearchMode] = useState('phone');
+  const [phone, setPhone] = useState('');
 
   /* ── PNR ── */
   const handlePnrCheck = (e) => {
     e.preventDefault();
     if (pnr.length < 10) { alert("Please enter a valid 10-digit PNR"); return; }
     router.push(`/pnr-route?pnr=${pnr}`);
+  };
+
+  const handlePhoneCheck = (e) => {
+    e.preventDefault();
+    if (phone.length < 10) { alert("Please enter a valid 10-digit mobile number"); return; }
+    localStorage.setItem("selected_phone", phone);
+    localStorage.setItem("login_phone_prefill", phone);
+    localStorage.setItem("post_login_redirect", "search");
+    router.push('/account');
   };
 
   const handleProceedWithStation = (code) => {
@@ -132,7 +143,7 @@ export default function Home() {
       `}} />
 
       {/* ══ HERO ═════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden border-b border-slate-200 md:min-h-[calc(100vh-40px)] md:flex md:items-center">
+      <section className="relative overflow-visible md:overflow-hidden border-b border-slate-200 md:min-h-[calc(100vh-40px)] md:flex md:items-center">
 
         {/* ── MOBILE LAYOUT ── */}
         <div className="md:hidden relative w-full">
@@ -177,28 +188,80 @@ export default function Home() {
               {['top-3 left-3', 'top-3 right-3', 'bottom-3 left-3', 'bottom-3 right-3'].map(pos => (
                 <div key={pos} className={`absolute ${pos} w-2 h-2 rounded-full bg-slate-200 border border-slate-350`} />
               ))}
-              <form onSubmit={handlePnrCheck}>
-                <div className="relative">
-                  <Train className="absolute left-4 top-[18px] w-4 h-4 text-slate-400" />
-                  <input
-                    type="text" required maxLength={10} value={pnr}
-                    onChange={e => { setPnr(e.target.value.replace(/\D/g, '')); setPnrResult(null); }}
-                    placeholder="Enter PNR to order"
-                    className="pl-11 pr-28 py-4 w-full bg-slate-50 border border-slate-200 rounded-2xl text-base focus:outline-none focus:border-rose-500 font-sans font-bold text-slate-800 placeholder-slate-400"
-                  />
-                  <button type="submit" disabled={pnrResult === 'checking'}
-                    className="absolute right-2.5 top-2.5 bg-slate-900 hover:bg-slate-700 text-white text-sm font-black px-5 py-2.5 rounded-xl transition-all shadow disabled:opacity-50"
+              
+              {/* Tab Selector */}
+              <div className="flex border-b border-slate-100 mb-4 text-sm font-black">
+                <button
+                  type="button"
+                  onClick={() => setSearchMode('phone')}
+                  className={`flex-1 pb-2.5 text-center transition-all ${searchMode === 'phone' ? 'border-b-2 border-rose-600 text-rose-600' : 'text-slate-400'}`}
+                >
+                  Mobile Number
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchMode('pnr')}
+                  className={`flex-1 pb-2.5 text-center transition-all ${searchMode === 'pnr' ? 'border-b-2 border-rose-600 text-rose-600' : 'text-slate-400'}`}
+                >
+                  PNR Number
+                </button>
+              </div>
+
+              {searchMode === 'pnr' ? (
+                <form onSubmit={handlePnrCheck}>
+                  <div className="relative">
+                    <Train className="absolute left-4 top-[18px] w-4 h-4 text-slate-400" />
+                    <input
+                      type="text" required maxLength={10} value={pnr}
+                      onChange={e => { setPnr(e.target.value.replace(/\D/g, '')); setPnrResult(null); }}
+                      placeholder="Enter PNR to order"
+                      className="pl-11 pr-28 py-4 w-full bg-slate-50 border border-slate-200 rounded-2xl text-base focus:outline-none focus:border-rose-500 font-sans font-bold text-slate-800 placeholder-slate-400"
+                    />
+                    <button type="submit" disabled={pnrResult === 'checking'}
+                      className="absolute right-2.5 top-2.5 bg-slate-900 hover:bg-slate-700 text-white text-sm font-black px-5 py-2.5 rounded-xl transition-all shadow disabled:opacity-50"
+                    >
+                      {pnrResult === 'checking' ? '…' : 'Submit'}
+                    </button>
+                  </div>
+                </form>
+              ) : currentUser ? (
+                <div className="text-center py-2 flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mb-2">
+                    <Check className="w-6 h-6 text-emerald-600 font-bold" />
+                  </div>
+                  <p className="text-sm font-black text-slate-800">Logged in as +91 {currentUser}</p>
+                  <p className="text-[10px] text-slate-400 font-bold mt-1">Ready to get hot food delivered at your berth?</p>
+                  <button 
+                    onClick={() => router.push(`/search?phone=${currentUser}`)}
+                    className="mt-4 w-full bg-rose-600 hover:bg-rose-700 text-white text-base font-black py-4.5 rounded-2xl transition-all shadow-md active:scale-95"
                   >
-                    {pnrResult === 'checking' ? '…' : 'Submit'}
+                    Proceed to Search
                   </button>
                 </div>
-              </form>
+              ) : (
+                <form onSubmit={handlePhoneCheck}>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-[18px] w-4 h-4 text-slate-400" />
+                    <input
+                      type="text" required maxLength={10} value={phone}
+                      onChange={e => { setPhone(e.target.value.replace(/\D/g, '')); }}
+                      placeholder="Enter 10-digit mobile number"
+                      className="pl-11 pr-28 py-4 w-full bg-slate-50 border border-slate-200 rounded-2xl text-base focus:outline-none focus:border-rose-500 font-sans font-bold text-slate-800 placeholder-slate-400"
+                    />
+                    <button type="submit"
+                      className="absolute right-2.5 top-2.5 bg-rose-600 hover:bg-rose-550 text-white text-sm font-black px-5 py-2.5 rounded-xl transition-all shadow"
+                    >
+                      Login
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
 
         {/* Space compensator below mobile hero to account for overflow */}
-        <div className="md:hidden h-14 w-full"></div>
+        <div className="md:hidden h-28 w-full"></div>
 
         {/* ── DESKTOP LAYOUT (Original Left-Aligned Sidebar Style) ── */}
         <div className="hidden md:block absolute inset-0 z-0">

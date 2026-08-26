@@ -9,7 +9,16 @@ import { User, Phone, ShoppingBag, HelpCircle, LogOut, ShieldCheck, ChevronRight
 export default function AccountPage() {
   const router = useRouter();
   const { currentUser, loginUser, logoutUser, orders, supportContacts, siteFaqs, fetchMyOrders } = useApp();
-  const [phoneInput, setPhoneInput] = useState('');
+  const [phoneInput, setPhoneInput] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const prefill = localStorage.getItem("login_phone_prefill");
+      if (prefill) {
+        localStorage.removeItem("login_phone_prefill");
+        return prefill;
+      }
+    }
+    return '';
+  });
 
   useEffect(() => {
     if (currentUser) fetchMyOrders(currentUser);
@@ -90,8 +99,15 @@ export default function AccountPage() {
         loginUser(phoneInput, res.idToken);
         setOtpSent(false);
         setConfirmationResult(null);
+        const tempPhone = phoneInput;
         setPhoneInput('');
         setOtpInput('');
+        
+        const redirectType = localStorage.getItem("post_login_redirect");
+        if (redirectType === "search") {
+          localStorage.removeItem("post_login_redirect");
+          router.push(`/search?phone=${tempPhone}`);
+        }
       } else {
         setLoginError(res.error);
       }

@@ -240,9 +240,14 @@ function CheckoutContent() {
     if (savedNum && !trainNumberVal) {
       setTrainNumberVal(savedNum);
     }
-    // Autofill registered user phone if logged in
+    // Autofill registered user phone if logged in, otherwise load from homepage phone
     if (currentUser) {
       setPhone(currentUser);
+    } else {
+      const savedPhone = localStorage.getItem("selected_phone");
+      if (savedPhone) {
+        setPhone(savedPhone);
+      }
     }
 
     const savedDoj = localStorage.getItem("checkout_doj") || '';
