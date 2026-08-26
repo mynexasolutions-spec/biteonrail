@@ -163,7 +163,7 @@ export default function Home() {
               <img src={homepageLogoWhite || "/logo-white.png"} alt="BiteOnRail Logo" className="h-10 w-auto filter drop-shadow-[1px_2px_4px_rgba(0,0,0,0.6)]" />
             </div>
             {/* Heading */}
-            <div className="pb-32">
+            <div className="pb-24">
               <h1
                 className="text-4xl font-black tracking-tight leading-tight text-white"
                 style={{ filter: 'drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.95)) drop-shadow(0px 0px 8px rgba(0, 0, 0, 0.8))' }}
@@ -227,7 +227,7 @@ export default function Home() {
               ) : currentUser ? (
                 <div className="text-center py-2 flex flex-col items-center">
                   <p className="text-sm font-black text-slate-800">Logged in as +91 {currentUser}</p>
-                  <p className="text-[10px] text-slate-400 font-bold mt-1">Ready to get hot food delivered at your berth?</p>
+                  <p className="text-xs sm:text-sm text-slate-400 font-bold mt-1.5">Ready to get hot food delivered at your berth?</p>
                   <button 
                     onClick={() => router.push(`/search?phone=${currentUser}`)}
                     className="mt-4 w-fit px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-black rounded-xl transition-all shadow-md active:scale-95"
