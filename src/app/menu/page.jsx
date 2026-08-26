@@ -1094,16 +1094,16 @@ function MenuContent() {
             /* Show Selected Category Products */
             <div className="space-y-3 md:space-y-6">
               {/* Back Button and Header */}
-              <div className="sticky-category-header flex flex-wrap items-center justify-between gap-4">
+              <div className="sticky-category-header flex flex-row items-center justify-between gap-3 w-full overflow-hidden">
                 <button
                   onClick={() => setActiveCategory(null)}
-                  className="flex items-center gap-2 text-sm font-black text-rose-600 bg-rose-50 border border-rose-100 px-4 py-2.5 rounded-2xl hover:bg-rose-100 transition-all shadow-xs shrink-0"
+                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-black text-rose-600 bg-rose-50 border border-rose-100 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl hover:bg-rose-100 transition-all shadow-xs shrink-0"
                 >
-                  <ArrowLeft className="w-4 h-4 text-rose-600" /> Back to Categories
+                  <ArrowLeft className="w-3.5 h-3.5 text-rose-600" /> Back to Categories
                 </button>
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">Selected Category</span>
-                  <span className="text-lg font-black text-slate-800 uppercase tracking-tight">{activeCategory}</span>
+                <div className="text-right min-w-0">
+                  <span className="text-[8px] sm:text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block truncate">Selected Category</span>
+                  <span className="text-sm sm:text-lg font-black text-slate-800 uppercase tracking-tight block truncate">{activeCategory}</span>
                 </div>
               </div>
 
