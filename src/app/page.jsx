@@ -719,9 +719,6 @@ export default function Home() {
                         <h3 className="font-black text-slate-800 text-sm sm:text-base md:text-lg leading-tight group-hover:text-rose-600 transition-colors">
                           {item.name}
                         </h3>
-                        <p className="text-xs sm:text-sm md:text-sm text-slate-450 font-semibold leading-relaxed mt-1 line-clamp-2">
-                          {item.desc}
-                        </p>
                       </div>
                       <button
                         onClick={() => router.push(`/menu?add_item=${encodeURIComponent(item.name)}`)}

@@ -500,7 +500,10 @@ function MenuContent() {
       // Station-specific items + global items (station_code = 'ALL')
       const stationItems = menuItems.filter(item =>
         item.station_code && item.station_code.toLowerCase() === stationCode.toLowerCase()
-      );
+      ).map(item => ({
+        ...item,
+        available: resolveItemAvailability ? resolveItemAvailability(item, stationCode) : item.available !== false
+      }));
       const globalItems = menuItems.filter(item =>
         !item.station_code || item.station_code.toUpperCase() === 'ALL'
       );
@@ -531,7 +534,7 @@ function MenuContent() {
   const getStationsForItem = React.useCallback((itemName) => {
     if (!menuItems) return [];
     const nameKey = itemName.toLowerCase().trim();
-    const matchedItems = menuItems.filter(item => item.name.toLowerCase().trim() === nameKey && item.available);
+    const matchedItems = menuItems.filter(item => item.name.toLowerCase().trim() === nameKey);
 
     let result = [];
     matchedItems.forEach(item => {
@@ -540,31 +543,36 @@ function MenuContent() {
         // If it's a global item, it is served at all stations unless overridden
         stations.forEach(stn => {
           const isAvailableAtStation = resolveItemAvailability ? resolveItemAvailability(item, stn.code) : true;
-          if (isAvailableAtStation) {
-            result.push({
-              ...item,
-              station_code: stn.code,
-              stationName: stn.name,
-              stationState: stn.state
-            });
-          }
+          result.push({
+            ...item,
+            station_code: stn.code,
+            stationName: stn.name,
+            stationState: stn.state,
+            inStock: isAvailableAtStation
+          });
         });
       } else {
         const stn = stations.find(s => s.code.toLowerCase() === item.station_code.toLowerCase());
         if (stn) {
+          const isAvailableAtStation = resolveItemAvailability ? resolveItemAvailability(item, stn.code) : item.available !== false;
           result.push({
             ...item,
             stationName: stn.name,
-            stationState: stn.state
+            stationState: stn.state,
+            inStock: isAvailableAtStation
           });
         }
       }
     });
 
-    // De-duplicate stations by code
+    // De-duplicate stations by code (prioritizing in-stock ones if duplicates exist)
     const uniqueStationsMap = new Map();
     result.forEach(r => {
-      uniqueStationsMap.set(r.station_code.toUpperCase(), r);
+      const key = r.station_code.toUpperCase();
+      const existing = uniqueStationsMap.get(key);
+      if (!existing || (!existing.inStock && r.inStock)) {
+        uniqueStationsMap.set(key, r);
+      }
     });
     return Array.from(uniqueStationsMap.values());
   }, [menuItems, stations, resolveItemAvailability]);
@@ -620,7 +628,7 @@ function MenuContent() {
         matchesFoodType = item.food_type === '';
       }
 
-      return matchesCategory && matchesSearch && matchesFoodType && item.available;
+      return matchesCategory && matchesSearch && matchesFoodType;
     });
   }, [consolidatedMenuItems, activeCategory, searchQuery, foodTypeFilter]);
 
@@ -883,8 +891,8 @@ function MenuContent() {
 
       {/* Dynamic Station Selector Bar */}
       {!stationCode && (
-        <div className="bg-white rounded-[28px] border border-slate-200/80 p-5 sm:p-6 shadow-sm mb-8 flex flex-col md:flex-row md:items-center justify-between gap-5 relative">
-          <div className="absolute top-0 left-0 bottom-0 w-2 bg-gradient-to-b from-rose-600 to-rose-500 rounded-l-[28px]" />
+        <div className="bg-white rounded-[28px] border border-slate-200/80 p-5 sm:p-6 shadow-sm mb-8 flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 bottom-0 w-2 bg-gradient-to-b from-rose-600 to-rose-500" />
 
           <div className="flex items-center gap-4">
             <div className="bg-rose-50 text-rose-600 p-3.5 rounded-2xl border border-rose-100 shrink-0 shadow-xs flex items-center justify-center">
@@ -1252,6 +1260,13 @@ function MenuContent() {
                               >
                                 Closed
                               </button>
+                            ) : item.available === false ? (
+                              <button
+                                disabled
+                                className="bg-slate-100 text-red-500 border border-slate-200 text-[10px] font-black uppercase py-2.5 rounded-xl cursor-not-allowed w-20 sm:w-24 text-center shrink-0 leading-none"
+                              >
+                                Out of Stock
+                              </button>
                             ) : cartItem ? (
                               <div className="flex items-center justify-between bg-rose-600 text-white rounded-xl py-1.5 px-2 sm:py-2 sm:px-3 shadow-md shadow-rose-600/10 animate-scaleIn w-20 sm:w-24 shrink-0">
                                 <button
@@ -1435,19 +1450,36 @@ function MenuContent() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white border border-slate-250 p-6 sm:p-8 rounded-[32px] w-full max-w-md shadow-2xl space-y-4 animate-scaleIn relative overflow-hidden">
 
-            <div className="flex justify-between items-start">
-              <div>
-                <span className="text-[10px] text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-0.5 rounded font-black uppercase tracking-wider flex items-center gap-1 w-fit">
-                  <MapPin className="w-3 h-3 text-rose-500" /> Select Delivery Junction
-                </span>
-                <h3 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight mt-1.5 leading-snug">Where should we deliver {stationPickerItem.name}?</h3>
-              </div>
-              <button
-                onClick={() => { setStationPickerItem(null); setStationSearchQuery(''); }}
-                className="text-slate-400 hover:text-slate-600 p-1 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
-              >
-                <X className="w-4.5 h-4.5" />
-              </button>
+            {/* Absolute close button */}
+            <button
+              onClick={() => { setStationPickerItem(null); setStationSearchQuery(''); }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors z-20 shadow-xs"
+            >
+              <X className="w-4.5 h-4.5" />
+            </button>
+
+            {/* Sexy Centered Header */}
+            <div className="flex flex-col items-center text-center pt-2">
+              {/* Product Image */}
+              {(stationPickerItem.image_url || stationPickerItem.image) ? (
+                <img
+                  src={stationPickerItem.image_url || stationPickerItem.image}
+                  alt={stationPickerItem.name}
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl object-contain bg-slate-50 border border-slate-200/80 shadow-md p-2 transition-transform duration-500 hover:scale-105"
+                />
+              ) : (
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-rose-50 border border-rose-100 flex items-center justify-center shadow-inner">
+                  <Utensils className="w-9 h-9 text-rose-500/80" />
+                </div>
+              )}
+
+              <span className="text-[10px] text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-0.5 rounded font-black uppercase tracking-wider flex items-center gap-1 w-fit mt-4 shadow-xs">
+                <MapPin className="w-3 h-3 text-rose-500" /> Select Delivery Junction
+              </span>
+              
+              <h3 className="text-lg sm:text-xl font-black text-slate-800 tracking-tight mt-3 leading-snug">
+                Where should we deliver <span className="text-rose-600 font-black">{stationPickerItem.name}</span>?
+              </h3>
             </div>
 
             <p className="text-sm sm:text-base text-slate-500 leading-normal font-semibold">
@@ -1476,7 +1508,7 @@ function MenuContent() {
               )}
             </div>
 
-            <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+            <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-2 scrollbar-thin">
               {(() => {
                 const stationsList = getStationsForItem(stationPickerItem.name);
                 const filtered = stationsList.filter(opt =>
@@ -1496,19 +1528,28 @@ function MenuContent() {
                 return filtered.map((opt) => (
                   <button
                     key={opt.station_code}
+                    disabled={!opt.inStock}
                     onClick={() => {
                       handleSelectStationForItem(opt.station_code, stationPickerItem);
                       setStationSearchQuery('');
                     }}
-                    className="w-full flex justify-between items-center bg-slate-50 hover:bg-rose-50/50 border border-slate-150 hover:border-rose-100 p-3.5 rounded-2xl transition-all text-xs font-bold text-slate-800 hover:text-rose-700 hover:scale-[1.01]"
+                    className={`w-full flex justify-between items-center p-4 rounded-2xl transition-all text-xs font-bold ${
+                      opt.inStock
+                        ? 'bg-slate-50/60 hover:bg-rose-50/20 border border-slate-200/80 hover:border-rose-200/60 text-slate-805 hover:text-rose-700 hover:scale-[1.015] hover:shadow-md shadow-xs cursor-pointer'
+                        : 'bg-slate-100/50 border border-slate-200 text-slate-400 cursor-not-allowed opacity-70'
+                    }`}
                   >
                     <div className="text-left">
-                      <span className="font-extrabold block text-slate-800 text-base sm:text-lg">{opt.stationName}</span>
-                      <span className="text-[10px] sm:text-[11px] text-slate-400 uppercase tracking-widest font-bold font-mono mt-0.5 block">{opt.station_code} · {opt.stationState}</span>
+                      <span className={`font-extrabold block text-base sm:text-lg ${opt.inStock ? 'text-slate-800' : 'text-slate-400'}`}>{opt.stationName}</span>
+                      <span className="text-xs sm:text-sm text-slate-400 uppercase tracking-widest font-bold font-mono mt-0.5 block">{opt.station_code} · {opt.stationState}</span>
                     </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-rose-600 font-mono font-black text-base sm:text-lg block">₹{opt.price}</span>
-                      <span className="text-[9px] text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded font-bold mt-0.5 block">In Stock</span>
+                    <div className="text-right shrink-0 flex flex-col items-end">
+                      <span className={`font-mono font-black text-base sm:text-lg block ${opt.inStock ? 'text-rose-600' : 'text-slate-400'}`}>₹{opt.price}</span>
+                      {opt.inStock ? (
+                        <span className="text-[9px] text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded font-black mt-1.5 inline-block w-fit">In Stock</span>
+                      ) : (
+                        <span className="text-[9px] text-red-500 bg-red-50 border border-red-100 px-1.5 py-0.5 rounded font-black mt-1.5 inline-block w-fit">Out of Stock</span>
+                      )}
                     </div>
                   </button>
                 ));
